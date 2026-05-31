@@ -1,0 +1,389 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum BookFormat {
+  EBOOK
+  PRINT
+  AUDIOBOOK
+}
+
+enum ChannelType {
+  DIGITAL
+  BOOKSTORE
+  DIRECT
+  PRESALE
+}
+
+enum SaleStatus {
+  CONFIRMED
+  PENDING_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum MerchandiseType {
+  SIMPLE
+  BUNDLE
+}
+
+enum InventoryMovementType {
+  NEW_PRINT_RUN
+  SEND_TO_BOOKSTORE
+  DIRECT_SALE
+  BOOKSTORE_RETURN
+  SEND_TO_INFLUENCER
+  BUNDLE_ASSEMBLY
+  WRITEOFF
+  MERCHANDISE_ENTRY
+  MERCHANDISE_SALE
+  MERCHANDISE_WRITEOFF
+}
+
+enum ImportStatus {
+  PENDING
+  CONFIRMED
+  REPLACED
+  CANCELLED
+}
+
+enum ExchangeStatus {
+  PENDING
+  FULFILLED
+  UNFULFILLED
+}
+
+enum ExpenseCategory {
+  PRINT
+  DESIGN_ART
+  EDITING
+  MERCHANDISE_PRODUCTION
+  SOCIAL_ADS
+  EVENTS
+  MARKETING_OTHER
+  SHIPPING
+  PLATFORMS_SOFTWARE
+  OTHER
+}
+
+enum ExpenseLevel {
+  GENERAL
+  BOOK
+  PRINT_RUN
+}
+
+// ─── Users & Auth ────────────────────────────────────────────────────────────
+
+model Profile {
+  id          String   @id @default(cuid())
+  supabaseId  String   @unique
+  email       String   @unique
+  displayName String?
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownedAccounts  Account[]       @relation("AccountOwner")
+  accountMembers AccountMember[]
+}
+
+model Account {
+  id           String   @id @default(cuid())
+  ownerId      String
+  owner        Profile  @relation("AccountOwner", fields: [ownerId], references: [id])
+  baseCurrency String   @default("CLP")
+  dateFormat   String   @default("DD/MM/YYYY")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  members  AccountMember[]
+  books    Book[]
+  channels Channel[]
+  expenses Expense[]
+}
+
+model AccountMember {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  role      UserRole @default(VIEWER)
+  createdAt DateTime @default(now())
+
+  @@unique([accountId, profileId])
+}
+
+// ─── Books ───────────────────────────────────────────────────────────────────
+
+model Book {
+  id              String     @id @default(cuid())
+  accountId       String
+  account         Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  title           String
+  subtitle        String?
+  isbn            String?
+  formats         BookFormat[]
+  language        String?
+  publishedAt     DateTime?
+  coverUrl        String?
+  description     String?
+  seriesId        String?
+  series          Series?    @relation(fields: [seriesId], references: [id])
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  printRuns            PrintRun[]
+  bookChannels         BookChannel[]
+  sales                Sale[]
+  inventoryMovements   InventoryMovement[]
+  expenses             Expense[]
+  exchanges            Exchange[]
+}
+
+model Series {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  books Book[]
+}
+
+// ─── Print Runs ──────────────────────────────────────────────────────────────
+
+model PrintRun {
+  id              String   @id @default(cuid())
+  bookId          String
+  book            Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  quantity        Int
+  totalCost       Decimal  @db.Decimal(12, 2)
+  costPerUnit     Decimal  @db.Decimal(10, 4)
+  receivedAt      DateTime @default(now())
+  supplier        String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  expenses           Expense[]
+  inventoryMovements InventoryMovement[]
+}
+
+// ─── Channels ────────────────────────────────────────────────────────────────
+
+model Channel {
+  id                   String      @id @default(cuid())
+  accountId            String
+  account              Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name                 String
+  type                 ChannelType
+  currency             String?
+  royaltyPercent       Decimal?    @db.Decimal(5, 2)
+  paymentDelaySays     Int?
+  contactPerson        String?
+  contactEmail         String?
+  city                 String?
+  country              String?
+  consignmentPercent   Decimal?    @db.Decimal(5, 2)
+  paymentFrequency     String?
+  consignmentDays      Int?
+  consignmentStartAt   DateTime?
+  // Presale fields
+  isPresale            Boolean     @default(false)
+  presaleCloseAt       DateTime?
+  presaleDeliveryAt    DateTime?
+  isActive             Boolean     @default(true)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  bookChannels     BookChannel[]
+  sales            Sale[]
+  csvImports       CsvImport[]
+  payments         Payment[]
+}
+
+model BookChannel {
+  id              String   @id @default(cuid())
+  bookId          String
+  book            Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  channelId       String
+  channel         Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  suggestedPrice  Decimal? @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+
+  @@unique([bookId, channelId])
+}
+
+// ─── Sales ───────────────────────────────────────────────────────────────────
+
+model Sale {
+  id                String     @id @default(cuid())
+  bookId            String?
+  book              Book?      @relation(fields: [bookId], references: [id])
+  merchandiseId     String?
+  merchandise       Merchandise? @relation(fields: [merchandiseId], references: [id])
+  channelId         String
+  channel           Channel    @relation(fields: [channelId], references: [id])
+  quantity          Int
+  unitPrice         Decimal    @db.Decimal(10, 2)
+  totalAmount       Decimal    @db.Decimal(12, 2)
+  currency          String
+  paymentMethod     String?
+  status            SaleStatus @default(CONFIRMED)
+  estimatedDelivery DateTime?
+  deliveredAt       DateTime?
+  saleDate          DateTime   @default(now())
+  origin            String?    // "manual", "csv", "manual_over_csv"
+  csvImportId       String?
+  csvImport         CsvImport? @relation(fields: [csvImportId], references: [id])
+  notes             String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+// ─── CSV Imports ─────────────────────────────────────────────────────────────
+
+model CsvImport {
+  id             String       @id @default(cuid())
+  channelId      String
+  channel        Channel      @relation(fields: [channelId], references: [id])
+  filename       String
+  fileHash       String       @unique
+  periodStart    DateTime
+  periodEnd      DateTime
+  recordsTotal   Int
+  recordsImported Int
+  recordsSkipped Int
+  status         ImportStatus @default(CONFIRMED)
+  importedAt     DateTime     @default(now())
+
+  sales Sale[]
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+model Payment {
+  id          String   @id @default(cuid())
+  channelId   String
+  channel     Channel  @relation(fields: [channelId], references: [id])
+  amount      Decimal  @db.Decimal(12, 2)
+  currency    String
+  periodStart DateTime
+  periodEnd   DateTime
+  receivedAt  DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+// ─── Inventory ───────────────────────────────────────────────────────────────
+
+model InventoryMovement {
+  id            String                @id @default(cuid())
+  bookId        String?
+  book          Book?                 @relation(fields: [bookId], references: [id])
+  printRunId    String?
+  printRun      PrintRun?             @relation(fields: [printRunId], references: [id])
+  merchandiseId String?
+  merchandise   Merchandise?          @relation(fields: [merchandiseId], references: [id])
+  type          InventoryMovementType
+  quantity      Int
+  channelId     String?
+  exchangeId    String?
+  exchange      Exchange?             @relation(fields: [exchangeId], references: [id])
+  notes         String?
+  occurredAt    DateTime              @default(now())
+  createdAt     DateTime              @default(now())
+}
+
+// ─── Exchanges (Canjes) ──────────────────────────────────────────────────────
+
+model Exchange {
+  id               String         @id @default(cuid())
+  bookId           String
+  book             Book           @relation(fields: [bookId], references: [id])
+  recipient        String
+  quantity         Int
+  sentAt           DateTime
+  expectedResult   String?
+  deadlineAt       DateTime?
+  status           ExchangeStatus @default(PENDING)
+  evidenceUrl      String?
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  inventoryMovements InventoryMovement[]
+}
+
+// ─── Merchandise ─────────────────────────────────────────────────────────────
+
+model Merchandise {
+  id             String          @id @default(cuid())
+  accountId      String
+  name           String
+  type           MerchandiseType @default(SIMPLE)
+  imageUrl       String?
+  suggestedPrice Decimal?        @db.Decimal(10, 2)
+  category       String?
+  bookId         String?
+  edition        String?
+  components     Json?
+  sku            String?
+  description    String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  productionBatches  ProductionBatch[]
+  inventoryMovements InventoryMovement[]
+  sales              Sale[]
+}
+
+model ProductionBatch {
+  id              String      @id @default(cuid())
+  merchandiseId   String
+  merchandise     Merchandise @relation(fields: [merchandiseId], references: [id], onDelete: Cascade)
+  quantity        Int
+  totalCost       Decimal     @db.Decimal(12, 2)
+  costPerUnit     Decimal     @db.Decimal(10, 4)
+  supplier        String?
+  receivedAt      DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+
+  expenses Expense[]
+}
+
+// ─── Expenses ────────────────────────────────────────────────────────────────
+
+model Expense {
+  id                String          @id @default(cuid())
+  accountId         String
+  account           Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category          ExpenseCategory
+  level             ExpenseLevel    @default(GENERAL)
+  description       String
+  amount            Decimal         @db.Decimal(12, 2)
+  currency          String
+  bookId            String?
+  book              Book?           @relation(fields: [bookId], references: [id])
+  printRunId        String?
+  printRun          PrintRun?       @relation(fields: [printRunId], references: [id])
+  productionBatchId String?
+  productionBatch   ProductionBatch? @relation(fields: [productionBatchId], references: [id])
+  occurredAt        DateTime        @default(now())
+  notes             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
