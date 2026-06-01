@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { calcCostPerUnit, calcSaleTotal } from "@/lib/finance";
 
 export async function addPrintRun({
   bookId,
@@ -20,7 +21,7 @@ export async function addPrintRun({
   if (quantity < 1)   return { error: "La cantidad debe ser mayor a 0." };
   if (totalCost < 0)  return { error: "El costo no puede ser negativo." };
 
-  const costPerUnit = totalCost / quantity;
+  const costPerUnit = calcCostPerUnit(totalCost, quantity);
   const date = new Date(receivedAt + "T12:00:00"); // noon local avoids UTC-day-shift
 
   try {
@@ -70,7 +71,7 @@ export async function updatePrintRun({
   if (quantity < 1)  return { error: "La cantidad debe ser mayor a 0." };
   if (totalCost < 0) return { error: "El costo no puede ser negativo." };
 
-  const costPerUnit = totalCost / quantity;
+  const costPerUnit = calcCostPerUnit(totalCost, quantity);
   const date = new Date(receivedAt + "T12:00:00");
 
   try {

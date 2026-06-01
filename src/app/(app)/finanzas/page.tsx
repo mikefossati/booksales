@@ -15,6 +15,7 @@ import {
   CheckCircle2, BookOpen
 } from "lucide-react";
 import type { ExpenseCategory, ExpenseLevel, ChannelType } from "@/generated/prisma/client";
+import { netChannelRevenue, calcOutstanding } from "@/lib/finance";
 
 // ── Label maps ───────────────────────────────────────────────────────────────
 
@@ -47,16 +48,6 @@ const CHANNEL_TYPE_LABEL: Record<ChannelType, string> = {
 const PAYMENT_ICONS: Record<string, string> = {
   Efectivo: "💵", Transferencia: "📱", Tarjeta: "💳",
 };
-
-// ── Net income helper ─────────────────────────────────────────────────────────
-
-function netAmount(grossAmount: number, channelType: ChannelType, royaltyPct: number | null, consignmentPct: number | null): number {
-  if (channelType === "DIGITAL" && royaltyPct)
-    return grossAmount * (toNum(royaltyPct) / 100);
-  if (channelType === "BOOKSTORE" && consignmentPct)
-    return grossAmount * ((100 - toNum(consignmentPct)) / 100);
-  return grossAmount;
-}
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -150,7 +141,7 @@ export default async function FinanzasPage({
   const payableData = payableChannels.map(ch => {
     const sales    = allSales.filter(s => s.channelId === ch.id).reduce((s, sale) => s + toNum(sale.totalAmount), 0);
     const received = allPayments.filter(p => p.channelId === ch.id).reduce((s, p) => s + toNum(p.amount), 0);
-    const outstanding = Math.max(0, sales - received);
+    const outstanding = calcOutstanding(sales, received);
     return { channel: ch, totalSales: sales, totalReceived: received, outstanding };
   }).filter(d => d.totalSales > 0 || d.totalReceived > 0);
 

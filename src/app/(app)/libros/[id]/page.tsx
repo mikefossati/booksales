@@ -17,6 +17,14 @@ import DeleteSaleButton from "@/components/sales/DeleteSaleButton";
 import EditPrintRunModal from "@/components/libros/EditPrintRunModal";
 import WriteoffModal from "@/components/libros/WriteoffModal";
 import BookTabNav from "@/components/libros/BookTabNav";
+import {
+  STOCK_SIGN,
+  calcStockInHand,
+  calcInBookstores,
+  calcInExchanges,
+  calcRecoveryPct,
+  isFullyRecovered,
+} from "@/lib/finance";
 
 // ── Labels ────────────────────────────────────────────────────────────────────
 
@@ -48,15 +56,8 @@ const MOVEMENT_ICON: Record<string, string> = {
   BUNDLE_ASSEMBLY:    "📦",
 };
 
-const MOVEMENT_SIGN: Record<string, number> = {
-  NEW_PRINT_RUN:      +1,
-  BOOKSTORE_RETURN:   +1,
-  SEND_TO_BOOKSTORE:  -1,
-  DIRECT_SALE:        -1,
-  SEND_TO_INFLUENCER: -1,
-  WRITEOFF:           -1,
-  BUNDLE_ASSEMBLY:    -1,
-};
+// MOVEMENT_SIGN alias — imported as STOCK_SIGN from @/lib/finance
+const MOVEMENT_SIGN = STOCK_SIGN;
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -123,24 +124,14 @@ export default async function BookDetailPage({
   const totalUnits   = salesStats._sum.quantity ?? 0;
   const totalRevenue = toNum(salesStats._sum.totalAmount);
 
-  const stockInHand = movements.reduce(
-    (s, m) => s + (MOVEMENT_SIGN[m.type] ?? 0) * m.quantity, 0
-  );
-  const inBookstores = movements.reduce((s, m) => {
-    if (m.type === "SEND_TO_BOOKSTORE") return s + m.quantity;
-    if (m.type === "BOOKSTORE_RETURN")  return s - m.quantity;
-    return s;
-  }, 0);
-  const inExchanges = movements.reduce((s, m) =>
-    m.type === "SEND_TO_INFLUENCER" ? s + m.quantity : s, 0
-  );
+  const stockInHand  = calcStockInHand(movements);
+  const inBookstores = calcInBookstores(movements);
+  const inExchanges  = calcInExchanges(movements);
 
   const totalPrintCost = printRuns.reduce((s, r) => s + toNum(r.totalCost), 0);
   const totalPrinted   = printRuns.reduce((s, r) => s + r.quantity, 0);
-  const recoveryPct    = totalPrintCost > 0
-    ? Math.min((totalRevenue / totalPrintCost) * 100, 100)
-    : 0;
-  const recovered = totalPrintCost > 0 && totalRevenue >= totalPrintCost;
+  const recoveryPct    = calcRecoveryPct(totalRevenue, totalPrintCost);
+  const recovered      = isFullyRecovered(totalRevenue, totalPrintCost);
 
   const channelLookup = new Map(allChannels.map(c => [c.id, c.name]));
 

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import type { MerchandiseType } from "@/generated/prisma/client";
+import { calcCostPerUnit, calcSaleTotal } from "@/lib/finance";
 
 // ── Products ──────────────────────────────────────────────────────────────────
 
@@ -131,7 +132,7 @@ export async function addProductionBatch({
   if (quantity < 1)  return { error: "La cantidad debe ser mayor a 0." };
   if (totalCost < 0) return { error: "El costo no puede ser negativo." };
 
-  const costPerUnit = quantity > 0 ? totalCost / quantity : 0;
+  const costPerUnit = calcCostPerUnit(totalCost, quantity);
   const date = new Date(receivedAt + "T12:00:00");
 
   try {
@@ -181,7 +182,7 @@ export async function createMerchSale({
   if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
 
-  const total = quantity * unitPrice;
+  const total = calcSaleTotal(quantity, unitPrice);
 
   try {
     await prisma.$transaction(async (tx) => {

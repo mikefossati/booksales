@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { ExpenseCategory, ExpenseLevel } from "@/generated/prisma/client";
+import { resolveExpenseAssignments } from "@/lib/finance";
 
 export async function createExpense({
   accountId,
@@ -38,8 +39,7 @@ export async function createExpense({
         currency,
         category,
         level,
-        bookId:      (level !== "GENERAL" && bookId)     ? bookId     : null,
-        printRunId:  (level === "PRINT_RUN" && printRunId) ? printRunId : null,
+        ...resolveExpenseAssignments(level, bookId, printRunId),
         occurredAt:  new Date(occurredAt + "T12:00:00"),
         notes:       notes?.trim() || null,
       },
@@ -85,8 +85,7 @@ export async function updateExpense({
         currency,
         category,
         level,
-        bookId:      (level !== "GENERAL" && bookId)       ? bookId     : null,
-        printRunId:  (level === "PRINT_RUN" && printRunId) ? printRunId : null,
+        ...resolveExpenseAssignments(level, bookId, printRunId),
         occurredAt:  new Date(occurredAt + "T12:00:00"),
         notes:       notes?.trim() || null,
       },

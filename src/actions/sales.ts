@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { SaleStatus } from "@/generated/prisma/client";
+import { calcSaleTotal, shouldTrackBookInventory } from "@/lib/finance";
 
 export async function createSale({
   bookId,
@@ -21,7 +22,7 @@ export async function createSale({
   if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
 
-  const total = quantity * unitPrice;
+  const total = calcSaleTotal(quantity, unitPrice);
 
   const trackInventory = await shouldTrackInventory(bookId, channelId);
 
@@ -88,7 +89,7 @@ export async function updateSale({
       data: {
         quantity,
         unitPrice:    unitPrice.toFixed(2),
-        totalAmount:  (quantity * unitPrice).toFixed(2),
+        totalAmount:  calcSaleTotal(quantity, unitPrice).toFixed(2),
         channelId,
         saleDate:     new Date(saleDate + "T12:00:00"),
         paymentMethod: paymentMethod || null,
@@ -119,5 +120,5 @@ async function shouldTrackInventory(bookId: string, channelId: string): Promise<
     prisma.channel.findUnique({ where: { id: channelId }, select: { type: true } }),
     prisma.book.findUnique({ where: { id: bookId }, select: { formats: true } }),
   ]);
-  return channel?.type === "DIRECT" && (book?.formats ?? []).includes("PRINT");
+  return shouldTrackBookInventory(channel?.type ?? "", book?.formats ?? []);
 }

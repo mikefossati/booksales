@@ -17,19 +17,9 @@ import DeleteMerchButton from "@/components/libros/DeleteMerchButton";
 import AddBatchModal from "@/components/libros/AddBatchModal";
 import { BookOpen, Handshake, ShoppingBag } from "lucide-react";
 import type { ExchangeStatus, MerchandiseType } from "@/generated/prisma/client";
+import { getExchangeStatusMeta, calcMerchStock } from "@/lib/finance";
 
-// ── Canje status helpers ──────────────────────────────────────────────────────
-
-function getStatusMeta(
-  status: ExchangeStatus,
-  deadlineAt: Date | null,
-): { dot: string; label: string; labelColor: string } {
-  if (status === "FULFILLED")   return { dot: "🟢", label: "Cumplido",    labelColor: "text-[var(--color-success)]" };
-  if (status === "UNFULFILLED") return { dot: "🔴", label: "No cumplido", labelColor: "text-[var(--color-danger)]"  };
-  if (deadlineAt && new Date(deadlineAt) < new Date())
-    return { dot: "🔴", label: "Vencido", labelColor: "text-[var(--color-danger)]" };
-  return { dot: "🟡", label: "Pendiente", labelColor: "text-[var(--color-warning)]" };
-}
+const getStatusMeta = getExchangeStatusMeta;
 
 const TYPE_LABELS: Record<MerchandiseType, string> = { SIMPLE: "Simple", BUNDLE: "Bundle" };
 
@@ -169,7 +159,7 @@ export default async function LibrosPage({
               {merchandise.map(item => {
                 const totalBatched = item.productionBatches.reduce((s, b) => s + b.quantity, 0);
                 const totalSold    = item.sales.reduce((acc, sale) => acc + sale.quantity, 0);
-                const stock        = totalBatched - totalSold;
+                const stock        = calcMerchStock(totalBatched, totalSold);
                 const lastBatch    = item.productionBatches[0];
                 const stockColor   = stock <= 0 ? "text-[var(--color-danger)]" : stock <= 5 ? "text-[var(--color-warning)]" : "text-[var(--color-text)]";
 

@@ -11,6 +11,14 @@ import ProjectionChart from "@/components/reportes/ProjectionChart";
 import GoalCalculator from "@/components/reportes/GoalCalculator";
 import type { ProjectionPoint } from "@/components/reportes/ProjectionChart";
 import type { ExpenseCategory, ChannelType } from "@/generated/prisma/client";
+import {
+  STOCK_SIGN,
+  calcRecoveryPct,
+  calcProjectionScenarios,
+  calc3MonthAvg,
+  calcMerchStock,
+  getExchangeStatusMeta,
+} from "@/lib/finance";
 
 // ── Label maps ────────────────────────────────────────────────────────────────
 
@@ -23,11 +31,6 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 
 const CHANNEL_TYPE_LABEL: Record<ChannelType, string> = {
   DIGITAL: "Digital", BOOKSTORE: "Librería", DIRECT: "Directo", PRESALE: "Preventa",
-};
-
-const STOCK_SIGN: Record<string, number> = {
-  NEW_PRINT_RUN: +1, BOOKSTORE_RETURN: +1,
-  SEND_TO_BOOKSTORE: -1, DIRECT_SALE: -1, SEND_TO_INFLUENCER: -1, WRITEOFF: -1, BUNDLE_ASSEMBLY: -1,
 };
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -204,7 +207,7 @@ export default async function ReportesPage({
       tiradas:    printRuns.filter(r => r.bookId === b.id).length,
     }))
     .filter(b => b.printCost > 0)
-    .map(b => ({ ...b, recovered: Math.min(b.revenue, b.printCost), pct: b.printCost > 0 ? Math.min((b.revenue / b.printCost) * 100, 100) : 0 }));
+    .map(b => ({ ...b, recovered: Math.min(b.revenue, b.printCost), pct: calcRecoveryPct(b.revenue, b.printCost) }));
 
   // Merch P&L
   const merchPnl = merchandise.map(m => ({
@@ -231,18 +234,17 @@ export default async function ReportesPage({
     revenue: allSales.filter(s => { const d = new Date(s.saleDate); return d >= start && d <= end; }).reduce((s, x) => s + toNum(x.totalAmount), 0),
   }));
 
-  const last3Avg = historicalRevenue.slice(-3).reduce((s, m) => s + m.revenue, 0) / 3;
+  const last3Avg = calc3MonthAvg(historicalRevenue.map(m => m.revenue));
   const currentMonthRevenue = historicalRevenue[historicalRevenue.length - 1].revenue;
   const currentMonthLabel   = histMonths[histMonths.length - 1].label;
 
   const projectedMonths: ProjectionPoint[] = [];
   for (let i = 1; i <= 6; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const scenarios = calcProjectionScenarios(last3Avg);
     projectedMonths.push({
       month:       d.toLocaleString("es-CL", { month: "short" }).replace(".", ""),
-      realista:    Math.round(last3Avg),
-      conservador: Math.round(last3Avg * 0.8),
-      optimista:   Math.round(last3Avg * 1.2),
+      ...scenarios,
     });
   }
 
@@ -427,7 +429,7 @@ export default async function ReportesPage({
                   {merchandise.map(m => {
                     const batched  = m.productionBatches.reduce((s, b) => s + b.quantity, 0);
                     const sold     = m.sales.reduce((s, x) => s + x.quantity, 0);
-                    const stock    = batched - sold;
+                    const stock    = calcMerchStock(batched, sold);
                     const color    = stock <= 0 ? "text-[var(--color-danger)]" : stock <= 5 ? "text-[var(--color-warning)]" : "text-[var(--color-text)]";
                     return (
                       <div key={m.id} className="grid grid-cols-[1fr_auto_auto] gap-4 px-5 py-3.5 items-center">
@@ -508,8 +510,8 @@ export default async function ReportesPage({
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="divide-y divide-[var(--color-border)]">
                   {allExchanges.slice(0, 10).map(ex => {
-                    const isOverdue = ex.status === "PENDING" && ex.deadlineAt && new Date(ex.deadlineAt) < now;
-                    const dot = ex.status === "FULFILLED" ? "🟢" : ex.status === "UNFULFILLED" ? "🔴" : isOverdue ? "🔴" : "🟡";
+                    const { dot } = getExchangeStatusMeta(ex.status, ex.deadlineAt, now);
+                    const isOverdue = ex.status === "PENDING" && ex.deadlineAt !== null && new Date(ex.deadlineAt) < now;
                     return (
                       <div key={ex.id} className="flex items-center gap-3 px-5 py-3.5">
                         <span className="text-base">{dot}</span>

@@ -8,18 +8,12 @@ import { Calendar, TrendingUp, Clock, Package, BookOpen, ChevronRight } from "lu
 import SalesChart from "@/components/dashboard/SalesChart";
 import type { ChannelType, InventoryMovementType } from "@/generated/prisma/client";
 import type { ChartRow } from "@/components/dashboard/SalesChart";
-
-// ── Stock helpers ─────────────────────────────────────────────────────────────
-
-const STOCK_SIGN: Partial<Record<InventoryMovementType, number>> = {
-  NEW_PRINT_RUN:      +1,
-  BOOKSTORE_RETURN:   +1,
-  SEND_TO_BOOKSTORE:  -1,
-  DIRECT_SALE:        -1,
-  SEND_TO_INFLUENCER: -1,
-  WRITEOFF:           -1,
-  BUNDLE_ASSEMBLY:    -1,
-};
+import {
+  calcMomPercent,
+  calcOutstanding,
+  calcStockInHand,
+  STOCK_SIGN,
+} from "@/lib/finance";
 
 const LOW_STOCK_THRESHOLD = 10;
 
@@ -184,15 +178,13 @@ export default async function DashboardPage() {
   const yearlyTotal    = toNum(yearlySales._sum.totalAmount);
   const monthlyUnits   = monthlySales._sum.quantity ?? 0;
 
-  const momPct = prevTotal > 0
-    ? ((monthlyTotal - prevTotal) / prevTotal) * 100
-    : monthlyTotal > 0 ? 100 : 0;
+  const momPct = calcMomPercent(monthlyTotal, prevTotal);
 
   // Actual outstanding = sales − payments
   const salesByChannel    = new Map(payableSalesAgg.map(r => [r.channelId, toNum(r._sum.totalAmount)]));
   const paymentsByChannel = new Map(paymentsAgg.map(r => [r.channelId, toNum(r._sum.amount)]));
   const pendingTotal = payableIds.reduce((sum, id) => {
-    return sum + Math.max(0, (salesByChannel.get(id) ?? 0) - (paymentsByChannel.get(id) ?? 0));
+    return sum + calcOutstanding(salesByChannel.get(id) ?? 0, paymentsByChannel.get(id) ?? 0);
   }, 0);
 
   // Channel breakdown for current month
@@ -251,10 +243,9 @@ export default async function DashboardPage() {
 
   // Low stock books
   const stockByBook = new Map<string, number>();
-  for (const m of allMovements) {
-    if (!m.bookId) continue;
-    const sign = STOCK_SIGN[m.type] ?? 0;
-    stockByBook.set(m.bookId, (stockByBook.get(m.bookId) ?? 0) + sign * m.quantity);
+  for (const { bookId, type, quantity } of allMovements) {
+    if (!bookId) continue;
+    stockByBook.set(bookId, (stockByBook.get(bookId) ?? 0) + (STOCK_SIGN[type] ?? 0) * quantity);
   }
   for (const book of printBooks) {
     const stock = stockByBook.get(book.id) ?? 0;
