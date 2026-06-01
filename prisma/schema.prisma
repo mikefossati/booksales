@@ -101,13 +101,14 @@ model Profile {
 }
 
 model Account {
-  id           String   @id @default(cuid())
-  ownerId      String
-  owner        Profile  @relation("AccountOwner", fields: [ownerId], references: [id])
-  baseCurrency String   @default("CLP")
-  dateFormat   String   @default("DD/MM/YYYY")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                    String    @id @default(cuid())
+  ownerId               String
+  owner                 Profile   @relation("AccountOwner", fields: [ownerId], references: [id])
+  baseCurrency          String    @default("CLP")
+  dateFormat            String    @default("DD/MM/YYYY")
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   members  AccountMember[]
   books    Book[]
