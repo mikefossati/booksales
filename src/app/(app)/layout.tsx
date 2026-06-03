@@ -73,6 +73,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <BottomNav />
       <QuickSaleFab
         accountId={account.id}
+        accountCurrency={account.baseCurrency}
         books={books}
         merch={merch}
         channels={channels}
