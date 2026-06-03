@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Cormorant_Garamond } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,7 +28,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${inter.variable} ${cormorant.variable} h-full`}>
-      <body className="min-h-full bg-[var(--color-bg)]">{children}</body>
+      <body className="min-h-full bg-[var(--color-bg)]">
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
