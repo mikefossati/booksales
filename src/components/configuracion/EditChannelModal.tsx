@@ -9,6 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Pencil, X } from "lucide-react";
 import type { Channel } from "@/generated/prisma/client";
 
+const CURRENCIES = [
+  { value: "CLP", label: "CLP — Peso chileno"       },
+  { value: "ARS", label: "ARS — Peso argentino"      },
+  { value: "USD", label: "USD — Dólar estadounidense" },
+  { value: "EUR", label: "EUR — Euro"                },
+  { value: "BRL", label: "BRL — Real brasileño"      },
+  { value: "UYU", label: "UYU — Peso uruguayo"       },
+  { value: "MXN", label: "MXN — Peso mexicano"       },
+  { value: "COP", label: "COP — Peso colombiano"     },
+];
+
 export default function EditChannelModal({ channel }: { channel: Channel }) {
   const [open, setOpen]               = useState(false);
   const [name, setName]               = useState(channel.name);
@@ -84,16 +95,10 @@ export default function EditChannelModal({ channel }: { channel: Channel }) {
               </div>
 
               {channel.type === "DIGITAL" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ech-royalty">Regalías (%)</Label>
-                    <Input id="ech-royalty" type="number" min="0" max="100" step="0.01"
-                      value={royalty} onChange={e => setRoyalty(e.target.value)} placeholder="35" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ech-currency">Moneda</Label>
-                    <Input id="ech-currency" value={currency} onChange={e => setCurrency(e.target.value)} placeholder="USD" />
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ech-royalty">Regalías (%)</Label>
+                  <Input id="ech-royalty" type="number" min="0" max="100" step="0.01"
+                    value={royalty} onChange={e => setRoyalty(e.target.value)} placeholder="35" />
                 </div>
               )}
 
@@ -110,6 +115,20 @@ export default function EditChannelModal({ channel }: { channel: Channel }) {
                   </div>
                 </div>
               )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="ech-currency">Moneda de este canal</Label>
+                <select
+                  id="ech-currency"
+                  value={CURRENCIES.some(c => c.value === currency) ? currency : "CLP"}
+                  onChange={e => setCurrency(e.target.value)}
+                  className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 focus:border-[var(--color-accent)]"
+                >
+                  {CURRENCIES.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
 
               {error && (
                 <p className="text-sm text-[var(--color-danger)] bg-[var(--color-danger)]/8 rounded-[var(--radius-sm)] px-3 py-2">{error}</p>

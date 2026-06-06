@@ -22,6 +22,17 @@ const CHANNEL_TYPES: {
   { value: "PRESALE",   label: "Preventa",   description: "Campaña antes del lanzamiento",     icon: CalendarClock },
 ];
 
+const CURRENCIES = [
+  { value: "CLP", label: "CLP — Peso chileno"      },
+  { value: "ARS", label: "ARS — Peso argentino"     },
+  { value: "USD", label: "USD — Dólar estadounidense"},
+  { value: "EUR", label: "EUR — Euro"               },
+  { value: "BRL", label: "BRL — Real brasileño"     },
+  { value: "UYU", label: "UYU — Peso uruguayo"      },
+  { value: "MXN", label: "MXN — Peso mexicano"      },
+  { value: "COP", label: "COP — Peso colombiano"    },
+];
+
 const QUICK_NAMES: Record<ChannelType, string[]> = {
   DIGITAL:   ["Amazon KDP", "Buscalibre", "Google Play Books"],
   BOOKSTORE: ["Librería Antártica", "Feria del Libro"],
@@ -165,15 +176,9 @@ export default function AddChannelModal({ accountId }: { accountId: string }) {
                 </div>
 
                 {type === "DIGITAL" && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="ch-royalty">Regalías (%)</Label>
-                      <Input id="ch-royalty" type="number" min="0" max="100" step="0.01" value={royalty} onChange={(e) => setRoyalty(e.target.value)} placeholder="35" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="ch-currency">Moneda</Label>
-                      <Input id="ch-currency" value={currency} onChange={(e) => setCurrency(e.target.value)} placeholder="USD" />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ch-royalty">Regalías (%)</Label>
+                    <Input id="ch-royalty" type="number" min="0" max="100" step="0.01" value={royalty} onChange={(e) => setRoyalty(e.target.value)} placeholder="35" />
                   </div>
                 )}
 
@@ -189,6 +194,20 @@ export default function AddChannelModal({ accountId }: { accountId: string }) {
                     </div>
                   </div>
                 )}
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="ch-currency">Moneda de este canal</Label>
+                  <select
+                    id="ch-currency"
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 focus:border-[var(--color-accent)]"
+                  >
+                    {CURRENCIES.map(c => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
 
                 {error && (
                   <p className="text-sm text-[var(--color-danger)] bg-[var(--color-danger)]/8 rounded-[var(--radius-sm)] px-3 py-2">{error}</p>
