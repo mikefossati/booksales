@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ReportesTabNav from "@/components/reportes/ReportesTabNav";
 import PeriodNav from "@/components/reportes/PeriodNav";
+import ExportButton from "@/components/reportes/ExportButton";
 import ProjectionChart from "@/components/reportes/ProjectionChart";
 import GoalCalculator from "@/components/reportes/GoalCalculator";
 import type { ProjectionPoint } from "@/components/reportes/ProjectionChart";
@@ -247,10 +248,11 @@ export default async function ReportesPage({
 
   return (
     <main className="p-5 md:p-8 max-w-5xl">
-      <header className="mb-7">
+      <header className="mb-7 flex items-start justify-between gap-4">
         <h1 className="text-2xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
           Reportes
         </h1>
+        <ExportButton tab="all" />
       </header>
 
       <Suspense>
@@ -260,9 +262,12 @@ export default async function ReportesPage({
       {/* ── VENTAS ────────────────────────────────────────────────────────── */}
       {tab === "ventas" && (
         <div className="space-y-6">
-          <Suspense>
-            <PeriodNav />
-          </Suspense>
+          <div className="flex items-center justify-between gap-3">
+            <Suspense>
+              <PeriodNav />
+            </Suspense>
+            <ExportButton tab="ventas" size="sm" />
+          </div>
 
           {/* Summary cards */}
           <div className="grid grid-cols-3 gap-3">
@@ -375,6 +380,9 @@ export default async function ReportesPage({
       {/* ── INVENTARIO ────────────────────────────────────────────────────── */}
       {tab === "inventario" && (
         <div className="space-y-7">
+          <div className="flex justify-end">
+            <ExportButton tab="inventario" size="sm" />
+          </div>
           {/* Stock de libros */}
           <section>
             <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Stock de libros impresos</h2>
@@ -527,6 +535,9 @@ export default async function ReportesPage({
       {/* ── FINANZAS ──────────────────────────────────────────────────────── */}
       {tab === "finanzas" && (
         <div className="space-y-7">
+          <div className="flex justify-end">
+            <ExportButton tab="finanzas" size="sm" />
+          </div>
           {/* Expenses by category */}
           <section>
             <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Gastos por categoría</h2>
@@ -661,6 +672,9 @@ export default async function ReportesPage({
       {/* ── PROYECCIONES ──────────────────────────────────────────────────── */}
       {tab === "proyecciones" && (
         <div className="space-y-7">
+          <div className="flex justify-end">
+            <ExportButton tab="proyecciones" size="sm" />
+          </div>
           {/* Chart */}
           <section>
             <div className="flex items-baseline justify-between mb-3">
