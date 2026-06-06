@@ -1,257 +1,373 @@
 /**
- * Tests for the validation logic extracted from server actions.
- * We test the pure conditional rules, not the DB calls.
+ * Action-level validation tests.
+ * Prisma is mocked — these tests cover input guards and error propagation
+ * without requiring a real database.
  */
-import { describe, it, expect } from "vitest";
-import {
-  resolveExpenseAssignments,
-  shouldTrackBookInventory,
-  calcSaleTotal,
-  calcCostPerUnit,
-  calcOutstanding,
-} from "@/lib/finance";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// ── Sale input validation rules ───────────────────────────────────────────────
-// Mirror the guards in src/actions/sales.ts
+// ── Prisma mock (hoisted so variables are ready before vi.mock runs) ──────────
 
-describe("sale input validation rules", () => {
-  it("quantity 0 should be rejected (< 1)", () => {
-    expect(0 < 1).toBe(true);
+const {
+  mockSaleCreate, mockSaleUpdate, mockSaleFindUnique, mockSaleDelete,
+  mockMovementCreate, mockChannelFind, mockBookFind,
+  mockExpenseCreate, mockExpenseUpdate, mockExpenseDelete,
+} = vi.hoisted(() => ({
+  mockSaleCreate:     vi.fn(),
+  mockSaleUpdate:     vi.fn(),
+  mockSaleFindUnique: vi.fn(),
+  mockSaleDelete:     vi.fn(),
+  mockMovementCreate: vi.fn(),
+  mockChannelFind:    vi.fn(),
+  mockBookFind:       vi.fn(),
+  mockExpenseCreate:  vi.fn(),
+  mockExpenseUpdate:  vi.fn(),
+  mockExpenseDelete:  vi.fn(),
+}));
+
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    sale: {
+      create:     mockSaleCreate,
+      update:     mockSaleUpdate,
+      delete:     mockSaleDelete,
+      findUnique: mockSaleFindUnique,
+    },
+    channel:           { findUnique: mockChannelFind },
+    book:              { findUnique: mockBookFind },
+    inventoryMovement: { create: mockMovementCreate },
+    expense: {
+      create: mockExpenseCreate,
+      update: mockExpenseUpdate,
+      delete: mockExpenseDelete,
+    },
+    $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        sale:              { create: mockSaleCreate },
+        inventoryMovement: { create: mockMovementCreate },
+      }),
+    ),
+  },
+}));
+
+import { createSale, updateSale, deleteSale } from "@/actions/sales";
+import { createExpense, updateExpense, deleteExpense } from "@/actions/expenses";
+
+// ── Sales — createSale ────────────────────────────────────────────────────────
+
+describe("createSale — input validation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockChannelFind.mockResolvedValue({ type: "DIRECT" });
+    mockBookFind.mockResolvedValue({ formats: ["PRINT"] });
+    mockSaleCreate.mockResolvedValue({});
+    mockMovementCreate.mockResolvedValue({});
   });
 
-  it("quantity 1 is the minimum valid value", () => {
-    expect(1 < 1).toBe(false);
+  it("rejects quantity < 1", async () => {
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: 0, unitPrice: 8000, currency: "CLP",
+    });
+    expect(result.error).toBe("La cantidad debe ser al menos 1.");
+    expect(mockSaleCreate).not.toHaveBeenCalled();
   });
 
-  it("negative unit price should be rejected (< 0)", () => {
-    expect(-1 < 0).toBe(true);
+  it("rejects negative quantity", async () => {
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: -5, unitPrice: 8000, currency: "CLP",
+    });
+    expect(result.error).toBe("La cantidad debe ser al menos 1.");
   });
 
-  it("unit price of 0 is allowed (free item)", () => {
-    expect(0 < 0).toBe(false);
+  it("rejects negative unit price", async () => {
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: -1, currency: "CLP",
+    });
+    expect(result.error).toBe("El precio no puede ser negativo.");
+    expect(mockSaleCreate).not.toHaveBeenCalled();
   });
 
-  it("sale total is 0 for a free item (quantity × 0)", () => {
-    expect(calcSaleTotal(5, 0)).toBe(0);
-  });
-});
-
-// ── Print run validation rules ────────────────────────────────────────────────
-
-describe("print run input validation rules", () => {
-  it("quantity 0 should be rejected (< 1)", () => {
-    expect(0 < 1).toBe(true);
+  it("allows unit price of 0 (free item)", async () => {
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 0, currency: "CLP",
+    });
+    expect(result.error).toBeUndefined();
   });
 
-  it("negative total cost should be rejected (< 0)", () => {
-    expect(-1 < 0).toBe(true);
+  it("returns {} on success for a CLP sale", async () => {
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: 2, unitPrice: 8000, currency: "CLP",
+    });
+    expect(result).toEqual({});
+    expect(mockSaleCreate).toHaveBeenCalledOnce();
   });
 
-  it("total cost of 0 is allowed (gifted/free print run)", () => {
-    expect(0 < 0).toBe(false);
-    expect(calcCostPerUnit(0, 100)).toBe(0);
+  it("stores amountCLP = total when currency is CLP and no fxRate provided", async () => {
+    await createSale({
+      bookId: "b1", channelId: "c1", quantity: 2, unitPrice: 8000, currency: "CLP",
+    });
+    const call = mockSaleCreate.mock.calls[0][0].data;
+    expect(call.amountCLP).toBe("16000.00");
   });
 
-  it("cost per unit is computed correctly from valid inputs", () => {
-    expect(calcCostPerUnit(600000, 200)).toBe(3000);
+  it("stores amountCLP = total × fxRate for a foreign-currency sale with rate", async () => {
+    await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 100, currency: "USD",
+      fxRateToCLP: 970,
+    });
+    const call = mockSaleCreate.mock.calls[0][0].data;
+    expect(call.amountCLP).toBe("97000.00");
+    expect(call.fxRateToCLP).toBe("970.000000");
   });
 
-  it("cost per unit is 0 when quantity is 0 (div-by-zero guard)", () => {
-    expect(calcCostPerUnit(600000, 0)).toBe(0);
-  });
-});
-
-// ── Expense level assignment rules ────────────────────────────────────────────
-
-describe("expense level → ID assignment rules", () => {
-  it("GENERAL expense: bookId and printRunId are both null even if provided", () => {
-    const result = resolveExpenseAssignments("GENERAL", "b1", "pr1");
-    expect(result.bookId).toBeNull();
-    expect(result.printRunId).toBeNull();
+  it("stores amountCLP = null when foreign currency has no rate", async () => {
+    await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 100, currency: "USD",
+    });
+    const call = mockSaleCreate.mock.calls[0][0].data;
+    expect(call.amountCLP).toBeNull();
   });
 
-  it("BOOK expense: bookId is stored, printRunId is null even if provided", () => {
-    const result = resolveExpenseAssignments("BOOK", "b1", "pr1");
-    expect(result.bookId).toBe("b1");
-    expect(result.printRunId).toBeNull();
+  it("creates an inventory movement for DIRECT + PRINT", async () => {
+    mockChannelFind.mockResolvedValue({ type: "DIRECT" });
+    mockBookFind.mockResolvedValue({ formats: ["PRINT"] });
+
+    await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 8000, currency: "CLP",
+    });
+    expect(mockMovementCreate).toHaveBeenCalledOnce();
   });
 
-  it("BOOK expense without bookId: both null", () => {
-    const result = resolveExpenseAssignments("BOOK");
-    expect(result.bookId).toBeNull();
-    expect(result.printRunId).toBeNull();
+  it("does NOT create an inventory movement for DIGITAL channels", async () => {
+    mockChannelFind.mockResolvedValue({ type: "DIGITAL" });
+    mockBookFind.mockResolvedValue({ formats: ["EBOOK"] });
+
+    await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 5000, currency: "CLP",
+    });
+    expect(mockMovementCreate).not.toHaveBeenCalled();
   });
 
-  it("PRINT_RUN expense: both IDs stored when both provided", () => {
-    const result = resolveExpenseAssignments("PRINT_RUN", "b1", "pr1");
-    expect(result.bookId).toBe("b1");
-    expect(result.printRunId).toBe("pr1");
-  });
-
-  it("PRINT_RUN expense without printRunId: printRunId is null", () => {
-    const result = resolveExpenseAssignments("PRINT_RUN", "b1");
-    expect(result.bookId).toBe("b1");
-    expect(result.printRunId).toBeNull();
-  });
-});
-
-// ── Inventory tracking eligibility rules ─────────────────────────────────────
-
-describe("shouldTrackBookInventory rules", () => {
-  it("DIRECT + PRINT → track inventory", () => {
-    expect(shouldTrackBookInventory("DIRECT", ["PRINT"])).toBe(true);
-  });
-
-  it("DIGITAL + PRINT → do not track (KDP handles this)", () => {
-    expect(shouldTrackBookInventory("DIGITAL", ["PRINT"])).toBe(false);
-  });
-
-  it("BOOKSTORE + PRINT → do not track (consignment handled separately)", () => {
-    expect(shouldTrackBookInventory("BOOKSTORE", ["PRINT"])).toBe(false);
-  });
-
-  it("DIRECT + EBOOK → do not track (digital, no physical copies)", () => {
-    expect(shouldTrackBookInventory("DIRECT", ["EBOOK"])).toBe(false);
-  });
-
-  it("DIRECT + AUDIOBOOK → do not track", () => {
-    expect(shouldTrackBookInventory("DIRECT", ["AUDIOBOOK"])).toBe(false);
-  });
-
-  it("DIRECT + [PRINT, EBOOK] → track (has physical copies)", () => {
-    expect(shouldTrackBookInventory("DIRECT", ["PRINT", "EBOOK"])).toBe(true);
-  });
-
-  it("DIRECT + [] → do not track (no formats)", () => {
-    expect(shouldTrackBookInventory("DIRECT", [])).toBe(false);
-  });
-
-  it("empty channel type → do not track", () => {
-    expect(shouldTrackBookInventory("", ["PRINT"])).toBe(false);
-  });
-});
-
-// ── Expense validation rules ──────────────────────────────────────────────────
-// Mirror the guards in src/actions/expenses.ts
-
-describe("expense input validation rules", () => {
-  it("empty description should be rejected", () => {
-    expect(!"".trim()).toBe(true);
-  });
-
-  it("whitespace-only description should be rejected", () => {
-    expect(!"   ".trim()).toBe(true);
-  });
-
-  it("description with content passes", () => {
-    expect(!"Diseño de portada".trim()).toBe(false);
-  });
-
-  it("amount of 0 should be rejected (must be > 0)", () => {
-    expect(0 <= 0).toBe(true);
-  });
-
-  it("negative amount should be rejected", () => {
-    expect(-500 <= 0).toBe(true);
-  });
-
-  it("positive amount passes", () => {
-    expect(1000 <= 0).toBe(false);
+  it("returns error string when Prisma throws", async () => {
+    mockSaleCreate.mockRejectedValueOnce(new Error("DB error"));
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 8000, currency: "CLP",
+    });
+    expect(result.error).toMatch(/error/i);
   });
 });
 
-// ── Merchandise product validation rules ─────────────────────────────────────
-// Mirror the guards in src/actions/merchandise.ts
+// ── Sales — updateSale ────────────────────────────────────────────────────────
 
-describe("merchandise product validation rules", () => {
-  it("empty name should be rejected", () => {
-    expect(!"".trim()).toBe(true);
+describe("updateSale — input validation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSaleFindUnique.mockResolvedValue({ currency: "CLP" });
+    mockSaleUpdate.mockResolvedValue({});
   });
 
-  it("whitespace-only name should be rejected", () => {
-    expect(!"   ".trim()).toBe(true);
+  it("rejects quantity < 1", async () => {
+    const result = await updateSale({
+      id: "s1", quantity: 0, unitPrice: 8000, channelId: "c1",
+      saleDate: "2025-06-15", status: "CONFIRMED",
+    });
+    expect(result.error).toBe("La cantidad debe ser al menos 1.");
+    expect(mockSaleUpdate).not.toHaveBeenCalled();
   });
 
-  it("name with content passes", () => {
-    expect(!"Tote bag".trim()).toBe(false);
-  });
-});
-
-// ── Production batch validation rules ────────────────────────────────────────
-// Mirror the guards in src/actions/merchandise.ts → addProductionBatch
-
-describe("production batch validation rules", () => {
-  it("quantity 0 should be rejected (< 1)", () => {
-    expect(0 < 1).toBe(true);
+  it("rejects negative unit price", async () => {
+    const result = await updateSale({
+      id: "s1", quantity: 1, unitPrice: -1, channelId: "c1",
+      saleDate: "2025-06-15", status: "CONFIRMED",
+    });
+    expect(result.error).toBe("El precio no puede ser negativo.");
+    expect(mockSaleUpdate).not.toHaveBeenCalled();
   });
 
-  it("quantity 1 is the minimum valid value", () => {
-    expect(1 < 1).toBe(false);
+  it("returns {} on success", async () => {
+    const result = await updateSale({
+      id: "s1", quantity: 2, unitPrice: 8000, channelId: "c1",
+      saleDate: "2025-06-15", status: "CONFIRMED",
+    });
+    expect(result).toEqual({});
+    expect(mockSaleUpdate).toHaveBeenCalledOnce();
   });
 
-  it("negative total cost should be rejected", () => {
-    expect(-1000 < 0).toBe(true);
+  it("recalculates amountCLP when fxRate is provided", async () => {
+    mockSaleFindUnique.mockResolvedValue({ currency: "USD" });
+    await updateSale({
+      id: "s1", quantity: 1, unitPrice: 100, channelId: "c1",
+      saleDate: "2025-06-15", status: "CONFIRMED", fxRateToCLP: 970,
+    });
+    const call = mockSaleUpdate.mock.calls[0][0].data;
+    expect(call.amountCLP).toBe("97000.00");
   });
 
-  it("total cost of 0 is allowed (gifted / free batch)", () => {
-    expect(0 < 0).toBe(false);
-  });
-
-  it("cost per unit is 0 when cost is 0 (div-by-zero guard)", () => {
-    expect(calcCostPerUnit(0, 100)).toBe(0);
-  });
-
-  it("cost per unit computes correctly from valid inputs", () => {
-    expect(calcCostPerUnit(300_000, 100)).toBe(3000);
-  });
-});
-
-// ── Merch sale validation rules ───────────────────────────────────────────────
-// Mirror the guards in src/actions/merchandise.ts → createMerchSale
-
-describe("merch sale validation rules", () => {
-  it("quantity 0 should be rejected (< 1)", () => {
-    expect(0 < 1).toBe(true);
-  });
-
-  it("negative unit price should be rejected (< 0)", () => {
-    expect(-1 < 0).toBe(true);
-  });
-
-  it("unit price of 0 is allowed (free item)", () => {
-    expect(0 < 0).toBe(false);
-  });
-
-  it("sale total is computed correctly", () => {
-    expect(calcSaleTotal(3, 1500)).toBe(4500);
-  });
-
-  it("sale total is 0 for free item (quantity × 0)", () => {
-    expect(calcSaleTotal(5, 0)).toBe(0);
+  it("returns error string when Prisma throws", async () => {
+    mockSaleUpdate.mockRejectedValueOnce(new Error("DB error"));
+    const result = await updateSale({
+      id: "s1", quantity: 1, unitPrice: 8000, channelId: "c1",
+      saleDate: "2025-06-15", status: "CONFIRMED",
+    });
+    expect(result.error).toMatch(/error/i);
   });
 });
 
-// ── Outstanding balance rules ─────────────────────────────────────────────────
-// Logic used in dashboard and finanzas pages for "¿Qué me deben?"
+// ── Sales — deleteSale ────────────────────────────────────────────────────────
 
-describe("outstanding balance rules", () => {
-  it("nothing earned, nothing received → 0 outstanding", () => {
-    expect(calcOutstanding(0, 0)).toBe(0);
+describe("deleteSale", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSaleDelete.mockResolvedValue({});
   });
 
-  it("earned but not received → full amount outstanding", () => {
-    expect(calcOutstanding(50_000, 0)).toBe(50_000);
+  it("returns {} on success", async () => {
+    expect(await deleteSale("s1")).toEqual({});
+    expect(mockSaleDelete).toHaveBeenCalledWith({ where: { id: "s1" } });
   });
 
-  it("fully paid → 0 outstanding", () => {
-    expect(calcOutstanding(50_000, 50_000)).toBe(0);
+  it("returns error string when Prisma throws", async () => {
+    mockSaleDelete.mockRejectedValueOnce(new Error("DB error"));
+    const result = await deleteSale("s1");
+    expect(result.error).toMatch(/error/i);
+  });
+});
+
+// ── Expenses — createExpense ──────────────────────────────────────────────────
+
+describe("createExpense — input validation", () => {
+  const valid = {
+    accountId: "acc1",
+    description: "Diseño de portada",
+    amount: 50000,
+    currency: "CLP",
+    category: "DESIGN" as const,
+    level: "BOOK" as const,
+    bookId: "b1",
+    occurredAt: "2025-06-15",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockExpenseCreate.mockResolvedValue({});
   });
 
-  it("overpaid → 0 (no negative balance shown to author)", () => {
-    expect(calcOutstanding(50_000, 60_000)).toBe(0);
+  it("rejects empty description", async () => {
+    const result = await createExpense({ ...valid, description: "" });
+    expect(result.error).toBe("La descripción es obligatoria.");
+    expect(mockExpenseCreate).not.toHaveBeenCalled();
   });
 
-  it("partial payment → remaining difference", () => {
-    expect(calcOutstanding(50_000, 30_000)).toBe(20_000);
+  it("rejects whitespace-only description", async () => {
+    const result = await createExpense({ ...valid, description: "   " });
+    expect(result.error).toBe("La descripción es obligatoria.");
+    expect(mockExpenseCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects amount of 0", async () => {
+    const result = await createExpense({ ...valid, amount: 0 });
+    expect(result.error).toBe("El monto debe ser mayor a 0.");
+    expect(mockExpenseCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects negative amount", async () => {
+    const result = await createExpense({ ...valid, amount: -500 });
+    expect(result.error).toBe("El monto debe ser mayor a 0.");
+    expect(mockExpenseCreate).not.toHaveBeenCalled();
+  });
+
+  it("trims leading/trailing whitespace from description before saving", async () => {
+    await createExpense({ ...valid, description: "  Diseño  " });
+    const call = mockExpenseCreate.mock.calls[0][0].data;
+    expect(call.description).toBe("Diseño");
+  });
+
+  it("returns {} on success", async () => {
+    expect(await createExpense(valid)).toEqual({});
+    expect(mockExpenseCreate).toHaveBeenCalledOnce();
+  });
+
+  it("resolves bookId to null for GENERAL level regardless of input", async () => {
+    await createExpense({ ...valid, level: "GENERAL", bookId: "b1" });
+    const call = mockExpenseCreate.mock.calls[0][0].data;
+    expect(call.bookId).toBeNull();
+  });
+
+  it("stores bookId for BOOK level", async () => {
+    await createExpense({ ...valid, level: "BOOK", bookId: "b1" });
+    const call = mockExpenseCreate.mock.calls[0][0].data;
+    expect(call.bookId).toBe("b1");
+    expect(call.printRunId).toBeNull();
+  });
+
+  it("returns error string when Prisma throws", async () => {
+    mockExpenseCreate.mockRejectedValueOnce(new Error("DB error"));
+    const result = await createExpense(valid);
+    expect(result.error).toMatch(/error/i);
+  });
+});
+
+// ── Expenses — updateExpense ──────────────────────────────────────────────────
+
+describe("updateExpense — input validation", () => {
+  const valid = {
+    id: "e1",
+    description: "Diseño de portada",
+    amount: 50000,
+    currency: "CLP",
+    category: "DESIGN" as const,
+    level: "GENERAL" as const,
+    occurredAt: "2025-06-15",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockExpenseUpdate.mockResolvedValue({});
+  });
+
+  it("rejects empty description", async () => {
+    const result = await updateExpense({ ...valid, description: "" });
+    expect(result.error).toBe("La descripción es obligatoria.");
+    expect(mockExpenseUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects amount of 0", async () => {
+    const result = await updateExpense({ ...valid, amount: 0 });
+    expect(result.error).toBe("El monto debe ser mayor a 0.");
+  });
+
+  it("rejects negative amount", async () => {
+    const result = await updateExpense({ ...valid, amount: -1 });
+    expect(result.error).toBe("El monto debe ser mayor a 0.");
+  });
+
+  it("returns {} on success", async () => {
+    expect(await updateExpense(valid)).toEqual({});
+    expect(mockExpenseUpdate).toHaveBeenCalledOnce();
+  });
+
+  it("returns error string when Prisma throws", async () => {
+    mockExpenseUpdate.mockRejectedValueOnce(new Error("DB error"));
+    const result = await updateExpense(valid);
+    expect(result.error).toMatch(/error/i);
+  });
+});
+
+// ── Expenses — deleteExpense ──────────────────────────────────────────────────
+
+describe("deleteExpense", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockExpenseDelete.mockResolvedValue({});
+  });
+
+  it("returns {} on success", async () => {
+    expect(await deleteExpense("e1")).toEqual({});
+    expect(mockExpenseDelete).toHaveBeenCalledWith({ where: { id: "e1" } });
+  });
+
+  it("returns error string when Prisma throws", async () => {
+    mockExpenseDelete.mockRejectedValueOnce(new Error("DB error"));
+    const result = await deleteExpense("e1");
+    expect(result.error).toMatch(/error/i);
   });
 });
