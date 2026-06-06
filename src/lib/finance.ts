@@ -3,6 +3,8 @@
  * All monetary inputs/outputs are plain numbers (convert Decimal → number before calling).
  */
 
+import { toNum } from "./format";
+
 // ── Local type aliases (match Prisma enums, no Prisma import needed) ─────────
 
 export type ChannelType    = "DIGITAL" | "BOOKSTORE" | "DIRECT" | "PRESALE";
@@ -235,6 +237,20 @@ export function toBaseCurrency(
   if (amountCLP !== null) return amountCLP;
   if (currency === "CLP")  return amount;
   return 0;
+}
+
+/**
+ * Convenience wrapper for Sale objects: extracts the CLP-equivalent amount.
+ * Uses the stored amountCLP when present; falls back to totalAmount for CLP
+ * sales; returns 0 for foreign-currency sales with no rate recorded.
+ */
+export function saleToCLP(sale: {
+  totalAmount: unknown;
+  amountCLP?:  unknown;
+  currency:    string;
+}): number {
+  if (sale.amountCLP != null) return toNum(sale.amountCLP);
+  return sale.currency === "CLP" ? toNum(sale.totalAmount) : 0;
 }
 
 // ── Payments / outstanding balance ───────────────────────────────────────────

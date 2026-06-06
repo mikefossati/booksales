@@ -10,7 +10,7 @@ import PeriodNav from "@/components/reportes/PeriodNav";
 import ProjectionChart from "@/components/reportes/ProjectionChart";
 import GoalCalculator from "@/components/reportes/GoalCalculator";
 import type { ProjectionPoint } from "@/components/reportes/ProjectionChart";
-import type { ExpenseCategory, ChannelType } from "@/generated/prisma/client";
+import type { ExpenseCategory } from "@/generated/prisma/client";
 import {
   STOCK_SIGN,
   calcRecoveryPct,
@@ -18,20 +18,10 @@ import {
   calc3MonthAvg,
   calcMerchStock,
   getExchangeStatusMeta,
+  calcOutstanding,
+  saleToCLP,
 } from "@/lib/finance";
-
-// ── Label maps ────────────────────────────────────────────────────────────────
-
-const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
-  PRINT: "Impresión", DESIGN_ART: "Diseño y arte", EDITING: "Edición",
-  MERCHANDISE_PRODUCTION: "Prod. merch", SOCIAL_ADS: "Publicidad",
-  EVENTS: "Ferias y eventos", MARKETING_OTHER: "Marketing",
-  SHIPPING: "Envíos", PLATFORMS_SOFTWARE: "Plataformas", OTHER: "Otros",
-};
-
-const CHANNEL_TYPE_LABEL: Record<ChannelType, string> = {
-  DIGITAL: "Digital", BOOKSTORE: "Librería", DIRECT: "Directo", PRESALE: "Preventa",
-};
+import { CATEGORY_LABELS, CHANNEL_TYPE_LABEL } from "@/lib/labels";
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -116,17 +106,14 @@ export default async function ReportesPage({
 
   // ── Ventas aggregations ───────────────────────────────────────────────────
 
-  const clp = (s: { totalAmount: unknown; amountCLP?: unknown; currency: string }) =>
-    toNum(s.amountCLP as unknown) || (s.currency === "CLP" ? toNum(s.totalAmount as unknown) : 0);
-
-  const totalRevenue = salesInPeriod.reduce((s, x) => s + clp(x), 0);
+  const totalRevenue = salesInPeriod.reduce((s, x) => s + saleToCLP(x), 0);
   const totalUnits   = salesInPeriod.reduce((s, x) => s + x.quantity, 0);
 
   // By channel
   const byChannel = new Map<string, { revenue: number; units: number }>();
   for (const s of salesInPeriod) {
     const cur = byChannel.get(s.channelId) ?? { revenue: 0, units: 0 };
-    byChannel.set(s.channelId, { revenue: cur.revenue + clp(s), units: cur.units + s.quantity });
+    byChannel.set(s.channelId, { revenue: cur.revenue + saleToCLP(s), units: cur.units + s.quantity });
   }
   const channelRows = [...byChannel.entries()]
     .map(([id, d]) => ({ channel: channelMap.get(id)!, ...d }))
@@ -139,7 +126,7 @@ export default async function ReportesPage({
     const book = books.find(b => b.id === s.bookId);
     if (!book) continue;
     const cur = byBook.get(s.bookId!) ?? { revenue: 0, units: 0, title: book.title };
-    byBook.set(s.bookId!, { ...cur, revenue: cur.revenue + clp(s), units: cur.units + s.quantity });
+    byBook.set(s.bookId!, { ...cur, revenue: cur.revenue + saleToCLP(s), units: cur.units + s.quantity });
   }
   const bookRows = [...byBook.values()].sort((a, b) => b.revenue - a.revenue);
 
@@ -149,7 +136,7 @@ export default async function ReportesPage({
     const key  = s.merchandiseId!;
     const name = s.merchandise!.name;
     const cur  = byMerch.get(key) ?? { revenue: 0, units: 0, name };
-    byMerch.set(key, { ...cur, revenue: cur.revenue + clp(s), units: cur.units + s.quantity });
+    byMerch.set(key, { ...cur, revenue: cur.revenue + saleToCLP(s), units: cur.units + s.quantity });
   }
   const merchRows = [...byMerch.values()].sort((a, b) => b.revenue - a.revenue);
 
@@ -177,7 +164,7 @@ export default async function ReportesPage({
   const printBooks = books.filter(b => b.formats.includes("PRINT"));
 
   // Outstanding per channel
-  const salesByChannel   = new Map(channels.map(c => [c.id, allSales.filter(s => s.channelId === c.id).reduce((s, x) => s + clp(x), 0)]));
+  const salesByChannel   = new Map(channels.map(c => [c.id, allSales.filter(s => s.channelId === c.id).reduce((s, x) => s + saleToCLP(x), 0)]));
   const paymentsByChannel = new Map<string, number>();
   for (const p of allPayments) paymentsByChannel.set(p.channelId, (paymentsByChannel.get(p.channelId) ?? 0) + toNum(p.amount));
 
@@ -206,7 +193,7 @@ export default async function ReportesPage({
     .map(b => ({
       title:      b.title,
       printCost:  totalPrintCostByBook.get(b.id) ?? 0,
-      revenue:    allSales.filter(s => s.bookId === b.id).reduce((s, x) => s + clp(x), 0),
+      revenue:    allSales.filter(s => s.bookId === b.id).reduce((s, x) => s + saleToCLP(x), 0),
       tiradas:    printRuns.filter(r => r.bookId === b.id).length,
     }))
     .filter(b => b.printCost > 0)
@@ -216,7 +203,7 @@ export default async function ReportesPage({
   const merchPnl = merchandise.map(m => ({
     name:     m.name,
     cost:     m.productionBatches.reduce((s, b) => s + toNum(b.totalCost), 0),
-    revenue:  allSales.filter(s => s.merchandiseId === m.id).reduce((s, x) => s + toNum(x.totalAmount), 0),
+    revenue:  allSales.filter(s => s.merchandiseId === m.id).reduce((s, x) => s + saleToCLP(x), 0),
     units:    m.sales.reduce((s, x) => s + x.quantity, 0),
   })).filter(m => m.cost > 0 || m.revenue > 0);
 
@@ -234,7 +221,7 @@ export default async function ReportesPage({
 
   const historicalRevenue = histMonths.map(({ label, start, end }) => ({
     label,
-    revenue: allSales.filter(s => { const d = new Date(s.saleDate); return d >= start && d <= end; }).reduce((s, x) => s + toNum(x.totalAmount), 0),
+    revenue: allSales.filter(s => { const d = new Date(s.saleDate); return d >= start && d <= end; }).reduce((s, x) => s + saleToCLP(x), 0),
   }));
 
   const last3Avg = calc3MonthAvg(historicalRevenue.map(m => m.revenue));
@@ -471,7 +458,7 @@ export default async function ReportesPage({
                     const stock       = Math.max(0, inBookstoreByChannel.get(ch.id) ?? 0);
                     const totalSales  = salesByChannel.get(ch.id) ?? 0;
                     const totalPaid   = paymentsByChannel.get(ch.id) ?? 0;
-                    const outstanding = Math.max(0, totalSales - totalPaid);
+                    const outstanding = calcOutstanding(totalSales, totalPaid);
                     return (
                       <div key={ch.id} className="flex md:grid md:grid-cols-[1fr_auto_auto_auto] items-center gap-3 md:gap-4 px-5 py-3.5">
                         <div className="flex-1 min-w-0">
@@ -574,7 +561,8 @@ export default async function ReportesPage({
           {/* Print run P&L */}
           {printBookPnl.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Rentabilidad por tiradas</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-1" style={{ fontFamily: "var(--font-heading)" }}>Recuperación de inversión por tiradas</h2>
+              <p className="text-xs text-[var(--color-text-muted)] mb-3">Ingresos vs. costos de impresión. Para el resultado neto completo ve a Finanzas → Rentabilidad.</p>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                   {["Libro", "Tiradas", "Costo impresión", "Ingresos", "Resultado"].map((h, i) => (
@@ -639,32 +627,33 @@ export default async function ReportesPage({
             </section>
           )}
 
-          {/* ¿Qué me deben? summary */}
+          {/* ¿Qué me deben? — summary + link to the actionable view */}
           <section>
             <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>¿Qué me deben?</h2>
-            <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-              <div className="divide-y divide-[var(--color-border)]">
-                {channels.filter(c => c.type === "BOOKSTORE" || c.type === "DIGITAL").map(ch => {
-                  const sold       = salesByChannel.get(ch.id) ?? 0;
-                  const paid       = paymentsByChannel.get(ch.id) ?? 0;
-                  const outstanding = Math.max(0, sold - paid);
-                  if (sold === 0 && paid === 0) return null;
-                  return (
-                    <div key={ch.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-3.5 items-center">
-                      <div>
-                        <p className="text-sm font-medium text-[var(--color-text)]">{ch.name}</p>
-                        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{CHANNEL_TYPE_LABEL[ch.type]}</p>
-                      </div>
-                      <span className="text-sm text-[var(--color-text-muted)] text-right">{formatCurrency(sold, currency)}</span>
-                      <span className="text-sm text-[var(--color-success)] text-right">{formatCurrency(paid, currency)}</span>
-                      <span className={`text-sm font-semibold text-right ${outstanding > 0 ? "text-[var(--color-warning)]" : "text-[var(--color-success)]"}`}>
-                        {outstanding > 0 ? formatCurrency(outstanding, currency) : "✓"}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
+            {(() => {
+              const totalOutstanding = channels
+                .filter(c => c.type === "BOOKSTORE" || c.type === "DIGITAL")
+                .reduce((sum, ch) => sum + calcOutstanding(salesByChannel.get(ch.id) ?? 0, paymentsByChannel.get(ch.id) ?? 0), 0);
+              return (
+                <a href="/finanzas?tab=deben"
+                  className="flex items-center justify-between gap-4 px-5 py-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] hover:border-[var(--color-accent)] transition-colors">
+                  <div>
+                    <p className="text-sm font-medium text-[var(--color-text)]">
+                      {totalOutstanding > 0
+                        ? `${formatCurrency(totalOutstanding, currency)} pendientes de cobro`
+                        : "Todo cobrado — al día con todos los canales"}
+                    </p>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                      Gestiona cobros y registra pagos en Finanzas
+                    </p>
+                  </div>
+                  <span className={`text-lg font-semibold shrink-0 ${totalOutstanding > 0 ? "text-[var(--color-warning)]" : "text-[var(--color-success)]"}`}
+                    style={{ fontFamily: "var(--font-heading)" }}>
+                    {totalOutstanding > 0 ? formatCurrency(totalOutstanding, currency) : "✓"}
+                  </span>
+                </a>
+              );
+            })()}
           </section>
         </div>
       )}

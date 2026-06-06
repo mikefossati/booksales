@@ -17,6 +17,7 @@ import {
   shouldTrackBookInventory,
   calcOutstanding,
   toBaseCurrency,
+  saleToCLP,
 } from "@/lib/finance";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -671,5 +672,41 @@ describe("toBaseCurrency", () => {
 
   it("handles USD with stored amountCLP", () => {
     expect(toBaseCurrency(100, 97_000, "USD")).toBe(97_000);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// saleToCLP
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("saleToCLP", () => {
+  it("returns amountCLP when stored (normal path)", () => {
+    expect(saleToCLP({ totalAmount: 104_000, amountCLP: 65_520, currency: "ARS" })).toBe(65_520);
+  });
+
+  it("falls back to totalAmount when amountCLP is null and currency is CLP", () => {
+    expect(saleToCLP({ totalAmount: 8_000, amountCLP: null, currency: "CLP" })).toBe(8_000);
+  });
+
+  it("falls back to totalAmount when amountCLP is undefined and currency is CLP", () => {
+    expect(saleToCLP({ totalAmount: 8_000, currency: "CLP" })).toBe(8_000);
+  });
+
+  it("returns 0 when amountCLP is null and currency is foreign", () => {
+    expect(saleToCLP({ totalAmount: 104_000, amountCLP: null, currency: "ARS" })).toBe(0);
+  });
+
+  it("returns 0 when amountCLP is undefined and currency is foreign", () => {
+    expect(saleToCLP({ totalAmount: 104_000, currency: "USD" })).toBe(0);
+  });
+
+  it("handles Decimal-like objects (toString) for amountCLP", () => {
+    const decimalLike = { toString: () => "65520.00" };
+    expect(saleToCLP({ totalAmount: 104_000, amountCLP: decimalLike, currency: "ARS" })).toBe(65_520);
+  });
+
+  it("handles Decimal-like objects for totalAmount fallback", () => {
+    const decimalLike = { toString: () => "8000.00" };
+    expect(saleToCLP({ totalAmount: decimalLike, amountCLP: null, currency: "CLP" })).toBe(8_000);
   });
 });

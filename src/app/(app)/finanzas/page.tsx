@@ -16,36 +16,8 @@ import {
   TrendingUp, DollarSign, ShoppingBag, AlertCircle,
   CheckCircle2, BookOpen
 } from "lucide-react";
-import type { ExpenseCategory, ExpenseLevel, ChannelType } from "@/generated/prisma/client";
-import { netChannelRevenue, calcOutstanding } from "@/lib/finance";
-
-// ── Label maps ───────────────────────────────────────────────────────────────
-
-const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
-  PRINT:                  "Impresión",
-  DESIGN_ART:             "Diseño y arte",
-  EDITING:                "Edición",
-  MERCHANDISE_PRODUCTION: "Prod. merch",
-  SOCIAL_ADS:             "Publicidad",
-  EVENTS:                 "Ferias y eventos",
-  MARKETING_OTHER:        "Marketing",
-  SHIPPING:               "Envíos",
-  PLATFORMS_SOFTWARE:     "Plataformas",
-  OTHER:                  "Otros",
-};
-
-const LEVEL_LABELS: Record<ExpenseLevel, string> = {
-  GENERAL:   "General",
-  BOOK:      "Libro",
-  PRINT_RUN: "Tirada",
-};
-
-const CHANNEL_TYPE_LABEL: Record<ChannelType, string> = {
-  DIGITAL:   "Digital",
-  BOOKSTORE: "Librería",
-  DIRECT:    "Directo",
-  PRESALE:   "Preventa",
-};
+import { netChannelRevenue, calcOutstanding, saleToCLP } from "@/lib/finance";
+import { CATEGORY_LABELS, LEVEL_LABELS, CHANNEL_TYPE_LABEL } from "@/lib/labels";
 
 const PAYMENT_ICONS: Record<string, string> = {
   Efectivo: "💵", Transferencia: "📱", Tarjeta: "💳",
@@ -131,20 +103,17 @@ export default async function FinanzasPage({
 
   // ── Computed totals ───────────────────────────────────────────────────────
 
-  const clp = (sale: { totalAmount: unknown; amountCLP?: unknown; currency: string }) =>
-    toNum(sale.amountCLP as unknown) || (sale.currency === "CLP" ? toNum(sale.totalAmount as unknown) : 0);
-
-  const totalRevenue      = allSales.reduce((s, sale) => s + clp(sale), 0);
+  const totalRevenue      = allSales.reduce((s, sale) => s + saleToCLP(sale), 0);
   const totalExpenses     = allExpenses.reduce((s, e) => s + toNum(e.amount), 0);
   const totalPrintCosts   = printRunsByBook.reduce((s, r) => s + toNum(r.totalCost), 0);
   const monthlyRevenue    = allSales
     .filter(s => new Date(s.saleDate) >= monthStart)
-    .reduce((s, sale) => s + clp(sale), 0);
+    .reduce((s, sale) => s + saleToCLP(sale), 0);
 
   // "¿Qué me deben?" — per non-direct channel
   const payableChannels = channels.filter(c => c.type === "BOOKSTORE" || c.type === "DIGITAL");
   const payableData = payableChannels.map(ch => {
-    const sales    = allSales.filter(s => s.channelId === ch.id).reduce((s, sale) => s + clp(sale), 0);
+    const sales    = allSales.filter(s => s.channelId === ch.id).reduce((s, sale) => s + saleToCLP(sale), 0);
     const received = allPayments.filter(p => p.channelId === ch.id).reduce((s, p) => s + toNum(p.amount), 0);
     const outstanding = calcOutstanding(sales, received);
     return { channel: ch, totalSales: sales, totalReceived: received, outstanding };
@@ -155,7 +124,7 @@ export default async function FinanzasPage({
   // ── Rentabilidad: per book ────────────────────────────────────────────────
 
   const bookPnl = books.map(book => {
-    const bookSales    = allSales.filter(s => s.bookId === book.id).reduce((s, sale) => s + clp(sale), 0);
+    const bookSales    = allSales.filter(s => s.bookId === book.id).reduce((s, sale) => s + saleToCLP(sale), 0);
     const bookExpenses = allExpenses.filter(e => e.bookId === book.id).reduce((s, e) => s + toNum(e.amount), 0);
     const bookPrintCosts = printRunsByBook.filter(r => r.bookId === book.id).reduce((s, r) => s + toNum(r.totalCost), 0);
     const netProfit = bookSales - bookExpenses - bookPrintCosts;
@@ -218,7 +187,7 @@ export default async function FinanzasPage({
             return (
               <div className="space-y-6">
                 {Array.from(grouped.entries()).map(([month, sales]) => {
-                  const monthTotal = sales.reduce((s, r) => s + toNum(r.totalAmount), 0);
+                  const monthTotal = sales.reduce((s, r) => s + saleToCLP(r), 0);
                   return (
                     <section key={month}>
                       <div className="flex items-baseline justify-between mb-2">
