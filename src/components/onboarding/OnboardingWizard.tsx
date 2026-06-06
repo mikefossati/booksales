@@ -8,13 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { BookOpen, Globe, Store, Users, Check, ArrowRight, Leaf } from "lucide-react";
+import { BookOpen, Globe, Store, Users, Check, ArrowRight, TrendingUp, Receipt } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Step = 1 | 2 | 3 | 4;
 
-type PresetChannel = { id: string; name: string; type: ChannelType; icon: React.ElementType };
+type PresetChannel = {
+  id: string;
+  name: string;
+  type: ChannelType;
+  icon: React.ElementType;
+  currency: string;
+  royaltyPercent?: number;
+  consignmentPercent?: number;
+  hint: string;
+};
 
 const FORMAT_OPTIONS: { value: BookFormat; label: string; emoji: string }[] = [
   { value: "PRINT",     label: "Impreso",    emoji: "📖" },
@@ -23,12 +32,12 @@ const FORMAT_OPTIONS: { value: BookFormat; label: string; emoji: string }[] = [
 ];
 
 const CHANNEL_PRESETS: PresetChannel[] = [
-  { id: "amazon",      name: "Amazon KDP",        type: "DIGITAL",   icon: Globe  },
-  { id: "buscalibre",  name: "Buscalibre",         type: "DIGITAL",   icon: Globe  },
-  { id: "librerias",   name: "Librerías",          type: "BOOKSTORE", icon: Store  },
-  { id: "ferias",      name: "Ferias del libro",   type: "DIRECT",    icon: Users  },
-  { id: "instagram",   name: "Instagram / Redes",  type: "DIRECT",    icon: Users  },
-  { id: "otro",        name: "Otros canales",      type: "DIRECT",    icon: Users  },
+  { id: "amazon",     name: "Amazon KDP",       type: "DIGITAL",   icon: Globe,  currency: "USD", royaltyPercent: 70,   hint: "Paga en USD" },
+  { id: "buscalibre", name: "Buscalibre",        type: "DIGITAL",   icon: Globe,  currency: "USD",                       hint: "Paga en USD" },
+  { id: "librerias",  name: "Librerías",         type: "BOOKSTORE", icon: Store,  currency: "CLP", consignmentPercent: 30, hint: "Consignación ~30%" },
+  { id: "ferias",     name: "Ferias del libro",  type: "DIRECT",    icon: Users,  currency: "CLP",                       hint: "Venta directa" },
+  { id: "instagram",  name: "Instagram / Redes", type: "DIRECT",    icon: Users,  currency: "CLP",                       hint: "Venta directa" },
+  { id: "otro",       name: "Otros canales",     type: "DIRECT",    icon: Users,  currency: "CLP",                       hint: "Personalizable" },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -95,7 +104,13 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
     startTransition(async () => {
       const channels = CHANNEL_PRESETS
         .filter(c => selectedChannels.includes(c.id))
-        .map(c => ({ name: c.name, type: c.type }));
+        .map(c => ({
+          name:               c.name,
+          type:               c.type,
+          currency:           c.currency,
+          royaltyPercent:     c.royaltyPercent,
+          consignmentPercent: c.consignmentPercent,
+        }));
 
       const printRun = !isSkip && hasPrint && printQty
         ? {
@@ -178,12 +193,12 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
             ¿Dónde vendes tu libro?
           </h2>
           <p className="text-[var(--color-text-muted)] mt-2">
-            Elige todos los que apliquen. Puedes agregar más después.
+            Elige todos los que apliquen. Cada canal guarda su moneda y condiciones.
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {CHANNEL_PRESETS.map(({ id, name, type, icon: Icon }) => {
+          {CHANNEL_PRESETS.map(({ id, name, type, icon: Icon, currency, hint }) => {
             const selected = selectedChannels.includes(id);
             return (
               <button
@@ -203,16 +218,23 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
                 )}>
                   {selected ? <Check size={13} /> : <Icon size={13} />}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate">{name}</p>
-                  <p className="text-[10px] text-[var(--color-text-muted)] font-normal mt-0.5">
-                    {type === "DIGITAL" ? "Digital" : type === "BOOKSTORE" ? "Librería" : "Directo"}
-                  </p>
+                  <p className="text-[10px] font-normal mt-0.5 text-[var(--color-text-muted)]">{hint}</p>
                 </div>
+                {currency !== "CLP" && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-accent-light)] text-[var(--color-accent)] shrink-0">
+                    {currency}
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
+
+        <p className="text-xs text-[var(--color-text-muted)]">
+          ¿Vendes en Argentina, México u otro país? Agrega canales con moneda local desde Configuración después de completar esto.
+        </p>
       </div>
     ),
 
@@ -223,7 +245,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
             ¿Tienes ejemplares impresos?
           </h2>
           <p className="text-[var(--color-text-muted)] mt-2">
-            Si ya imprimiste, registra la tirada para hacer seguimiento del inventario.
+            Si ya imprimiste, registra la tirada para hacer seguimiento del inventario y punto de equilibrio.
           </p>
         </div>
 
@@ -292,7 +314,8 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
           </p>
         </div>
 
-        <div className="space-y-3">
+        {/* Summary of configured items */}
+        <div className="space-y-2.5">
           {title && (
             <div className="flex items-start gap-3 p-4 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)]">
               <BookOpen size={16} className="text-[var(--color-accent)] mt-0.5 shrink-0" />
@@ -332,9 +355,37 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
           )}
           {!title && selectedChannels.length === 0 && (
             <p className="text-sm text-[var(--color-text-muted)] py-2">
-              Saltaste la configuración inicial — puedes agregar todo esto cuando quieras desde el menú.
+              Saltaste la configuración inicial — puedes agregar todo desde Configuración cuando quieras.
             </p>
           )}
+        </div>
+
+        {/* What to expect on the dashboard */}
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-accent-light)]/40 p-4 space-y-3">
+          <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">En tu dashboard verás</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-[var(--radius-sm)] bg-[var(--color-accent)] flex items-center justify-center shrink-0">
+                <TrendingUp size={13} className="text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[var(--color-text)]">📚 Mis Ventas</p>
+                <p className="text-xs text-[var(--color-text-muted)]">Ingresos, canales, últimas ventas — con botón + para registrar al instante</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-[var(--radius-sm)] flex items-center justify-center shrink-0" style={{ backgroundColor: "var(--color-warning)" }}>
+                <Receipt size={13} className="text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[var(--color-text)]">💸 Mis Gastos</p>
+                <p className="text-xs text-[var(--color-text-muted)]">Gastos por categoría, últimos registros — con botón + para registrar al instante</p>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-muted)] pt-1">
+            El botón <span className="font-medium text-[var(--color-accent)]">+</span> flotante también está disponible en todas las pantallas para registrar ventas, gastos y más.
+          </p>
         </div>
       </div>
     ),

@@ -4,8 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { BookFormat, ChannelType } from "@/generated/prisma/client";
 
 type PresetChannel = {
-  name: string;
-  type: ChannelType;
+  name:               string;
+  type:               ChannelType;
+  currency?:          string;
+  royaltyPercent?:    number;
+  consignmentPercent?: number;
 };
 
 type PrintRunData = {
@@ -43,7 +46,14 @@ export async function completeOnboarding({
       if (channels?.length) {
         for (const ch of channels) {
           await tx.channel.create({
-            data: { accountId, name: ch.name, type: ch.type },
+            data: {
+              accountId,
+              name:               ch.name,
+              type:               ch.type,
+              currency:           ch.currency           ?? null,
+              royaltyPercent:     ch.royaltyPercent     ?? null,
+              consignmentPercent: ch.consignmentPercent ?? null,
+            },
           });
         }
       }
