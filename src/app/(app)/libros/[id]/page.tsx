@@ -300,7 +300,7 @@ export default async function BookDetailPage({
                   ))}
                 </div>
                 {allSales.map(sale => (
-                  <div key={sale.id} className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 md:gap-4 px-5 py-3.5 items-center">
+                  <div key={sale.id} className="grid grid-cols-[1fr_auto_auto] md:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 md:gap-4 px-5 py-3.5 items-center">
                     <div>
                       <p className="text-sm text-[var(--color-text)]">{sale.channel.name}</p>
                       <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
@@ -322,7 +322,7 @@ export default async function BookDetailPage({
                         </span>
                       )}
                     </span>
-                    <div className="hidden md:flex items-center gap-2 justify-end">
+                    <div className="flex items-center gap-2 justify-end">
                       <EditSaleModal sale={sale} channels={allChannels} />
                       <DeleteSaleButton id={sale.id} />
                     </div>

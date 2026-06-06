@@ -10,6 +10,8 @@ import AddExpenseModal from "@/components/finanzas/AddExpenseModal";
 import RecordPaymentModal from "@/components/finanzas/RecordPaymentModal";
 import DeleteExpenseButton from "@/components/finanzas/DeleteExpenseButton";
 import EditExpenseModal from "@/components/finanzas/EditExpenseModal";
+import EditSaleModal from "@/components/sales/EditSaleModal";
+import DeleteSaleButton from "@/components/sales/DeleteSaleButton";
 import {
   TrendingUp, DollarSign, ShoppingBag, AlertCircle,
   CheckCircle2, BookOpen
@@ -226,7 +228,7 @@ export default async function FinanzasPage({
                       <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                         <div className="divide-y divide-[var(--color-border)]">
                           {sales.map(sale => (
-                            <div key={sale.id} className="flex items-center gap-4 px-5 py-3.5">
+                            <div key={sale.id} className="flex items-center gap-3 px-5 py-3.5">
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-[var(--color-text)] truncate">
                                   {sale.bookId
@@ -245,6 +247,10 @@ export default async function FinanzasPage({
                               <Badge variant="secondary" className="text-[10px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0 shrink-0">
                                 {CHANNEL_TYPE_LABEL[sale.channel.type]}
                               </Badge>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <EditSaleModal sale={sale} channels={channels} />
+                                <DeleteSaleButton id={sale.id} />
+                              </div>
                             </div>
                           ))}
                         </div>

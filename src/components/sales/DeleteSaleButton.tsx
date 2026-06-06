@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteSale } from "@/actions/sales";
+import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 
 export default function DeleteSaleButton({ id }: { id: string }) {
@@ -10,10 +11,15 @@ export default function DeleteSaleButton({ id }: { id: string }) {
   const router = useRouter();
 
   function handleDelete() {
-    if (!confirm("¿Eliminar esta venta?")) return;
+    if (!confirm("¿Eliminar esta venta? Esta acción no se puede deshacer.")) return;
     startTransition(async () => {
-      await deleteSale(id);
-      router.refresh();
+      const result = await deleteSale(id);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Venta eliminada");
+        router.refresh();
+      }
     });
   }
 
