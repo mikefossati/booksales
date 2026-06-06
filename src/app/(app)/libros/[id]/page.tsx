@@ -87,7 +87,7 @@ export default async function BookDetailPage({
     await Promise.all([
       prisma.sale.aggregate({
         where: { bookId: book.id, status: { not: "CANCELLED" } },
-        _sum:  { totalAmount: true, quantity: true },
+        _sum:  { amountCLP: true, quantity: true },
       }),
       prisma.sale.findMany({
         where:   { bookId: book.id, status: { not: "CANCELLED" } },
@@ -122,7 +122,7 @@ export default async function BookDetailPage({
   // ── Derived stock values ──────────────────────────────────────────────────────
 
   const totalUnits   = salesStats._sum.quantity ?? 0;
-  const totalRevenue = toNum(salesStats._sum.totalAmount);
+  const totalRevenue = toNum(salesStats._sum.amountCLP);
 
   const stockInHand  = calcStockInHand(movements);
   const inBookstores = calcInBookstores(movements);
@@ -314,7 +314,14 @@ export default async function BookDetailPage({
                     <span className="hidden md:block text-sm text-[var(--color-text-muted)] text-right">{formatDate(sale.saleDate)}</span>
                     <span className="hidden md:block text-sm text-[var(--color-text)] text-right">{sale.quantity}</span>
                     <span className="hidden md:block text-sm text-[var(--color-text-muted)] text-right">{formatCurrency(toNum(sale.unitPrice), sale.currency)}</span>
-                    <span className="hidden md:block text-sm font-semibold text-[var(--color-text)] text-right">{formatCurrency(toNum(sale.totalAmount), sale.currency)}</span>
+                    <span className="hidden md:block text-sm font-semibold text-[var(--color-text)] text-right">
+                      {formatCurrency(toNum(sale.totalAmount), sale.currency)}
+                      {sale.currency !== currency && sale.amountCLP && (
+                        <span className="block text-[10px] font-normal text-[var(--color-text-muted)]">
+                          ≈ {formatCurrency(toNum(sale.amountCLP), currency)}
+                        </span>
+                      )}
+                    </span>
                     <div className="hidden md:flex items-center gap-2 justify-end">
                       <EditSaleModal sale={sale} channels={allChannels} />
                       <DeleteSaleButton id={sale.id} />

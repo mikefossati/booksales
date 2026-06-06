@@ -219,6 +219,24 @@ export function calc3MonthAvg(series: number[]): number {
   return tail.reduce((s, n) => s + n, 0) / tail.length;
 }
 
+// ── Multi-currency conversion ─────────────────────────────────────────────────
+
+/**
+ * Returns the CLP-equivalent of a sale amount.
+ * - If amountCLP is stored (post-migration), use it directly.
+ * - Fallback: if the sale currency is already CLP, return the raw amount.
+ * - Otherwise returns 0 (foreign-currency legacy record with no rate stored).
+ */
+export function toBaseCurrency(
+  amount:     number,
+  amountCLP:  number | null,
+  currency:   string,
+): number {
+  if (amountCLP !== null) return amountCLP;
+  if (currency === "CLP")  return amount;
+  return 0;
+}
+
 // ── Payments / outstanding balance ───────────────────────────────────────────
 
 /**

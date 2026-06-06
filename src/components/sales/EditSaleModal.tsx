@@ -25,6 +25,8 @@ type SaleData = {
   id: string;
   quantity: number;
   unitPrice: { toString(): string } | string | number;
+  currency: string;
+  fxRateToCLP: { toString(): string } | string | number | null;
   channelId: string;
   saleDate: Date | string;
   paymentMethod: string | null;
@@ -41,9 +43,12 @@ export default function EditSaleModal({
 }) {
   const initialDate = new Date(sale.saleDate).toISOString().split("T")[0];
 
+  const isForeignCurrency = sale.currency !== "CLP";
+
   const [open, setOpen]               = useState(false);
   const [quantity, setQuantity]       = useState(sale.quantity);
   const [unitPrice, setUnitPrice]     = useState(Number(sale.unitPrice.toString()).toFixed(0));
+  const [fxRate, setFxRate]           = useState(sale.fxRateToCLP ? Number(sale.fxRateToCLP.toString()).toFixed(4) : "");
   const [channelId, setChannelId]     = useState(sale.channelId);
   const [saleDate, setSaleDate]       = useState(initialDate);
   const [paymentMethod, setPaymentMethod] = useState(sale.paymentMethod ?? "Efectivo");
@@ -69,6 +74,7 @@ export default function EditSaleModal({
         unitPrice: parseFloat(unitPrice),
         channelId,
         saleDate,
+        fxRateToCLP: isForeignCurrency && fxRate ? parseFloat(fxRate) : null,
         paymentMethod: paymentMethod || undefined,
         status,
         notes: notes || undefined,
@@ -132,6 +138,25 @@ export default function EditSaleModal({
                 </div>
               </div>
 
+              {isForeignCurrency && (
+                <div className="space-y-1.5 rounded-[var(--radius-md)] bg-[var(--color-accent-light)]/60 px-3 py-2.5">
+                  <Label htmlFor="es-fx">
+                    Tipo de cambio — 1 {sale.currency} =
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="es-fx"
+                      type="number" min="0" step="0.0001" inputMode="decimal"
+                      value={fxRate}
+                      onChange={e => setFxRate(e.target.value)}
+                      placeholder="0.0000"
+                      className="text-sm"
+                    />
+                    <span className="text-sm text-[var(--color-text-muted)] shrink-0">CLP</span>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <Label>Canal</Label>
                 <select value={channelId} onChange={e => setChannelId(e.target.value)}
@@ -181,16 +206,23 @@ export default function EditSaleModal({
               )}
 
               <div className="flex items-center justify-between pt-1">
-                <p className="text-sm font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
-                  Total: ${total.toLocaleString("es-CL")}
-                </p>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+                    {sale.currency} {total.toLocaleString("es-CL")}
+                  </p>
+                  {isForeignCurrency && fxRate && (
+                    <p className="text-xs text-[var(--color-text-muted)]">
+                      ≈ CLP {Math.round(total * parseFloat(fxRate)).toLocaleString("es-CL")}
+                    </p>
+                  )}
+                </div>
                 <div className="flex gap-3">
                   <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>Cancelar</Button>
                   <Button type="submit" disabled={isPending}>
                     {isPending ? "Guardando..." : "Guardar"}
                   </Button>
                 </div>
-              </div>
+              </div>  {/* flex items-center justify-between */}
             </form>
           </div>
         </div>

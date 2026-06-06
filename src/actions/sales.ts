@@ -10,6 +10,7 @@ export async function createSale({
   quantity,
   unitPrice,
   currency,
+  fxRateToCLP,
   paymentMethod,
 }: {
   bookId: string;
@@ -17,12 +18,14 @@ export async function createSale({
   quantity: number;
   unitPrice: number;
   currency: string;
+  fxRateToCLP?: number;
   paymentMethod?: string;
 }): Promise<{ error?: string }> {
   if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
 
-  const total = calcSaleTotal(quantity, unitPrice);
+  const total     = calcSaleTotal(quantity, unitPrice);
+  const amountCLP = fxRateToCLP != null ? total * fxRateToCLP : currency === "CLP" ? total : null;
 
   const trackInventory = await shouldTrackInventory(bookId, channelId);
 
@@ -33,9 +36,11 @@ export async function createSale({
           bookId,
           channelId,
           quantity,
-          unitPrice:   unitPrice.toFixed(2),
-          totalAmount: total.toFixed(2),
+          unitPrice:    unitPrice.toFixed(2),
+          totalAmount:  total.toFixed(2),
           currency,
+          fxRateToCLP:  fxRateToCLP != null ? fxRateToCLP.toFixed(6) : null,
+          amountCLP:    amountCLP != null ? amountCLP.toFixed(2) : null,
           paymentMethod: paymentMethod ?? null,
           status: "CONFIRMED",
           origin: "manual",
@@ -66,6 +71,7 @@ export async function updateSale({
   unitPrice,
   channelId,
   saleDate,
+  fxRateToCLP,
   paymentMethod,
   status,
   notes,
@@ -75,6 +81,7 @@ export async function updateSale({
   unitPrice: number;
   channelId: string;
   saleDate: string;
+  fxRateToCLP?: number | null;
   paymentMethod?: string;
   status: SaleStatus;
   notes?: string;
@@ -83,19 +90,26 @@ export async function updateSale({
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
 
   try {
-    const sale = await prisma.sale.findUnique({ where: { id }, select: { currency: true } });
+    const existing  = await prisma.sale.findUnique({ where: { id }, select: { currency: true } });
+    const currency  = existing?.currency ?? "CLP";
+    const total     = calcSaleTotal(quantity, unitPrice);
+    const rate      = fxRateToCLP !== undefined ? fxRateToCLP : null;
+    const amountCLP = rate != null ? total * rate : currency === "CLP" ? total : null;
+
     await prisma.sale.update({
       where: { id },
       data: {
         quantity,
         unitPrice:    unitPrice.toFixed(2),
-        totalAmount:  calcSaleTotal(quantity, unitPrice).toFixed(2),
+        totalAmount:  total.toFixed(2),
         channelId,
         saleDate:     new Date(saleDate + "T12:00:00"),
+        fxRateToCLP:  rate != null ? rate.toFixed(6) : null,
+        amountCLP:    amountCLP != null ? amountCLP.toFixed(2) : null,
         paymentMethod: paymentMethod || null,
         status,
         notes:        notes?.trim() || null,
-        currency:     sale?.currency ?? "CLP",
+        currency,
       },
     });
     return {};

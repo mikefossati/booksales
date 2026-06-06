@@ -129,17 +129,20 @@ export default async function FinanzasPage({
 
   // ── Computed totals ───────────────────────────────────────────────────────
 
-  const totalRevenue      = allSales.reduce((s, sale) => s + toNum(sale.totalAmount), 0);
+  const clp = (sale: { totalAmount: unknown; amountCLP?: unknown; currency: string }) =>
+    toNum(sale.amountCLP as unknown) || (sale.currency === "CLP" ? toNum(sale.totalAmount as unknown) : 0);
+
+  const totalRevenue      = allSales.reduce((s, sale) => s + clp(sale), 0);
   const totalExpenses     = allExpenses.reduce((s, e) => s + toNum(e.amount), 0);
   const totalPrintCosts   = printRunsByBook.reduce((s, r) => s + toNum(r.totalCost), 0);
   const monthlyRevenue    = allSales
     .filter(s => new Date(s.saleDate) >= monthStart)
-    .reduce((s, sale) => s + toNum(sale.totalAmount), 0);
+    .reduce((s, sale) => s + clp(sale), 0);
 
   // "¿Qué me deben?" — per non-direct channel
   const payableChannels = channels.filter(c => c.type === "BOOKSTORE" || c.type === "DIGITAL");
   const payableData = payableChannels.map(ch => {
-    const sales    = allSales.filter(s => s.channelId === ch.id).reduce((s, sale) => s + toNum(sale.totalAmount), 0);
+    const sales    = allSales.filter(s => s.channelId === ch.id).reduce((s, sale) => s + clp(sale), 0);
     const received = allPayments.filter(p => p.channelId === ch.id).reduce((s, p) => s + toNum(p.amount), 0);
     const outstanding = calcOutstanding(sales, received);
     return { channel: ch, totalSales: sales, totalReceived: received, outstanding };
@@ -150,7 +153,7 @@ export default async function FinanzasPage({
   // ── Rentabilidad: per book ────────────────────────────────────────────────
 
   const bookPnl = books.map(book => {
-    const bookSales    = allSales.filter(s => s.bookId === book.id).reduce((s, sale) => s + toNum(sale.totalAmount), 0);
+    const bookSales    = allSales.filter(s => s.bookId === book.id).reduce((s, sale) => s + clp(sale), 0);
     const bookExpenses = allExpenses.filter(e => e.bookId === book.id).reduce((s, e) => s + toNum(e.amount), 0);
     const bookPrintCosts = printRunsByBook.filter(r => r.bookId === book.id).reduce((s, r) => s + toNum(r.totalCost), 0);
     const netProfit = bookSales - bookExpenses - bookPrintCosts;

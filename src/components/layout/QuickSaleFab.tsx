@@ -6,10 +6,11 @@ import { createSale } from "@/actions/sales";
 import { createMerchSale } from "@/actions/merchandise";
 import { createExpense } from "@/actions/expenses";
 import { toast } from "sonner";
-import { Plus, X, BookOpen, ShoppingBag, Minus, ChevronRight, Receipt } from "lucide-react";
+import { Plus, X, BookOpen, ShoppingBag, Minus, ChevronRight, Receipt, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { fetchRateToCLP } from "@/lib/fx";
 import type { ExpenseCategory } from "@/generated/prisma/client";
 
 type Book    = { id: string; title: string; coverUrl: string | null };
@@ -62,6 +63,8 @@ export default function QuickSaleFab({
   const [quantity, setQuantity]   = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
   const [payment, setPayment]     = useState("Efectivo");
+  const [fxRate, setFxRate]       = useState("");
+  const [fxLoading, setFxLoading] = useState(false);
 
   // ── Expense state ───────────────────────────────────────────────────────────
   const [expCategory, setExpCategory] = useState<ExpenseCategory>("SHIPPING");
@@ -87,6 +90,18 @@ export default function QuickSaleFab({
     if (cat) setExpDescription(cat.full);
   }, [expCategory]);
 
+  // Fetch live FX rate when channel currency changes
+  useEffect(() => {
+    const currency = channels.find(c => c.id === channelId)?.currency ?? "CLP";
+    if (currency === accountCurrency) { setFxRate(""); return; }
+
+    setFxLoading(true);
+    fetchRateToCLP(currency)
+      .then(rate => { if (rate) setFxRate(rate.toFixed(4)); })
+      .catch(() => {})
+      .finally(() => setFxLoading(false));
+  }, [channelId]);
+
   // Pre-fill sale price when book / channel selection changes
   useEffect(() => {
     if (!channelId) return;
@@ -101,7 +116,9 @@ export default function QuickSaleFab({
 
   const selectedChannel = channels.find(c => c.id === channelId);
   const saleCurrency    = selectedChannel?.currency ?? "CLP";
+  const needsFx         = saleCurrency !== accountCurrency;
   const total           = quantity * (parseFloat(unitPrice) || 0);
+  const totalCLP        = needsFx && fxRate ? total * parseFloat(fxRate) : total;
 
   function formatMoney(n: number, curr = accountCurrency) {
     return new Intl.NumberFormat("es-CL", { style: "currency", currency: curr, maximumFractionDigits: 0 }).format(n);
@@ -115,6 +132,7 @@ export default function QuickSaleFab({
     setBookId(b0); setMerchId(m0); setChannelId(c0);
     setQuantity(1); setPayment("Efectivo");
     setUnitPrice(b0 && c0 ? (lastPrices[`${b0}_${c0}`]?.toFixed(0) ?? "") : "");
+    setFxRate(""); setFxLoading(false);
     setExpAmount(""); setExpLevel("GENERAL"); setExpBookId("");
     setOpen(true);
   }
@@ -156,12 +174,14 @@ export default function QuickSaleFab({
       }
 
       let result: { error?: string };
+      const fxRateToCLP = needsFx && fxRate ? parseFloat(fxRate) : undefined;
+
       if (mode === "libro") {
         if (!bookId) return;
-        result = await createSale({ bookId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, paymentMethod: payment });
+        result = await createSale({ bookId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, fxRateToCLP, paymentMethod: payment });
       } else {
         if (!merchId) return;
-        result = await createMerchSale({ merchandiseId: merchId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, paymentMethod: payment });
+        result = await createMerchSale({ merchandiseId: merchId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, fxRateToCLP, paymentMethod: payment });
       }
 
       if (result.error) {
@@ -460,7 +480,35 @@ export default function QuickSaleFab({
                             </div>
                           </div>
 
-                          {/* Channel */}
+                          {/* FX rate — only shown for foreign-currency channels */}
+                          {needsFx && (
+                            <div className="space-y-1.5 rounded-[var(--radius-md)] bg-[var(--color-accent-light)]/60 px-3 py-2.5">
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+                                  1 {saleCurrency} =
+                                </label>
+                                {fxLoading && <RefreshCw size={11} className="animate-spin text-[var(--color-text-muted)]" />}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="number" min="0" step="0.0001" inputMode="decimal"
+                                  value={fxRate}
+                                  onChange={e => setFxRate(e.target.value)}
+                                  placeholder="0.0000"
+                                  required
+                                  className="text-sm h-8"
+                                />
+                                <span className="text-xs font-medium text-[var(--color-text-muted)] shrink-0">CLP</span>
+                              </div>
+                              {fxRate && total > 0 && (
+                                <p className="text-[10px] text-[var(--color-text-muted)]">
+                                  ≈ {formatMoney(totalCLP)} CLP total
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                      {/* Channel */}
                           <div className="space-y-2">
                             <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Canal</label>
                             <div className="space-y-1.5">
@@ -532,10 +580,13 @@ export default function QuickSaleFab({
                   <p className="text-xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
                     {formatMoney(total, saleCurrency)}
                   </p>
+                  {needsFx && fxRate && (
+                    <p className="text-xs text-[var(--color-text-muted)]">≈ {formatMoney(totalCLP)}</p>
+                  )}
                 </div>
                 <Button
                   type="submit"
-                  disabled={isPending || !channelId || !unitPrice || parseFloat(unitPrice) < 0}
+                  disabled={isPending || !channelId || !unitPrice || parseFloat(unitPrice) < 0 || (needsFx && !fxRate)}
                 >
                   {isPending ? "Registrando..." : "Registrar venta"}
                 </Button>

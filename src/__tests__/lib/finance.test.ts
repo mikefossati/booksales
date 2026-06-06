@@ -16,6 +16,7 @@ import {
   resolveExpenseAssignments,
   shouldTrackBookInventory,
   calcOutstanding,
+  toBaseCurrency,
 } from "@/lib/finance";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -640,5 +641,35 @@ describe("calcOutstanding", () => {
 
   it("handles large amounts correctly", () => {
     expect(calcOutstanding(1_500_000, 900_000)).toBe(600_000);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// toBaseCurrency
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("toBaseCurrency", () => {
+  it("returns amountCLP when stored (normal post-migration path)", () => {
+    expect(toBaseCurrency(104_000, 65_520, "ARS")).toBe(65_520);
+  });
+
+  it("returns amountCLP even when zero (explicit zero is valid)", () => {
+    expect(toBaseCurrency(100, 0, "ARS")).toBe(0);
+  });
+
+  it("falls back to amount when amountCLP is null and currency is CLP", () => {
+    expect(toBaseCurrency(50_000, null, "CLP")).toBe(50_000);
+  });
+
+  it("returns 0 when amountCLP is null and currency is not CLP (legacy foreign record with no rate)", () => {
+    expect(toBaseCurrency(104_000, null, "ARS")).toBe(0);
+  });
+
+  it("CLP sale with amountCLP stored returns amountCLP", () => {
+    expect(toBaseCurrency(8_000, 8_000, "CLP")).toBe(8_000);
+  });
+
+  it("handles USD with stored amountCLP", () => {
+    expect(toBaseCurrency(100, 97_000, "USD")).toBe(97_000);
   });
 });

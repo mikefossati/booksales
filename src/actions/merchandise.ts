@@ -170,6 +170,7 @@ export async function createMerchSale({
   quantity,
   unitPrice,
   currency,
+  fxRateToCLP,
   paymentMethod,
 }: {
   merchandiseId: string;
@@ -177,12 +178,14 @@ export async function createMerchSale({
   quantity: number;
   unitPrice: number;
   currency: string;
+  fxRateToCLP?: number;
   paymentMethod?: string;
 }): Promise<{ error?: string }> {
   if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
 
-  const total = calcSaleTotal(quantity, unitPrice);
+  const total     = calcSaleTotal(quantity, unitPrice);
+  const amountCLP = fxRateToCLP != null ? total * fxRateToCLP : currency === "CLP" ? total : null;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -191,9 +194,11 @@ export async function createMerchSale({
           merchandiseId,
           channelId,
           quantity,
-          unitPrice:     unitPrice.toFixed(2),
-          totalAmount:   total.toFixed(2),
+          unitPrice:    unitPrice.toFixed(2),
+          totalAmount:  total.toFixed(2),
           currency,
+          fxRateToCLP:  fxRateToCLP != null ? fxRateToCLP.toFixed(6) : null,
+          amountCLP:    amountCLP != null ? amountCLP.toFixed(2) : null,
           paymentMethod: paymentMethod ?? null,
           status:        "CONFIRMED",
           origin:        "manual",

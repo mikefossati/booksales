@@ -124,28 +124,28 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     prisma.sale.aggregate({
       where: { ...baseFilter, saleDate: { gte: monthStart } },
-      _sum: { totalAmount: true, quantity: true },
+      _sum: { amountCLP: true, quantity: true },
     }),
     prisma.sale.aggregate({
       where: { ...baseFilter, saleDate: { gte: prevMonthStart, lte: prevMonthEnd } },
-      _sum: { totalAmount: true },
+      _sum: { amountCLP: true },
     }),
     prisma.sale.aggregate({
       where: { ...baseFilter, saleDate: { gte: yearStart } },
-      _sum: { totalAmount: true },
+      _sum: { amountCLP: true },
     }),
     prisma.sale.groupBy({
       by: ["channelId"],
       where: { ...baseFilter, saleDate: { gte: monthStart } },
-      _sum: { totalAmount: true, quantity: true },
+      _sum: { amountCLP: true, quantity: true },
     }),
     payableIds.length
       ? prisma.sale.groupBy({
           by: ["channelId"],
           where: { channelId: { in: payableIds }, status: { not: "CANCELLED" } },
-          _sum: { totalAmount: true },
+          _sum: { amountCLP: true },
         })
-      : Promise.resolve([] as { channelId: string; _sum: { totalAmount: unknown } }[]),
+      : Promise.resolve([] as { channelId: string; _sum: { amountCLP: unknown } }[]),
     payableIds.length
       ? prisma.payment.groupBy({
           by: ["channelId"],
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
       : Promise.resolve([] as { channelId: string; _sum: { amount: unknown } }[]),
     prisma.sale.findMany({
       where: { ...baseFilter, saleDate: { gte: twelveMonthsAgo } },
-      select: { channelId: true, totalAmount: true, saleDate: true },
+      select: { channelId: true, totalAmount: true, amountCLP: true, currency: true, saleDate: true },
     }),
     prisma.book.findMany({
       where: { accountId: account.id, formats: { has: "PRINT" } },
@@ -173,15 +173,15 @@ export default async function DashboardPage() {
 
   // ── Computed values ──────────────────────────────────────────────────────────
 
-  const monthlyTotal   = toNum(monthlySales._sum.totalAmount);
-  const prevTotal      = toNum(prevMonthlySales._sum.totalAmount);
-  const yearlyTotal    = toNum(yearlySales._sum.totalAmount);
+  const monthlyTotal   = toNum(monthlySales._sum.amountCLP);
+  const prevTotal      = toNum(prevMonthlySales._sum.amountCLP);
+  const yearlyTotal    = toNum(yearlySales._sum.amountCLP);
   const monthlyUnits   = monthlySales._sum.quantity ?? 0;
 
   const momPct = calcMomPercent(monthlyTotal, prevTotal);
 
   // Actual outstanding = sales − payments
-  const salesByChannel    = new Map(payableSalesAgg.map(r => [r.channelId, toNum(r._sum.totalAmount)]));
+  const salesByChannel    = new Map(payableSalesAgg.map(r => [r.channelId, toNum(r._sum.amountCLP)]));
   const paymentsByChannel = new Map(paymentsAgg.map(r => [r.channelId, toNum(r._sum.amount)]));
   const pendingTotal = payableIds.reduce((sum, id) => {
     return sum + calcOutstanding(salesByChannel.get(id) ?? 0, paymentsByChannel.get(id) ?? 0);
@@ -192,7 +192,7 @@ export default async function DashboardPage() {
   const breakdown  = monthlyByChannel
     .map(row => ({
       channel: channelMap.get(row.channelId)!,
-      revenue: toNum(row._sum.totalAmount),
+      revenue: toNum(row._sum.amountCLP),
       units:   row._sum.quantity ?? 0,
     }))
     .filter(r => r.channel)
@@ -220,7 +220,7 @@ export default async function DashboardPage() {
           const t = channelTypeMap.get(s.channelId);
           return type === "DIRECT" ? (t === "DIRECT" || t === "PRESALE") : t === type;
         })
-        .reduce((sum, s) => sum + toNum(s.totalAmount), 0));
+        .reduce((sum, s) => sum + (toNum(s.amountCLP) || toNum(s.totalAmount)), 0));
     return { month: label, Digital: sumByType("DIGITAL"), Librerías: sumByType("BOOKSTORE"), Directo: sumByType("DIRECT") };
   });
 

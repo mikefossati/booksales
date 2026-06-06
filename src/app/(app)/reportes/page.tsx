@@ -116,14 +116,17 @@ export default async function ReportesPage({
 
   // ── Ventas aggregations ───────────────────────────────────────────────────
 
-  const totalRevenue = salesInPeriod.reduce((s, x) => s + toNum(x.totalAmount), 0);
+  const clp = (s: { totalAmount: unknown; amountCLP?: unknown; currency: string }) =>
+    toNum(s.amountCLP as unknown) || (s.currency === "CLP" ? toNum(s.totalAmount as unknown) : 0);
+
+  const totalRevenue = salesInPeriod.reduce((s, x) => s + clp(x), 0);
   const totalUnits   = salesInPeriod.reduce((s, x) => s + x.quantity, 0);
 
   // By channel
   const byChannel = new Map<string, { revenue: number; units: number }>();
   for (const s of salesInPeriod) {
     const cur = byChannel.get(s.channelId) ?? { revenue: 0, units: 0 };
-    byChannel.set(s.channelId, { revenue: cur.revenue + toNum(s.totalAmount), units: cur.units + s.quantity });
+    byChannel.set(s.channelId, { revenue: cur.revenue + clp(s), units: cur.units + s.quantity });
   }
   const channelRows = [...byChannel.entries()]
     .map(([id, d]) => ({ channel: channelMap.get(id)!, ...d }))
@@ -136,7 +139,7 @@ export default async function ReportesPage({
     const book = books.find(b => b.id === s.bookId);
     if (!book) continue;
     const cur = byBook.get(s.bookId!) ?? { revenue: 0, units: 0, title: book.title };
-    byBook.set(s.bookId!, { ...cur, revenue: cur.revenue + toNum(s.totalAmount), units: cur.units + s.quantity });
+    byBook.set(s.bookId!, { ...cur, revenue: cur.revenue + clp(s), units: cur.units + s.quantity });
   }
   const bookRows = [...byBook.values()].sort((a, b) => b.revenue - a.revenue);
 
@@ -146,7 +149,7 @@ export default async function ReportesPage({
     const key  = s.merchandiseId!;
     const name = s.merchandise!.name;
     const cur  = byMerch.get(key) ?? { revenue: 0, units: 0, name };
-    byMerch.set(key, { ...cur, revenue: cur.revenue + toNum(s.totalAmount), units: cur.units + s.quantity });
+    byMerch.set(key, { ...cur, revenue: cur.revenue + clp(s), units: cur.units + s.quantity });
   }
   const merchRows = [...byMerch.values()].sort((a, b) => b.revenue - a.revenue);
 
@@ -174,7 +177,7 @@ export default async function ReportesPage({
   const printBooks = books.filter(b => b.formats.includes("PRINT"));
 
   // Outstanding per channel
-  const salesByChannel   = new Map(channels.map(c => [c.id, allSales.filter(s => s.channelId === c.id).reduce((s, x) => s + toNum(x.totalAmount), 0)]));
+  const salesByChannel   = new Map(channels.map(c => [c.id, allSales.filter(s => s.channelId === c.id).reduce((s, x) => s + clp(x), 0)]));
   const paymentsByChannel = new Map<string, number>();
   for (const p of allPayments) paymentsByChannel.set(p.channelId, (paymentsByChannel.get(p.channelId) ?? 0) + toNum(p.amount));
 
@@ -203,7 +206,7 @@ export default async function ReportesPage({
     .map(b => ({
       title:      b.title,
       printCost:  totalPrintCostByBook.get(b.id) ?? 0,
-      revenue:    allSales.filter(s => s.bookId === b.id).reduce((s, x) => s + toNum(x.totalAmount), 0),
+      revenue:    allSales.filter(s => s.bookId === b.id).reduce((s, x) => s + clp(x), 0),
       tiradas:    printRuns.filter(r => r.bookId === b.id).length,
     }))
     .filter(b => b.printCost > 0)
