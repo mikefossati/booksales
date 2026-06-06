@@ -3,17 +3,23 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteChannel } from "@/actions/channels";
+import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 
-export default function DeleteChannelButton({ id }: { id: string }) {
+export default function DeleteChannelButton({ id, name }: { id: string; name: string }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   function handleDelete() {
-    if (!confirm("¿Eliminar este canal? Se perderán los datos asociados.")) return;
+    if (!confirm(`¿Eliminar el canal "${name}"?`)) return;
     startTransition(async () => {
-      await deleteChannel(id);
-      router.refresh();
+      const result = await deleteChannel(id);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Canal eliminado");
+        router.refresh();
+      }
     });
   }
 

@@ -75,10 +75,26 @@ export async function updateChannel({
 }
 
 export async function deleteChannel(id: string): Promise<{ error?: string }> {
+  const [salesCount, paymentsCount] = await Promise.all([
+    prisma.sale.count({ where: { channelId: id } }),
+    prisma.payment.count({ where: { channelId: id } }),
+  ]);
+
+  if (salesCount > 0) {
+    return {
+      error: `Este canal tiene ${salesCount} venta${salesCount !== 1 ? "s" : ""} registrada${salesCount !== 1 ? "s" : ""}. Elimina esas ventas primero.`,
+    };
+  }
+  if (paymentsCount > 0) {
+    return {
+      error: `Este canal tiene ${paymentsCount} cobro${paymentsCount !== 1 ? "s" : ""} registrado${paymentsCount !== 1 ? "s" : ""}. Elimínalos primero.`,
+    };
+  }
+
   try {
     await prisma.channel.delete({ where: { id } });
     return {};
   } catch {
-    return { error: "Error al eliminar el canal." };
+    return { error: "Error al eliminar el canal. Inténtalo de nuevo." };
   }
 }

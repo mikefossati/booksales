@@ -161,7 +161,7 @@ export default async function ConfiguracionPage({
                         </p>
                       </div>
                       <EditChannelModal channel={ch} />
-                      <DeleteChannelButton id={ch.id} />
+                      <DeleteChannelButton id={ch.id} name={ch.name} />
                     </CardContent>
                   </Card>
                 );
