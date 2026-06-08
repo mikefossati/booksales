@@ -92,7 +92,7 @@ export function getCachedReportesData(accountId: string) {
           }),
           prisma.book.findMany({
             where:   { accountId },
-            select:  { id: true, title: true, formats: true },
+            select:  { id: true, title: true, formats: true, coverUrl: true },
             orderBy: { title: "asc" },
           }),
           prisma.printRun.findMany({

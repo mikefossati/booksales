@@ -4,8 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate, toNum } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
-import type { ChannelType, InventoryMovementType, ExpenseCategory } from "@/generated/prisma/client";
-import { calcMomPercent, calcOutstanding, calcStockInHand, STOCK_SIGN } from "@/lib/finance";
+import type { ChannelType, ExpenseCategory } from "@/generated/prisma/client";
+import { calcMomPercent, calcOutstanding, STOCK_SIGN, saleToCLP } from "@/lib/finance";
+import { getCachedReportesData } from "@/lib/data-cache";
 import DashboardSaleButton from "@/components/dashboard/DashboardSaleButton";
 import DashboardExpenseButton from "@/components/dashboard/DashboardExpenseButton";
 
@@ -107,161 +108,115 @@ export default async function DashboardPage() {
   const account  = await getOrCreateAccount(user.id, user.email ?? "");
   const currency = account.baseCurrency;
 
+  // Profile is not in the shared cache (user-specific, rarely changes)
   const profile = await prisma.profile.findUnique({
     where:  { supabaseId: user.id },
     select: { displayName: true },
   });
 
-  const now             = new Date();
-  const monthStart      = new Date(now.getFullYear(), now.getMonth(), 1);
-  const prevMonthStart  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevMonthEnd    = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-  const yearStart       = new Date(now.getFullYear(), 0, 1);
-  const currentMonth    = now.toLocaleString("es-CL", { month: "long", year: "numeric" });
-  const firstName       = profile?.displayName?.split(" ")[0] ?? user.email?.split("@")[0] ?? "escritora";
+  // All other data comes from the shared cache (same dataset as reportes)
+  const { channels, allSales, allExpenses, allPayments, books, bookMovements } =
+    await getCachedReportesData(account.id);
 
-  const channels = await prisma.channel.findMany({
-    where:   { accountId: account.id },
-    select:  { id: true, name: true, type: true, currency: true },
-    orderBy: { createdAt: "asc" },
-  });
-  const channelIds     = channels.map(c => c.id);
-  const channelTypeMap = new Map(channels.map(c => [c.id, c.type as ChannelType]));
+  // ── Date boundaries ───────────────────────────────────────────────────────
 
-  const baseFilter = {
-    channelId: { in: channelIds.length ? channelIds : ["__none__"] },
-    status: { not: "CANCELLED" as const },
-  };
+  const now            = new Date();
+  const monthStart     = new Date(now.getFullYear(), now.getMonth(), 1);
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+  const yearStart      = new Date(now.getFullYear(), 0, 1);
+  const currentMonth   = now.toLocaleString("es-CL", { month: "long", year: "numeric" });
+  const firstName      = profile?.displayName?.split(" ")[0] ?? user.email?.split("@")[0] ?? "escritora";
+
+  // ── Channel maps ──────────────────────────────────────────────────────────
+
+  const channelMap      = new Map(channels.map(c => [c.id, c]));
   const payableChannels = channels.filter(c => c.type === "BOOKSTORE" || c.type === "DIGITAL");
-  const payableIds      = payableChannels.map(c => c.id);
 
-  const [
-    monthlySales,
-    prevMonthlySales,
-    yearlySales,
-    monthlyByChannel,
-    payableSalesAgg,
-    paymentsAgg,
-    recentSales,
-    books,
-    printBooks,
-    allMovements,
-    monthlyExpenses,
-    yearlyExpensesAgg,
-    prevMonthExpensesAgg,
-  ] = await Promise.all([
-    prisma.sale.aggregate({
-      where: { ...baseFilter, saleDate: { gte: monthStart } },
-      _sum:  { amountCLP: true, quantity: true },
-    }),
-    prisma.sale.aggregate({
-      where: { ...baseFilter, saleDate: { gte: prevMonthStart, lte: prevMonthEnd } },
-      _sum:  { amountCLP: true },
-    }),
-    prisma.sale.aggregate({
-      where: { ...baseFilter, saleDate: { gte: yearStart } },
-      _sum:  { amountCLP: true },
-    }),
-    prisma.sale.groupBy({
-      by:    ["channelId"],
-      where: { ...baseFilter, saleDate: { gte: monthStart } },
-      _sum:  { amountCLP: true, quantity: true },
-    }),
-    payableIds.length
-      ? prisma.sale.groupBy({
-          by:    ["channelId"],
-          where: { channelId: { in: payableIds }, status: { not: "CANCELLED" } },
-          _sum:  { amountCLP: true },
-        })
-      : Promise.resolve([] as { channelId: string; _sum: { amountCLP: unknown } }[]),
-    payableIds.length
-      ? prisma.payment.groupBy({
-          by:    ["channelId"],
-          where: { channelId: { in: payableIds } },
-          _sum:  { amount: true },
-        })
-      : Promise.resolve([] as { channelId: string; _sum: { amount: unknown } }[]),
-    prisma.sale.findMany({
-      where:   { ...baseFilter, saleDate: { gte: monthStart } },
-      select:  {
-        id: true, quantity: true, unitPrice: true, totalAmount: true,
-        amountCLP: true, currency: true, saleDate: true, paymentMethod: true,
-        book:        { select: { title: true } },
-        merchandise: { select: { name: true } },
-        channel:     { select: { name: true, type: true } },
-        bookId: true, channelId: true,
-      },
-      orderBy: { saleDate: "desc" },
-      take:    5,
-    }),
-    prisma.book.findMany({
-      where:   { accountId: account.id },
-      select:  { id: true, title: true, coverUrl: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.book.findMany({
-      where:  { accountId: account.id, formats: { has: "PRINT" } },
-      select: { id: true, title: true },
-    }),
-    prisma.inventoryMovement.findMany({
-      where:  { bookId: { not: null }, book: { accountId: account.id }, type: { in: Object.keys(STOCK_SIGN) as InventoryMovementType[] } },
-      select: { bookId: true, type: true, quantity: true },
-    }),
-    prisma.expense.findMany({
-      where:   { accountId: account.id, occurredAt: { gte: monthStart } },
-      select:  { id: true, description: true, amount: true, currency: true, category: true, occurredAt: true },
-      orderBy: { occurredAt: "desc" },
-    }),
-    prisma.expense.aggregate({
-      where: { accountId: account.id, occurredAt: { gte: yearStart } },
-      _sum:  { amount: true },
-    }),
-    prisma.expense.aggregate({
-      where: { accountId: account.id, occurredAt: { gte: prevMonthStart, lte: prevMonthEnd } },
-      _sum:  { amount: true },
-    }),
-  ]);
+  // ── Sales: in-memory period filtering and aggregation ─────────────────────
 
-  // ── Sales computed ────────────────────────────────────────────────────────────
+  const salesThisMonth = allSales.filter(s => new Date(s.saleDate) >= monthStart);
+  const salesPrevMonth = allSales.filter(s => {
+    const d = new Date(s.saleDate);
+    return d >= prevMonthStart && d <= prevMonthEnd;
+  });
+  const salesThisYear = allSales.filter(s => new Date(s.saleDate) >= yearStart);
 
-  const monthlyTotal  = toNum(monthlySales._sum.amountCLP);
-  const prevTotal     = toNum(prevMonthlySales._sum.amountCLP);
-  const yearlyTotal   = toNum(yearlySales._sum.amountCLP);
-  const monthlyUnits  = monthlySales._sum.quantity ?? 0;
-  const salesMomPct   = calcMomPercent(monthlyTotal, prevTotal);
+  const monthlyTotal = salesThisMonth.reduce((sum, s) => sum + saleToCLP(s), 0);
+  const monthlyUnits = salesThisMonth.reduce((sum, s) => sum + s.quantity, 0);
+  const prevTotal    = salesPrevMonth.reduce((sum, s) => sum + saleToCLP(s), 0);
+  const yearlyTotal  = salesThisYear.reduce((sum, s) => sum + saleToCLP(s), 0);
+  const salesMomPct  = calcMomPercent(monthlyTotal, prevTotal);
 
-  const salesByChannel    = new Map(payableSalesAgg.map(r => [r.channelId, toNum(r._sum.amountCLP)]));
-  const paymentsByChannel = new Map(paymentsAgg.map(r => [r.channelId, toNum(r._sum.amount)]));
-
-  const channelMap = new Map(channels.map(c => [c.id, c]));
-  const breakdown  = monthlyByChannel
-    .map(row => ({ channel: channelMap.get(row.channelId)!, revenue: toNum(row._sum.amountCLP), units: row._sum.quantity ?? 0 }))
+  // Channel breakdown this month
+  const byChannelRevenue = new Map<string, { revenue: number; units: number }>();
+  for (const s of salesThisMonth) {
+    const cur = byChannelRevenue.get(s.channelId) ?? { revenue: 0, units: 0 };
+    byChannelRevenue.set(s.channelId, { revenue: cur.revenue + saleToCLP(s), units: cur.units + s.quantity });
+  }
+  const breakdown = [...byChannelRevenue.entries()]
+    .map(([id, d]) => ({ channel: channelMap.get(id)!, ...d }))
     .filter(r => r.channel)
     .sort((a, b) => b.revenue - a.revenue);
 
-  // ── Expenses computed ─────────────────────────────────────────────────────────
+  // Outstanding per payable channel (all-time)
+  const salesByChannel    = new Map<string, number>();
+  const paymentsByChannel = new Map<string, number>();
+  for (const s of allSales)    salesByChannel.set(s.channelId, (salesByChannel.get(s.channelId) ?? 0) + saleToCLP(s));
+  for (const p of allPayments) paymentsByChannel.set(p.channelId, (paymentsByChannel.get(p.channelId) ?? 0) + toNum(p.amount));
 
-  const monthlyExpensesTotal = monthlyExpenses.reduce((s, e) => s + toNum(e.amount), 0);
-  const yearlyExpensesTotal  = toNum(yearlyExpensesAgg._sum.amount);
-  const prevMonthExpenses    = toNum(prevMonthExpensesAgg._sum.amount);
+  // Recent sales (last 5 this month, already sorted desc by saleDate from cache)
+  const recentSales = salesThisMonth.slice(0, 5);
+
+  // ── Books and stock ───────────────────────────────────────────────────────
+
+  const bookMap    = new Map(books.map(b => [b.id, b]));
+  const printBooks = books.filter(b => b.formats.includes("PRINT"));
+
+  const stockByBook = new Map<string, number>();
+  for (const { bookId, type, quantity } of bookMovements) {
+    if (!bookId) continue;
+    stockByBook.set(bookId, (stockByBook.get(bookId) ?? 0) + (STOCK_SIGN[type] ?? 0) * quantity);
+  }
+
+  // Last prices for sale button (most recent sale per book+channel)
+  const lastPrices: Record<string, number> = {};
+  for (const s of allSales) {
+    if (!s.bookId) continue;
+    const key = `${s.bookId}_${s.channelId}`;
+    if (!(key in lastPrices)) lastPrices[key] = toNum(s.unitPrice);
+  }
+
+  // ── Expenses: in-memory period filtering ─────────────────────────────────
+
+  const expensesThisMonth = allExpenses.filter(e => new Date(e.occurredAt) >= monthStart);
+  const expensesPrevMonth = allExpenses.filter(e => {
+    const d = new Date(e.occurredAt);
+    return d >= prevMonthStart && d <= prevMonthEnd;
+  });
+  const expensesThisYear = allExpenses.filter(e => new Date(e.occurredAt) >= yearStart);
+
+  const monthlyExpensesTotal = expensesThisMonth.reduce((sum, e) => sum + toNum(e.amount), 0);
+  const yearlyExpensesTotal  = expensesThisYear.reduce((sum, e)  => sum + toNum(e.amount), 0);
+  const prevMonthExpenses    = expensesPrevMonth.reduce((sum, e) => sum + toNum(e.amount), 0);
   const expensesMomPct       = calcMomPercent(monthlyExpensesTotal, prevMonthExpenses);
 
   const expensesByCat = new Map<ExpenseCategory, number>();
-  for (const e of monthlyExpenses) {
+  for (const e of expensesThisMonth) {
     expensesByCat.set(e.category, (expensesByCat.get(e.category) ?? 0) + toNum(e.amount));
   }
   const categoryBreakdown = [...expensesByCat.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4);
 
-  // ── Net result ────────────────────────────────────────────────────────────────
+  // ── Net result ────────────────────────────────────────────────────────────
 
-  const netResult    = monthlyTotal - monthlyExpensesTotal;
-  const prevNet      = prevTotal - prevMonthExpenses;
-  const netMomPct    = calcMomPercent(netResult, prevNet);
-  const netPositive  = netResult >= 0;
+  const netResult   = monthlyTotal - monthlyExpensesTotal;
+  const prevNet     = prevTotal - prevMonthExpenses;
+  const netMomPct   = calcMomPercent(netResult, prevNet);
+  const netPositive = netResult >= 0;
 
-  // ── Alerts ────────────────────────────────────────────────────────────────────
+  // ── Alerts ────────────────────────────────────────────────────────────────
 
   const alerts: { icon: string; text: string; href: string }[] = [];
 
@@ -276,11 +231,6 @@ export default async function DashboardPage() {
     }
   }
 
-  const stockByBook = new Map<string, number>();
-  for (const { bookId, type, quantity } of allMovements) {
-    if (!bookId) continue;
-    stockByBook.set(bookId, (stockByBook.get(bookId) ?? 0) + (STOCK_SIGN[type] ?? 0) * quantity);
-  }
   for (const book of printBooks) {
     const stock = stockByBook.get(book.id) ?? 0;
     if (stock > 0 && stock <= LOW_STOCK_THRESHOLD) {
@@ -288,16 +238,7 @@ export default async function DashboardPage() {
     }
   }
 
-  // ── lastPrices for sale button ────────────────────────────────────────────────
-
-  const lastPrices: Record<string, number> = {};
-  for (const s of recentSales) {
-    if (!s.bookId) continue;
-    const key = `${s.bookId}_${s.channelId}`;
-    if (!(key in lastPrices)) lastPrices[key] = toNum(s.unitPrice);
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <main className="p-5 md:p-8 max-w-5xl space-y-6">
@@ -390,7 +331,9 @@ export default async function DashboardPage() {
               <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Últimas ventas</p>
               <div className="divide-y divide-[var(--color-border)] -mx-5">
                 {recentSales.map(sale => {
-                  const itemName = sale.book?.title ?? sale.merchandise?.name ?? "Venta";
+                  const itemName = sale.bookId
+                    ? (bookMap.get(sale.bookId)?.title ?? "Libro")
+                    : (sale.merchandise?.name ?? "Venta");
                   const saleAmt  = toNum(sale.amountCLP) || toNum(sale.totalAmount);
                   return (
                     <div key={sale.id} className="flex items-center gap-3 px-5 py-2.5">
@@ -459,11 +402,11 @@ export default async function DashboardPage() {
           )}
 
           {/* Recent expenses */}
-          {monthlyExpenses.length > 0 && (
+          {expensesThisMonth.length > 0 && (
             <div className="space-y-1">
               <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Últimos gastos</p>
               <div className="divide-y divide-[var(--color-border)] -mx-5">
-                {monthlyExpenses.slice(0, 5).map(exp => (
+                {expensesThisMonth.slice(0, 5).map(exp => (
                   <div key={exp.id} className="flex items-center gap-3 px-5 py-2.5">
                     <span className="text-base shrink-0">{CATEGORY_EMOJI[exp.category] ?? "💬"}</span>
                     <div className="flex-1 min-w-0">
