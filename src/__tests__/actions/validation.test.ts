@@ -8,20 +8,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ── Prisma mock (hoisted so variables are ready before vi.mock runs) ──────────
 
 const {
-  mockSaleCreate, mockSaleUpdate, mockSaleFindUnique, mockSaleDelete,
-  mockMovementCreate, mockChannelFind, mockBookFind,
-  mockExpenseCreate, mockExpenseUpdate, mockExpenseDelete,
+  mockSaleCreate, mockSaleUpdate, mockSaleFindFirst, mockSaleDelete,
+  mockMovementCreate, mockChannelFindFirst, mockBookFindFirst,
+  mockExpenseCreate, mockExpenseUpdate, mockExpenseDelete, mockExpenseFindFirst,
 } = vi.hoisted(() => ({
-  mockSaleCreate:     vi.fn(),
-  mockSaleUpdate:     vi.fn(),
-  mockSaleFindUnique: vi.fn(),
-  mockSaleDelete:     vi.fn(),
-  mockMovementCreate: vi.fn(),
-  mockChannelFind:    vi.fn(),
-  mockBookFind:       vi.fn(),
-  mockExpenseCreate:  vi.fn(),
-  mockExpenseUpdate:  vi.fn(),
-  mockExpenseDelete:  vi.fn(),
+  mockSaleCreate:       vi.fn(),
+  mockSaleUpdate:       vi.fn(),
+  mockSaleFindFirst:    vi.fn(),
+  mockSaleDelete:       vi.fn(),
+  mockMovementCreate:   vi.fn(),
+  mockChannelFindFirst: vi.fn(),
+  mockBookFindFirst:    vi.fn(),
+  mockExpenseCreate:    vi.fn(),
+  mockExpenseUpdate:    vi.fn(),
+  mockExpenseDelete:    vi.fn(),
+  mockExpenseFindFirst: vi.fn(),
+}));
+
+// Mock the auth helper so tests don't need a real Supabase/Next.js context
+vi.mock("@/lib/auth", () => ({
+  requireAccount: vi.fn().mockResolvedValue({ account: { id: "acc1" } }),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -30,15 +36,16 @@ vi.mock("@/lib/prisma", () => ({
       create:     mockSaleCreate,
       update:     mockSaleUpdate,
       delete:     mockSaleDelete,
-      findUnique: mockSaleFindUnique,
+      findFirst:  mockSaleFindFirst,
     },
-    channel:           { findUnique: mockChannelFind },
-    book:              { findUnique: mockBookFind },
+    channel:           { findFirst: mockChannelFindFirst, findUnique: mockChannelFindFirst },
+    book:              { findFirst: mockBookFindFirst, findUnique: mockBookFindFirst },
     inventoryMovement: { create: mockMovementCreate },
     expense: {
-      create: mockExpenseCreate,
-      update: mockExpenseUpdate,
-      delete: mockExpenseDelete,
+      create:    mockExpenseCreate,
+      update:    mockExpenseUpdate,
+      delete:    mockExpenseDelete,
+      findFirst: mockExpenseFindFirst,
     },
     $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
       fn({
@@ -57,8 +64,8 @@ import { createExpense, updateExpense, deleteExpense } from "@/actions/expenses"
 describe("createSale — input validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockChannelFind.mockResolvedValue({ type: "DIRECT" });
-    mockBookFind.mockResolvedValue({ formats: ["PRINT"] });
+    mockChannelFindFirst.mockResolvedValue({ id: "c1", type: "DIRECT" });
+    mockBookFindFirst.mockResolvedValue({ id: "b1", formats: ["PRINT"] });
     mockSaleCreate.mockResolvedValue({});
     mockMovementCreate.mockResolvedValue({});
   });
@@ -128,8 +135,8 @@ describe("createSale — input validation", () => {
   });
 
   it("creates an inventory movement for DIRECT + PRINT", async () => {
-    mockChannelFind.mockResolvedValue({ type: "DIRECT" });
-    mockBookFind.mockResolvedValue({ formats: ["PRINT"] });
+    mockChannelFindFirst.mockResolvedValue({ id: "c1", type: "DIRECT" });
+    mockBookFindFirst.mockResolvedValue({ id: "b1", formats: ["PRINT"] });
 
     await createSale({
       bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 8000, currency: "CLP",
@@ -138,8 +145,8 @@ describe("createSale — input validation", () => {
   });
 
   it("does NOT create an inventory movement for DIGITAL channels", async () => {
-    mockChannelFind.mockResolvedValue({ type: "DIGITAL" });
-    mockBookFind.mockResolvedValue({ formats: ["EBOOK"] });
+    mockChannelFindFirst.mockResolvedValue({ id: "c1", type: "DIGITAL" });
+    mockBookFindFirst.mockResolvedValue({ id: "b1", formats: ["EBOOK"] });
 
     await createSale({
       bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 5000, currency: "CLP",
@@ -161,7 +168,7 @@ describe("createSale — input validation", () => {
 describe("updateSale — input validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSaleFindUnique.mockResolvedValue({ currency: "CLP" });
+    mockSaleFindFirst.mockResolvedValue({ id: "s1", currency: "CLP" });
     mockSaleUpdate.mockResolvedValue({});
   });
 
@@ -193,7 +200,7 @@ describe("updateSale — input validation", () => {
   });
 
   it("recalculates amountCLP when fxRate is provided", async () => {
-    mockSaleFindUnique.mockResolvedValue({ currency: "USD" });
+    mockSaleFindFirst.mockResolvedValue({ id: "s1", currency: "USD" });
     await updateSale({
       id: "s1", quantity: 1, unitPrice: 100, channelId: "c1",
       saleDate: "2025-06-15", status: "CONFIRMED", fxRateToCLP: 970,
@@ -217,6 +224,7 @@ describe("updateSale — input validation", () => {
 describe("deleteSale", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSaleFindFirst.mockResolvedValue({ id: "s1" });
     mockSaleDelete.mockResolvedValue({});
   });
 
@@ -240,7 +248,7 @@ describe("createExpense — input validation", () => {
     description: "Diseño de portada",
     amount: 50000,
     currency: "CLP",
-    category: "DESIGN" as const,
+    category: "DESIGN_ART" as const,
     level: "BOOK" as const,
     bookId: "b1",
     occurredAt: "2025-06-15",
@@ -314,13 +322,14 @@ describe("updateExpense — input validation", () => {
     description: "Diseño de portada",
     amount: 50000,
     currency: "CLP",
-    category: "DESIGN" as const,
+    category: "DESIGN_ART" as const,
     level: "GENERAL" as const,
     occurredAt: "2025-06-15",
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockExpenseFindFirst.mockResolvedValue({ id: "e1" });
     mockExpenseUpdate.mockResolvedValue({});
   });
 
@@ -357,6 +366,7 @@ describe("updateExpense — input validation", () => {
 describe("deleteExpense", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockExpenseFindFirst.mockResolvedValue({ id: "e1" });
     mockExpenseDelete.mockResolvedValue({});
   });
 

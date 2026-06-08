@@ -1,13 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAccount } from "@/lib/auth";
 import type { MerchandiseType } from "@/generated/prisma/client";
 import { calcCostPerUnit, calcSaleTotal } from "@/lib/finance";
 
 // ── Products ──────────────────────────────────────────────────────────────────
 
 export async function createMerchandise({
-  accountId,
   name,
   type,
   suggestedPrice,
@@ -17,8 +17,8 @@ export async function createMerchandise({
   components,
   sku,
   description,
+  accountId: _ignored,
 }: {
-  accountId: string;
   name: string;
   type: MerchandiseType;
   suggestedPrice?: number;
@@ -28,13 +28,17 @@ export async function createMerchandise({
   components?: string[];
   sku?: string;
   description?: string;
+  accountId?: string; // derived from session; caller value is ignored
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (!name.trim()) return { error: "El nombre es obligatorio." };
 
   try {
     await prisma.merchandise.create({
       data: {
-        accountId,
+        accountId:      auth.account.id,
         name:           name.trim(),
         type,
         suggestedPrice: suggestedPrice != null ? suggestedPrice.toFixed(2) : null,
@@ -77,7 +81,16 @@ export async function updateMerchandise({
   description?: string;
   isActive: boolean;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (!name.trim()) return { error: "El nombre es obligatorio." };
+
+  const owned = await prisma.merchandise.findFirst({
+    where: { id, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
 
   try {
     await prisma.merchandise.update({
@@ -102,9 +115,17 @@ export async function updateMerchandise({
 }
 
 export async function deleteMerchandise(id: string): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  const owned = await prisma.merchandise.findFirst({
+    where: { id, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
+
   try {
     await prisma.$transaction(async (tx) => {
-      // Null out merch reference on sales so history is preserved
       await tx.sale.updateMany({ where: { merchandiseId: id }, data: { merchandiseId: null } });
       await tx.merchandise.delete({ where: { id } });
     });
@@ -129,8 +150,17 @@ export async function addProductionBatch({
   supplier?: string;
   receivedAt: string;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (quantity < 1)  return { error: "La cantidad debe ser mayor a 0." };
   if (totalCost < 0) return { error: "El costo no puede ser negativo." };
+
+  const owned = await prisma.merchandise.findFirst({
+    where: { id: merchandiseId, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
 
   const costPerUnit = calcCostPerUnit(totalCost, quantity);
   const date = new Date(receivedAt + "T12:00:00");
@@ -162,7 +192,7 @@ export async function addProductionBatch({
   }
 }
 
-// ── Merch sales (called from QuickSaleFab) ────────────────────────────────────
+// ── Merch sales ───────────────────────────────────────────────────────────────
 
 export async function createMerchSale({
   merchandiseId,
@@ -181,8 +211,17 @@ export async function createMerchSale({
   fxRateToCLP?: number;
   paymentMethod?: string;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
+
+  const [channelOwned, merchOwned] = await Promise.all([
+    prisma.channel.findFirst({ where: { id: channelId, accountId: auth.account.id }, select: { id: true } }),
+    prisma.merchandise.findFirst({ where: { id: merchandiseId, accountId: auth.account.id }, select: { id: true } }),
+  ]);
+  if (!channelOwned || !merchOwned) return { error: "No encontrado." };
 
   const total     = calcSaleTotal(quantity, unitPrice);
   const amountCLP = fxRateToCLP != null ? total * fxRateToCLP : currency === "CLP" ? total : null;
@@ -194,11 +233,11 @@ export async function createMerchSale({
           merchandiseId,
           channelId,
           quantity,
-          unitPrice:    unitPrice.toFixed(2),
-          totalAmount:  total.toFixed(2),
+          unitPrice:     unitPrice.toFixed(2),
+          totalAmount:   total.toFixed(2),
           currency,
-          fxRateToCLP:  fxRateToCLP != null ? fxRateToCLP.toFixed(6) : null,
-          amountCLP:    amountCLP != null ? amountCLP.toFixed(2) : null,
+          fxRateToCLP:   fxRateToCLP != null ? fxRateToCLP.toFixed(6) : null,
+          amountCLP:     amountCLP != null ? amountCLP.toFixed(2) : null,
           paymentMethod: paymentMethod ?? null,
           status:        "CONFIRMED",
           origin:        "manual",

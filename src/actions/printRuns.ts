@@ -1,7 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { calcCostPerUnit, calcSaleTotal } from "@/lib/finance";
+import { requireAccount } from "@/lib/auth";
+import { calcCostPerUnit } from "@/lib/finance";
 
 export async function addPrintRun({
   bookId,
@@ -15,14 +16,23 @@ export async function addPrintRun({
   quantity: number;
   totalCost: number;
   supplier?: string;
-  receivedAt: string; // YYYY-MM-DD from date input
+  receivedAt: string; // YYYY-MM-DD
   notes?: string;
 }): Promise<{ error?: string }> {
-  if (quantity < 1)   return { error: "La cantidad debe ser mayor a 0." };
-  if (totalCost < 0)  return { error: "El costo no puede ser negativo." };
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  if (quantity < 1)  return { error: "La cantidad debe ser mayor a 0." };
+  if (totalCost < 0) return { error: "El costo no puede ser negativo." };
+
+  const bookOwned = await prisma.book.findFirst({
+    where: { id: bookId, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!bookOwned) return { error: "No encontrado." };
 
   const costPerUnit = calcCostPerUnit(totalCost, quantity);
-  const date = new Date(receivedAt + "T12:00:00"); // noon local avoids UTC-day-shift
+  const date = new Date(receivedAt + "T12:00:00");
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -68,8 +78,17 @@ export async function updatePrintRun({
   receivedAt: string;
   notes?: string;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (quantity < 1)  return { error: "La cantidad debe ser mayor a 0." };
   if (totalCost < 0) return { error: "El costo no puede ser negativo." };
+
+  const owned = await prisma.printRun.findFirst({
+    where: { id, book: { accountId: auth.account.id } },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
 
   const costPerUnit = calcCostPerUnit(totalCost, quantity);
   const date = new Date(receivedAt + "T12:00:00");

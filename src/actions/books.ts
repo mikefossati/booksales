@@ -1,23 +1,27 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAccount } from "@/lib/auth";
 import { BookFormat } from "@/generated/prisma/client";
 
 export async function createBook({
-  accountId,
   title,
   formats,
+  accountId: _ignored,
 }: {
-  accountId: string;
   title: string;
   formats: BookFormat[];
+  accountId?: string; // derived from session; caller value is ignored
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (!title.trim()) return { error: "El título es obligatorio." };
   if (formats.length === 0) return { error: "Selecciona al menos un formato." };
 
   try {
     await prisma.book.create({
-      data: { accountId, title: title.trim(), formats },
+      data: { accountId: auth.account.id, title: title.trim(), formats },
     });
     return {};
   } catch {
@@ -46,8 +50,17 @@ export async function updateBook({
   coverUrl?: string;
   description?: string;
 }): Promise<{ error?: string }> {
-  if (!title.trim())    return { error: "El título es obligatorio." };
-  if (!formats.length)  return { error: "Selecciona al menos un formato." };
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  if (!title.trim())   return { error: "El título es obligatorio." };
+  if (!formats.length) return { error: "Selecciona al menos un formato." };
+
+  const owned = await prisma.book.findFirst({
+    where: { id, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
 
   try {
     await prisma.book.update({
@@ -70,6 +83,15 @@ export async function updateBook({
 }
 
 export async function deleteBook(id: string): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  const owned = await prisma.book.findFirst({
+    where: { id, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
+
   const [salesCount, printRunCount] = await Promise.all([
     prisma.sale.count({ where: { bookId: id } }),
     prisma.printRun.count({ where: { bookId: id } }),
@@ -77,7 +99,7 @@ export async function deleteBook(id: string): Promise<{ error?: string }> {
 
   if (salesCount > 0 || printRunCount > 0) {
     const parts: string[] = [];
-    if (salesCount > 0)   parts.push(`${salesCount} venta${salesCount > 1 ? "s" : ""}`);
+    if (salesCount > 0)    parts.push(`${salesCount} venta${salesCount > 1 ? "s" : ""}`);
     if (printRunCount > 0) parts.push(`${printRunCount} tirada${printRunCount > 1 ? "s" : ""}`);
     return { error: `No se puede eliminar: este libro tiene ${parts.join(" y ")} registradas.` };
   }

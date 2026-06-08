@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAccount } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export async function updateProfile({
   profileId,
@@ -11,6 +13,17 @@ export async function updateProfile({
   displayName: string;
   avatarUrl?: string;
 }): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autorizado." };
+
+  // Verify the profile belongs to the requesting user
+  const profile = await prisma.profile.findFirst({
+    where: { id: profileId, supabaseId: user.id },
+    select: { id: true },
+  });
+  if (!profile) return { error: "No autorizado." };
+
   try {
     await prisma.profile.update({
       where: { id: profileId },
@@ -26,17 +39,20 @@ export async function updateProfile({
 }
 
 export async function updatePreferences({
-  accountId,
   baseCurrency,
   dateFormat,
+  accountId: _ignored,
 }: {
-  accountId: string;
   baseCurrency: string;
   dateFormat: string;
+  accountId?: string; // derived from session; caller value is ignored
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   try {
     await prisma.account.update({
-      where: { id: accountId },
+      where: { id: auth.account.id },
       data: { baseCurrency, dateFormat },
     });
     return {};

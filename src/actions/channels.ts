@@ -1,37 +1,41 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAccount } from "@/lib/auth";
 import { ChannelType } from "@/generated/prisma/client";
 
 export async function createChannel({
-  accountId,
   name,
   type,
   royaltyPercent,
   consignmentPercent,
   currency,
   city,
+  accountId: _ignored,
 }: {
-  accountId: string;
   name: string;
   type: ChannelType;
   royaltyPercent?: number | null;
   consignmentPercent?: number | null;
   currency?: string | null;
   city?: string | null;
+  accountId?: string; // derived from session; caller value is ignored
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (!name.trim()) return { error: "El nombre es obligatorio." };
 
   try {
     await prisma.channel.create({
       data: {
-        accountId,
-        name: name.trim(),
+        accountId:          auth.account.id,
+        name:               name.trim(),
         type,
-        royaltyPercent:    royaltyPercent    ?? null,
+        royaltyPercent:     royaltyPercent    ?? null,
         consignmentPercent: consignmentPercent ?? null,
-        currency:          currency?.trim()   || null,
-        city:              city?.trim()       || null,
+        currency:           currency?.trim()   || null,
+        city:               city?.trim()       || null,
       },
     });
     return {};
@@ -55,17 +59,26 @@ export async function updateChannel({
   currency?: string | null;
   city?: string | null;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (!name.trim()) return { error: "El nombre es obligatorio." };
+
+  const owned = await prisma.channel.findFirst({
+    where: { id, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
 
   try {
     await prisma.channel.update({
       where: { id },
       data: {
-        name: name.trim(),
-        royaltyPercent:    royaltyPercent    ?? null,
+        name:               name.trim(),
+        royaltyPercent:     royaltyPercent    ?? null,
         consignmentPercent: consignmentPercent ?? null,
-        currency:          currency?.trim()   || null,
-        city:              city?.trim()       || null,
+        currency:           currency?.trim()   || null,
+        city:               city?.trim()       || null,
       },
     });
     return {};
@@ -75,6 +88,15 @@ export async function updateChannel({
 }
 
 export async function deleteChannel(id: string): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  const owned = await prisma.channel.findFirst({
+    where: { id, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
+
   const [salesCount, paymentsCount] = await Promise.all([
     prisma.sale.count({ where: { channelId: id } }),
     prisma.payment.count({ where: { channelId: id } }),

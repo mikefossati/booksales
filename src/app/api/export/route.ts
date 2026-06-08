@@ -54,9 +54,22 @@ export async function GET(req: NextRequest) {
   const account = await getOrCreateAccount(user.id, user.email ?? "");
 
   const { searchParams } = new URL(req.url);
-  const tab    = searchParams.get("tab")    ?? "all";
-  const period = searchParams.get("period") ?? "todo";
-  const format = (searchParams.get("format") ?? "xlsx") as "xlsx" | "csv";
+
+  const VALID_TABS    = ["all", "ventas", "inventario", "finanzas", "proyecciones"] as const;
+  const VALID_PERIODS = ["mes", "año", "todo"] as const;
+  const VALID_FORMATS = ["xlsx", "csv"] as const;
+
+  type Tab    = typeof VALID_TABS[number];
+  type Period = typeof VALID_PERIODS[number];
+  type Format = typeof VALID_FORMATS[number];
+
+  const rawTab    = searchParams.get("tab")    ?? "";
+  const rawPeriod = searchParams.get("period") ?? "";
+  const rawFormat = searchParams.get("format") ?? "";
+
+  const tab:    Tab    = (VALID_TABS    as readonly string[]).includes(rawTab)    ? rawTab    as Tab    : "all";
+  const period: Period = (VALID_PERIODS as readonly string[]).includes(rawPeriod) ? rawPeriod as Period : "todo";
+  const format: Format = (VALID_FORMATS as readonly string[]).includes(rawFormat) ? rawFormat as Format : "xlsx";
 
   const start = periodStart(period);
 
@@ -315,7 +328,8 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (err) {
-    console.error("[/api/export]", err);
+    const message = err instanceof Error ? err.message : "unknown error";
+    console.error("[/api/export] export failed:", message);
     return new NextResponse("Error al generar el archivo.", { status: 500 });
   }
 }

@@ -1,17 +1,23 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAccount } from "@/lib/auth";
 import type { UserRole } from "@/generated/prisma/client";
 
 export async function inviteUserByEmail({
-  accountId,
   email,
   role,
+  accountId: _ignored,
 }: {
-  accountId: string;
   email: string;
   role: UserRole;
+  accountId?: string; // derived from session; caller value is ignored
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  const accountId = auth.account.id;
+
   if (!email.trim()) return { error: "El correo es obligatorio." };
 
   const [profile, account] = await Promise.all([
@@ -19,7 +25,7 @@ export async function inviteUserByEmail({
     prisma.account.findUnique({ where: { id: accountId }, select: { ownerId: true } }),
   ]);
 
-  if (!profile) return { error: "No se encontró ninguna cuenta con ese correo. Pídele que se registre primero." };
+  if (!profile)  return { error: "No se encontró ninguna cuenta con ese correo. Pídele que se registre primero." };
   if (account?.ownerId === profile.id) return { error: "Este usuario ya es propietario de la cuenta." };
 
   const existing = await prisma.accountMember.findUnique({
@@ -44,6 +50,15 @@ export async function updateMemberRole({
   memberId: string;
   role: UserRole;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  const owned = await prisma.accountMember.findFirst({
+    where: { id: memberId, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
+
   try {
     await prisma.accountMember.update({ where: { id: memberId }, data: { role } });
     return {};
@@ -53,6 +68,15 @@ export async function updateMemberRole({
 }
 
 export async function revokeMember(memberId: string): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  const owned = await prisma.accountMember.findFirst({
+    where: { id: memberId, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
+
   try {
     await prisma.accountMember.delete({ where: { id: memberId } });
     return {};

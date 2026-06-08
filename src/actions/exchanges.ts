@@ -1,10 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAccount } from "@/lib/auth";
 import type { ExchangeStatus } from "@/generated/prisma/client";
 
 export async function createExchange({
-  accountId,
   bookId,
   recipient,
   quantity,
@@ -12,8 +12,8 @@ export async function createExchange({
   expectedResult,
   deadlineAt,
   notes,
+  accountId: _ignored,
 }: {
-  accountId: string;
   bookId: string;
   recipient: string;
   quantity: number;
@@ -21,11 +21,18 @@ export async function createExchange({
   expectedResult?: string;
   deadlineAt?: string;
   notes?: string;
+  accountId?: string; // derived from session; caller value is ignored
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (!recipient.trim()) return { error: "El destinatario es obligatorio." };
   if (quantity < 1)      return { error: "La cantidad debe ser mayor a 0." };
 
-  const book = await prisma.book.findFirst({ where: { id: bookId, accountId } });
+  const book = await prisma.book.findFirst({
+    where: { id: bookId, accountId: auth.account.id },
+    select: { id: true },
+  });
   if (!book) return { error: "Libro no encontrado." };
 
   const date = new Date(sentAt + "T12:00:00");
@@ -76,7 +83,16 @@ export async function updateExchange({
   evidenceUrl?: string;
   notes?: string;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (!recipient.trim()) return { error: "El destinatario es obligatorio." };
+
+  const owned = await prisma.exchange.findFirst({
+    where: { id, book: { accountId: auth.account.id } },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
 
   try {
     await prisma.exchange.update({
@@ -97,6 +113,15 @@ export async function updateExchange({
 }
 
 export async function deleteExchange(id: string): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  const owned = await prisma.exchange.findFirst({
+    where: { id, book: { accountId: auth.account.id } },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.inventoryMovement.deleteMany({ where: { exchangeId: id } });

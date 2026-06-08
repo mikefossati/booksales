@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAccount } from "@/lib/auth";
 import { SaleStatus } from "@/generated/prisma/client";
 import { calcSaleTotal, shouldTrackBookInventory } from "@/lib/finance";
 
@@ -21,12 +22,28 @@ export async function createSale({
   fxRateToCLP?: number;
   paymentMethod?: string;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
 
+  const channelOwned = await prisma.channel.findFirst({
+    where: { id: channelId, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!channelOwned) return { error: "No encontrado." };
+
+  if (bookId) {
+    const bookOwned = await prisma.book.findFirst({
+      where: { id: bookId, accountId: auth.account.id },
+      select: { id: true },
+    });
+    if (!bookOwned) return { error: "No encontrado." };
+  }
+
   const total     = calcSaleTotal(quantity, unitPrice);
   const amountCLP = fxRateToCLP != null ? total * fxRateToCLP : currency === "CLP" ? total : null;
-
   const trackInventory = await shouldTrackInventory(bookId, channelId);
 
   try {
@@ -36,14 +53,14 @@ export async function createSale({
           bookId,
           channelId,
           quantity,
-          unitPrice:    unitPrice.toFixed(2),
-          totalAmount:  total.toFixed(2),
+          unitPrice:     unitPrice.toFixed(2),
+          totalAmount:   total.toFixed(2),
           currency,
-          fxRateToCLP:  fxRateToCLP != null ? fxRateToCLP.toFixed(6) : null,
-          amountCLP:    amountCLP != null ? amountCLP.toFixed(2) : null,
+          fxRateToCLP:   fxRateToCLP != null ? fxRateToCLP.toFixed(6) : null,
+          amountCLP:     amountCLP != null ? amountCLP.toFixed(2) : null,
           paymentMethod: paymentMethod ?? null,
-          status: "CONFIRMED",
-          origin: "manual",
+          status:        "CONFIRMED",
+          origin:        "manual",
         },
       });
 
@@ -51,7 +68,7 @@ export async function createSale({
         await tx.inventoryMovement.create({
           data: {
             bookId,
-            type:      "DIRECT_SALE",
+            type:       "DIRECT_SALE",
             quantity,
             channelId,
             occurredAt: new Date(),
@@ -86,29 +103,37 @@ export async function updateSale({
   status: SaleStatus;
   notes?: string;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
 
-  try {
-    const existing  = await prisma.sale.findUnique({ where: { id }, select: { currency: true } });
-    const currency  = existing?.currency ?? "CLP";
-    const total     = calcSaleTotal(quantity, unitPrice);
-    const rate      = fxRateToCLP !== undefined ? fxRateToCLP : null;
-    const amountCLP = rate != null ? total * rate : currency === "CLP" ? total : null;
+  const owned = await prisma.sale.findFirst({
+    where: { id, channel: { accountId: auth.account.id } },
+    select: { id: true, currency: true },
+  });
+  if (!owned) return { error: "No encontrado." };
 
+  const currency  = owned.currency;
+  const total     = calcSaleTotal(quantity, unitPrice);
+  const rate      = fxRateToCLP !== undefined ? fxRateToCLP : null;
+  const amountCLP = rate != null ? total * rate : currency === "CLP" ? total : null;
+
+  try {
     await prisma.sale.update({
       where: { id },
       data: {
         quantity,
-        unitPrice:    unitPrice.toFixed(2),
-        totalAmount:  total.toFixed(2),
+        unitPrice:     unitPrice.toFixed(2),
+        totalAmount:   total.toFixed(2),
         channelId,
-        saleDate:     new Date(saleDate + "T12:00:00"),
-        fxRateToCLP:  rate != null ? rate.toFixed(6) : null,
-        amountCLP:    amountCLP != null ? amountCLP.toFixed(2) : null,
+        saleDate:      new Date(saleDate + "T12:00:00"),
+        fxRateToCLP:   rate != null ? rate.toFixed(6) : null,
+        amountCLP:     amountCLP != null ? amountCLP.toFixed(2) : null,
         paymentMethod: paymentMethod || null,
         status,
-        notes:        notes?.trim() || null,
+        notes:         notes?.trim() || null,
         currency,
       },
     });
@@ -119,6 +144,15 @@ export async function updateSale({
 }
 
 export async function deleteSale(id: string): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  const owned = await prisma.sale.findFirst({
+    where: { id, channel: { accountId: auth.account.id } },
+    select: { id: true },
+  });
+  if (!owned) return { error: "No encontrado." };
+
   try {
     await prisma.sale.delete({ where: { id } });
     return {};

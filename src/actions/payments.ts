@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAccount } from "@/lib/auth";
 
 export async function recordPayment({
   channelId,
@@ -19,7 +20,16 @@ export async function recordPayment({
   receivedAt: string;  // YYYY-MM-DD
   notes?: string;
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
   if (amount <= 0) return { error: "El monto debe ser mayor a 0." };
+
+  const channelOwned = await prisma.channel.findFirst({
+    where: { id: channelId, accountId: auth.account.id },
+    select: { id: true },
+  });
+  if (!channelOwned) return { error: "No encontrado." };
 
   try {
     await prisma.payment.create({

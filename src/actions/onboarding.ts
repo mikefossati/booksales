@@ -1,33 +1,39 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAccount } from "@/lib/auth";
 import { BookFormat, ChannelType } from "@/generated/prisma/client";
 
 type PresetChannel = {
-  name:               string;
-  type:               ChannelType;
-  currency?:          string;
-  royaltyPercent?:    number;
+  name:                string;
+  type:                ChannelType;
+  currency?:           string;
+  royaltyPercent?:     number;
   consignmentPercent?: number;
 };
 
 type PrintRunData = {
-  quantity: number;
+  quantity:  number;
   totalCost: number;
   supplier?: string;
 };
 
 export async function completeOnboarding({
-  accountId,
   book,
   channels,
   printRun,
+  accountId: _ignored,
 }: {
-  accountId: string;
-  book?: { title: string; formats: BookFormat[] };
-  channels?: PresetChannel[];
-  printRun?: PrintRunData;
+  book?:      { title: string; formats: BookFormat[] };
+  channels?:  PresetChannel[];
+  printRun?:  PrintRunData;
+  accountId?: string; // derived from session; caller value is ignored
 }): Promise<{ error?: string }> {
+  const auth = await requireAccount();
+  if ("error" in auth) return auth;
+
+  const accountId = auth.account.id;
+
   try {
     await prisma.$transaction(async (tx) => {
       let bookId: string | undefined;
@@ -36,7 +42,7 @@ export async function completeOnboarding({
         const created = await tx.book.create({
           data: {
             accountId,
-            title: book.title.trim(),
+            title:   book.title.trim(),
             formats: book.formats,
           },
         });
@@ -83,7 +89,7 @@ export async function completeOnboarding({
 
       await tx.account.update({
         where: { id: accountId },
-        data: { onboardingCompletedAt: new Date() },
+        data:  { onboardingCompletedAt: new Date() },
       });
     });
     return {};
