@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateAccount } from "@/lib/account";
-import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDate, toNum } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ReportesTabNav from "@/components/reportes/ReportesTabNav";
 import PeriodNav from "@/components/reportes/PeriodNav";
 import ExportButton from "@/components/reportes/ExportButton";
+import { getCachedReportesData } from "@/lib/data-cache";
 import ProjectionChart from "@/components/reportes/ProjectionChart";
 import GoalCalculator from "@/components/reportes/GoalCalculator";
 import type { ProjectionPoint } from "@/components/reportes/ProjectionChart";
@@ -47,58 +47,13 @@ export default async function ReportesPage({
 
   // ── Fetch all data ────────────────────────────────────────────────────────
 
-  const channels = await prisma.channel.findMany({
-    where: { accountId: account.id },
-    select: { id: true, name: true, type: true, currency: true, consignmentPercent: true, royaltyPercent: true, consignmentDays: true, consignmentStartAt: true },
-    orderBy: { name: "asc" },
-  });
-  const channelIds  = channels.map(c => c.id);
-  const channelMap  = new Map(channels.map(c => [c.id, c]));
-  const baseFilter  = { channelId: { in: channelIds.length ? channelIds : ["__none__"] }, status: { not: "CANCELLED" as const } };
+  const {
+    channels, allSales, allExpenses, allPayments,
+    books, printRuns, bookMovements, allExchanges, merchandise,
+  } = await getCachedReportesData(account.id);
 
-  const [allSales, allExpenses, allPayments, books, printRuns, bookMovements, allExchanges, merchandise] = await Promise.all([
-    prisma.sale.findMany({
-      where:   baseFilter,
-      include: { channel: { select: { name: true, type: true } }, merchandise: { select: { name: true } } },
-      orderBy: { saleDate: "desc" },
-    }),
-    prisma.expense.findMany({
-      where:   { accountId: account.id },
-      include: { book: { select: { title: true } } },
-      orderBy: { occurredAt: "desc" },
-    }),
-    prisma.payment.findMany({
-      where:  { channelId: { in: channelIds.length ? channelIds : ["__none__"] } },
-      select: { channelId: true, amount: true },
-    }),
-    prisma.book.findMany({
-      where: { accountId: account.id },
-      select: { id: true, title: true, formats: true },
-      orderBy: { title: "asc" },
-    }),
-    prisma.printRun.findMany({
-      where:   { book: { accountId: account.id } },
-      select:  { id: true, bookId: true, quantity: true, totalCost: true, receivedAt: true },
-      orderBy: { receivedAt: "desc" },
-    }),
-    prisma.inventoryMovement.findMany({
-      where:  { bookId: { not: null }, book: { accountId: account.id } },
-      select: { bookId: true, channelId: true, type: true, quantity: true },
-    }),
-    prisma.exchange.findMany({
-      where:   { book: { accountId: account.id } },
-      include: { book: { select: { title: true } } },
-      orderBy: { sentAt: "desc" },
-    }),
-    prisma.merchandise.findMany({
-      where:   { accountId: account.id },
-      include: {
-        productionBatches: { select: { quantity: true, totalCost: true } },
-        sales: { where: { status: { not: "CANCELLED" } }, select: { quantity: true } },
-      },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const channelIds = channels.map(c => c.id);
+  const channelMap = new Map(channels.map(c => [c.id, c]));
 
   // ── Period filter ─────────────────────────────────────────────────────────
 

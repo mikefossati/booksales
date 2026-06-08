@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import type { ExchangeStatus } from "@/generated/prisma/client";
 
@@ -60,6 +61,7 @@ export async function createExchange({
         },
       });
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al registrar el canje. Inténtalo de nuevo." };
@@ -106,6 +108,7 @@ export async function updateExchange({
         notes:          notes?.trim() || null,
       },
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al actualizar el canje." };
@@ -127,6 +130,7 @@ export async function deleteExchange(id: string): Promise<{ error?: string }> {
       await tx.inventoryMovement.deleteMany({ where: { exchangeId: id } });
       await tx.exchange.delete({ where: { id } });
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al eliminar el canje." };

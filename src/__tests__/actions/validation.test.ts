@@ -30,6 +30,14 @@ vi.mock("@/lib/auth", () => ({
   requireAccount: vi.fn().mockResolvedValue({ account: { id: "acc1" } }),
 }));
 
+// Mock Next.js cache so updateTag doesn't throw outside a server action context
+vi.mock("next/cache", () => ({
+  updateTag: vi.fn(),
+  revalidateTag: vi.fn(),
+  revalidatePath: vi.fn(),
+  unstable_cache: vi.fn((fn: () => unknown) => fn),
+}));
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     sale: {

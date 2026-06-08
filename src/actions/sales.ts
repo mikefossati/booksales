@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { SaleStatus } from "@/generated/prisma/client";
 import { calcSaleTotal, shouldTrackBookInventory } from "@/lib/finance";
@@ -76,6 +77,7 @@ export async function createSale({
         });
       }
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al registrar la venta. Inténtalo de nuevo." };
@@ -137,6 +139,7 @@ export async function updateSale({
         currency,
       },
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al actualizar la venta." };
@@ -155,6 +158,7 @@ export async function deleteSale(id: string): Promise<{ error?: string }> {
 
   try {
     await prisma.sale.delete({ where: { id } });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al eliminar la venta." };

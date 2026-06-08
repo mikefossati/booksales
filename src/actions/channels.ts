@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { ChannelType } from "@/generated/prisma/client";
 
@@ -38,6 +39,7 @@ export async function createChannel({
         city:               city?.trim()       || null,
       },
     });
+    updateTag(`config-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al guardar el canal. Inténtalo de nuevo." };
@@ -81,6 +83,7 @@ export async function updateChannel({
         city:               city?.trim()       || null,
       },
     });
+    updateTag(`config-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al guardar los cambios." };
@@ -115,6 +118,7 @@ export async function deleteChannel(id: string): Promise<{ error?: string }> {
 
   try {
     await prisma.channel.delete({ where: { id } });
+    updateTag(`config-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al eliminar el canal. Inténtalo de nuevo." };

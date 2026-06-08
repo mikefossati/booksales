@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { calcCostPerUnit } from "@/lib/finance";
 
@@ -57,6 +58,7 @@ export async function addPrintRun({
         },
       });
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al guardar la tirada. Inténtalo de nuevo." };
@@ -111,6 +113,7 @@ export async function updatePrintRun({
         data:  { quantity, occurredAt: date },
       });
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al actualizar la tirada. Inténtalo de nuevo." };

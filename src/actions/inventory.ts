@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 
 export async function sendToBookstore({
@@ -36,6 +37,7 @@ export async function sendToBookstore({
         occurredAt: new Date(),
       },
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al registrar el movimiento." };
@@ -72,6 +74,7 @@ export async function writeoffBook({
         occurredAt: new Date(),
       },
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al registrar la baja." };

@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { BookFormat, ChannelType } from "@/generated/prisma/client";
 
@@ -92,6 +93,8 @@ export async function completeOnboarding({
         data:  { onboardingCompletedAt: new Date() },
       });
     });
+    updateTag(`config-${auth.account.id}`);
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al completar la configuración. Inténtalo de nuevo." };

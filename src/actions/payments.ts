@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 
 export async function recordPayment({
@@ -43,6 +44,7 @@ export async function recordPayment({
         notes:       notes?.trim() || null,
       },
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al registrar el cobro." };

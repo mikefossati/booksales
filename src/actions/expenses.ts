@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { ExpenseCategory, ExpenseLevel } from "@/generated/prisma/client";
 import { resolveExpenseAssignments } from "@/lib/finance";
@@ -48,6 +49,7 @@ export async function createExpense({
         notes:       notes?.trim() || null,
       },
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al guardar el gasto. Inténtalo de nuevo." };
@@ -103,6 +105,7 @@ export async function updateExpense({
         notes:       notes?.trim() || null,
       },
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al actualizar el gasto. Inténtalo de nuevo." };
@@ -121,6 +124,7 @@ export async function deleteExpense(id: string): Promise<{ error?: string }> {
 
   try {
     await prisma.expense.delete({ where: { id } });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al eliminar el gasto." };

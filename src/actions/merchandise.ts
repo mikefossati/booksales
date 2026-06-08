@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import type { MerchandiseType } from "@/generated/prisma/client";
 import { calcCostPerUnit, calcSaleTotal } from "@/lib/finance";
@@ -50,6 +51,7 @@ export async function createMerchandise({
         description:    description?.trim() || null,
       },
     });
+    updateTag(`config-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al crear el producto. Inténtalo de nuevo." };
@@ -108,6 +110,7 @@ export async function updateMerchandise({
         description:    description?.trim() || null,
       },
     });
+    updateTag(`config-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al actualizar el producto." };
@@ -129,6 +132,8 @@ export async function deleteMerchandise(id: string): Promise<{ error?: string }>
       await tx.sale.updateMany({ where: { merchandiseId: id }, data: { merchandiseId: null } });
       await tx.merchandise.delete({ where: { id } });
     });
+    updateTag(`config-${auth.account.id}`);
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al eliminar el producto." };
@@ -186,6 +191,7 @@ export async function addProductionBatch({
         },
       });
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al registrar el lote. Inténtalo de nuevo." };
@@ -253,6 +259,7 @@ export async function createMerchSale({
         },
       });
     });
+    updateTag(`txn-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al registrar la venta. Inténtalo de nuevo." };

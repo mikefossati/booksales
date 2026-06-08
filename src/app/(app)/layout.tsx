@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateAccount } from "@/lib/account";
-import { prisma } from "@/lib/prisma";
 import { toNum } from "@/lib/format";
+import { getCachedLayoutData } from "@/lib/data-cache";
 import Sidebar from "@/components/layout/Sidebar";
 import BottomNav from "@/components/layout/BottomNav";
 import QuickSaleFab from "@/components/layout/QuickSaleFab";
@@ -22,33 +22,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     if (!currentPath.startsWith("/onboarding")) redirect("/onboarding");
   }
 
-  const [books, merch, channels, lastBookSales, lastMerchSales] = await Promise.all([
-    prisma.book.findMany({
-      where: { accountId: account.id },
-      select: { id: true, title: true, coverUrl: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.merchandise.findMany({
-      where: { accountId: account.id, isActive: true },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.channel.findMany({
-      where: { accountId: account.id },
-      select: { id: true, name: true, type: true, currency: true },
-      orderBy: { createdAt: "asc" },
-    }),
-    prisma.sale.findMany({
-      where: { channel: { accountId: account.id }, bookId: { not: null }, status: { not: "CANCELLED" } },
-      select: { bookId: true, channelId: true, unitPrice: true },
-      orderBy: { saleDate: "desc" },
-    }),
-    prisma.sale.findMany({
-      where: { channel: { accountId: account.id }, merchandiseId: { not: null }, status: { not: "CANCELLED" } },
-      select: { merchandiseId: true, channelId: true, unitPrice: true },
-      orderBy: { saleDate: "desc" },
-    }),
-  ]);
+  const { books, merch, channels, lastBookSales, lastMerchSales } =
+    await getCachedLayoutData(account.id);
 
   // Build price maps: `${itemId}_${channelId}` → last unit price
   const lastPrices: Record<string, number> = {};

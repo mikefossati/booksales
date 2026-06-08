@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateAccount } from "@/lib/account";
-import { prisma } from "@/lib/prisma";
 import { toNum } from "@/lib/format";
 import { saleToCLP, calcOutstanding, calcProjectionScenarios, calc3MonthAvg, STOCK_SIGN } from "@/lib/finance";
 import { CATEGORY_LABELS, LEVEL_LABELS, CHANNEL_TYPE_LABEL } from "@/lib/labels";
+import { getCachedReportesData } from "@/lib/data-cache";
 import {
   buildXlsx, buildCsv,
   salesAoa, expensesAoa, bookStockAoa, consignmentAoa,
@@ -74,67 +74,20 @@ export async function GET(req: NextRequest) {
   const start = periodStart(period);
 
   try {
-    // ── Fetch all data ────────────────────────────────────────────────────────
+    // ── Fetch data from shared cache (same dataset as reportes page) ──────────
 
-    const channels = await prisma.channel.findMany({
-      where:   { accountId: account.id },
-      select:  { id: true, name: true, type: true, currency: true, consignmentPercent: true },
-      orderBy: { name: "asc" },
-    });
-    const channelIds = channels.map(c => c.id);
+    const {
+      channels, allSales: rawSales, allExpenses: rawExpenses,
+      allPayments, books, printRuns, bookMovements, allExchanges, merchandise,
+    } = await getCachedReportesData(account.id);
+
     const channelMap = new Map(channels.map(c => [c.id, c]));
 
-    const base       = { channelId: { in: channelIds.length ? channelIds : ["__none__"] }, status: { not: "CANCELLED" as const } };
-    const saleWhere  = start ? { ...base, saleDate: { gte: start } } : base;
-    const expWhere   = start ? { accountId: account.id, occurredAt: { gte: start } } : { accountId: account.id };
-
-    const [allSales, allExpenses, allPayments, books, printRuns, bookMovements, allExchanges, merchandise] =
-      await Promise.all([
-        prisma.sale.findMany({
-          where:   saleWhere,
-          include: { channel: { select: { name: true, type: true } }, merchandise: { select: { name: true } } },
-          orderBy: { saleDate: "desc" },
-        }),
-        prisma.expense.findMany({
-          where:   expWhere,
-          include: { book: { select: { title: true } } },
-          orderBy: { occurredAt: "desc" },
-        }),
-        prisma.payment.findMany({
-          where:  { channelId: { in: channelIds.length ? channelIds : ["__none__"] } },
-          select: { channelId: true, amount: true },
-        }),
-        prisma.book.findMany({
-          where:   { accountId: account.id },
-          select:  { id: true, title: true, formats: true },
-          orderBy: { title: "asc" },
-        }),
-        prisma.printRun.findMany({
-          where:   { book: { accountId: account.id } },
-          select:  { id: true, bookId: true, quantity: true, totalCost: true, receivedAt: true },
-          orderBy: { receivedAt: "desc" },
-        }),
-        prisma.inventoryMovement.findMany({
-          where:  { bookId: { not: null }, book: { accountId: account.id } },
-          select: { bookId: true, channelId: true, type: true, quantity: true },
-        }),
-        prisma.exchange.findMany({
-          where:   { book: { accountId: account.id } },
-          include: { book: { select: { title: true } } },
-          orderBy: { sentAt: "desc" },
-        }),
-        prisma.merchandise.findMany({
-          where:   { accountId: account.id },
-          include: {
-            productionBatches: { select: { quantity: true, totalCost: true } },
-            sales: {
-              where:  { status: { not: "CANCELLED" } },
-              select: { quantity: true, totalAmount: true, amountCLP: true, currency: true },
-            },
-          },
-          orderBy: { name: "asc" },
-        }),
-      ]);
+    // Apply period filter in-memory.
+    // rawSales / rawExpenses are always full history; ventas/gastos sheets
+    // are period-filtered while P&L / projection / inventory use full history.
+    const allSales    = start ? rawSales.filter(s    => new Date(s.saleDate)    >= start) : rawSales;
+    const allExpenses = start ? rawExpenses.filter(e => new Date(e.occurredAt)  >= start) : rawExpenses;
 
     // ── Transform: Ventas ─────────────────────────────────────────────────────
 
@@ -175,8 +128,8 @@ export async function GET(req: NextRequest) {
 
     // ── Transform: Inventario ─────────────────────────────────────────────────
 
-    const stockByBook     = new Map<string, number>();
-    const inStoreByBook   = new Map<string, number>();
+    const stockByBook      = new Map<string, number>();
+    const inStoreByBook    = new Map<string, number>();
     const inStoreByChannel = new Map<string, number>();
 
     for (const m of bookMovements) {
@@ -202,9 +155,10 @@ export async function GET(req: NextRequest) {
       totalPrinted: printRuns.filter(r => r.bookId === b.id).reduce((s, r) => s + r.quantity, 0),
     }));
 
+    // Consignment uses full history (not period-filtered) — outstanding is lifetime.
     const salesByChannel    = new Map<string, number>();
     const paymentsByChannel = new Map<string, number>();
-    for (const s of allSales) salesByChannel.set(s.channelId, (salesByChannel.get(s.channelId) ?? 0) + saleToCLP(s));
+    for (const s of rawSales)   salesByChannel.set(s.channelId, (salesByChannel.get(s.channelId) ?? 0) + saleToCLP(s));
     for (const p of allPayments) paymentsByChannel.set(p.channelId, (paymentsByChannel.get(p.channelId) ?? 0) + toNum(p.amount));
 
     const consignmentRecords: ConsignmentRecord[] = channels
@@ -232,7 +186,7 @@ export async function GET(req: NextRequest) {
       deadlineAt:     fmt(e.deadlineAt),
     }));
 
-    // ── Transform: Finanzas P&L ───────────────────────────────────────────────
+    // ── Transform: Finanzas P&L (full history, not period-filtered) ──────────
 
     const printCostByBook = new Map<string, number>();
     for (const r of printRuns) {
@@ -243,7 +197,7 @@ export async function GET(req: NextRequest) {
       .filter(b => (printCostByBook.get(b.id) ?? 0) > 0)
       .map(b => {
         const cost = printCostByBook.get(b.id) ?? 0;
-        const rev  = allSales.filter(s => s.bookId === b.id).reduce((s, x) => s + saleToCLP(x), 0);
+        const rev  = rawSales.filter(s => s.bookId === b.id).reduce((s, x) => s + saleToCLP(x), 0);
         const runs = printRuns.filter(r => r.bookId === b.id).length;
         return {
           title: b.title, runs, printCost: rnd(cost), revenue: rnd(rev),
@@ -258,7 +212,7 @@ export async function GET(req: NextRequest) {
       return { name: m.name, units, cost: rnd(cost), revenue: rnd(revenue), result: rnd(revenue - cost) };
     }).filter(m => m.cost > 0 || m.revenue > 0);
 
-    // ── Transform: Proyecciones ───────────────────────────────────────────────
+    // ── Transform: Proyecciones (full history for accuracy) ──────────────────
 
     const now = new Date();
     const histMonths = Array.from({ length: 12 }, (_, i) => {
@@ -267,14 +221,14 @@ export async function GET(req: NextRequest) {
     });
 
     const historicalRevenue = histMonths.map(({ start: s, end: e }) =>
-      allSales
+      rawSales
         .filter(sale => { const d = new Date(sale.saleDate); return d >= s && d <= e; })
         .reduce((sum, x) => sum + saleToCLP(x), 0)
     );
 
     const avg3 = calc3MonthAvg(historicalRevenue);
     const projectionRecords: ProjectionRecord[] = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() + i + 1, 1);
+      const d  = new Date(now.getFullYear(), now.getMonth() + i + 1, 1);
       const sc = calcProjectionScenarios(avg3);
       return {
         month: d.toLocaleString("es-CL", { month: "long", year: "numeric" }),
@@ -292,11 +246,11 @@ export async function GET(req: NextRequest) {
         { name: "Canjes",         aoa: exchangesAoa(exchangeRecords) },
       ],
       finanzas:     [
-        { name: "Gastos",         aoa: expensesAoa(expenseRecords) },
-        { name: "Tiradas P&L",    aoa: printRunPnlAoa(printRunPnlRecords) },
-        { name: "Merch P&L",      aoa: merchPnlAoa(merchPnlRecords) },
+        { name: "Gastos",      aoa: expensesAoa(expenseRecords) },
+        { name: "Tiradas P&L", aoa: printRunPnlAoa(printRunPnlRecords) },
+        { name: "Merch P&L",   aoa: merchPnlAoa(merchPnlRecords) },
       ],
-      proyecciones: [{ name: "Proyecciones",   aoa: projectionsAoa(projectionRecords) }],
+      proyecciones: [{ name: "Proyecciones", aoa: projectionsAoa(projectionRecords) }],
     };
     SHEET_SETS.all = [
       ...SHEET_SETS.ventas,

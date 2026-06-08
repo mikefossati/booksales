@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { BookFormat } from "@/generated/prisma/client";
 
@@ -23,6 +24,7 @@ export async function createBook({
     await prisma.book.create({
       data: { accountId: auth.account.id, title: title.trim(), formats },
     });
+    updateTag(`config-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al guardar el libro. Inténtalo de nuevo." };
@@ -76,6 +78,7 @@ export async function updateBook({
         description: description?.trim() || null,
       },
     });
+    updateTag(`config-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al guardar los cambios." };
@@ -106,6 +109,7 @@ export async function deleteBook(id: string): Promise<{ error?: string }> {
 
   try {
     await prisma.book.delete({ where: { id } });
+    updateTag(`config-${auth.account.id}`);
     return {};
   } catch {
     return { error: "Error al eliminar el libro." };
