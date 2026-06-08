@@ -17,8 +17,8 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Mis Libros — Gestión de Ventas",
-  description: "Gestiona y analiza las ventas de tus libros en todos los canales.",
+  title: "Autoriapp — Gestión de ventas para autores independientes",
+  description: "Gestiona y analiza las ventas de tus libros en todos los canales. La app hecha para autores independientes.",
 };
 
 export default function RootLayout({

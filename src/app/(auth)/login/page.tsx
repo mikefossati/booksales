@@ -1,15 +1,13 @@
+import { AutoriappLogo } from "@/components/brand/Logo";
 import LoginForm from "@/components/auth/LoginForm";
 
 export default function LoginPage() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-10 text-center">
-        <h1
-          className="text-5xl font-semibold text-[var(--color-accent)] tracking-tight"
-          style={{ fontFamily: "var(--font-heading)", letterSpacing: "-0.02em" }}
-        >
-          Mis Libros
-        </h1>
+        <div className="flex justify-center mb-4">
+          <AutoriappLogo size="lg" />
+        </div>
         <p className="text-sm text-[var(--color-text-muted)] mt-3 leading-relaxed">
           El lugar donde tu trabajo creativo<br />se convierte en números claros
         </p>

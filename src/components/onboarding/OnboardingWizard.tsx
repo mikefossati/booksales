@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { completeOnboarding } from "@/actions/onboarding";
+import { AutoriappLogo } from "@/components/brand/Logo";
 import { BookFormat, ChannelType } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -408,9 +409,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
     <div className="flex flex-col min-h-screen">
       {/* Top bar */}
       <header className="flex items-center justify-between px-6 py-5">
-        <span className="text-lg font-semibold text-[var(--color-accent)]" style={{ fontFamily: "var(--font-heading)" }}>
-          Mis Libros
-        </span>
+        <AutoriappLogo size="sm" />
         <StepDots current={step} total={totalSteps} />
       </header>
 

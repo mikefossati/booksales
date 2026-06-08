@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BookOpen, BarChart3, Clock, Package } from "lucide-react";
+import { AutoriappLogo, AutoriappMark } from "@/components/brand/Logo";
 
 const FEATURES = [
   {
@@ -19,7 +20,7 @@ const FEATURES = [
   },
   {
     icon: BarChart3,
-    title: "Reportes que hablan en escritora",
+    title: "Reportes que hablan en autor",
     body: "No en lenguaje contable. ¿Cuánto gané este mes? ¿Cuál es mi canal más fuerte? ¿Cuándo cubrí los gastos de impresión? Esas preguntas.",
   },
 ];
@@ -29,12 +30,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[var(--color-bg)]">
       {/* Nav */}
       <nav className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
-        <span
-          className="text-xl font-semibold text-[var(--color-accent)]"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          Mis Libros
-        </span>
+        <AutoriappLogo size="md" />
         <Link
           href="/login"
           className="text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
@@ -47,7 +43,7 @@ export default function LandingPage() {
       <section className="max-w-5xl mx-auto px-6 pt-16 pb-24 md:pt-24 md:pb-32">
         <div className="max-w-2xl">
           <p className="text-xs font-medium text-[var(--color-accent)] uppercase tracking-widest mb-5">
-            Para autoras independientes
+            Para autores independientes
           </p>
           <h1
             className="text-5xl md:text-7xl font-semibold text-[var(--color-text)] leading-[1.05]"
@@ -81,7 +77,7 @@ export default function LandingPage() {
             <div className="w-3 h-3 rounded-full bg-[var(--color-border)]" />
             <div className="w-3 h-3 rounded-full bg-[var(--color-border)]" />
             <div className="w-3 h-3 rounded-full bg-[var(--color-border)]" />
-            <span className="ml-3 text-xs text-[var(--color-text-muted)]">mis-libros.app/dashboard</span>
+            <span className="ml-3 text-xs text-[var(--color-text-muted)]">autoriapp.com/dashboard</span>
           </div>
           {/* Faux dashboard */}
           <div className="p-6 md:p-8">
@@ -110,8 +106,8 @@ export default function LandingPage() {
               </div>
               {[
                 { name: "Feria del Libro Santiago", pct: 52, val: "$129.200" },
-                { name: "Amazon KDP",              pct: 30, val: "$74.550" },
-                { name: "Librería Antártica",       pct: 18, val: "$44.730" },
+                { name: "Amazon KDP",               pct: 30, val: "$74.550" },
+                { name: "Librería Antártica",        pct: 18, val: "$44.730" },
               ].map(({ name, pct, val }) => (
                 <div key={name} className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] last:border-0">
                   <div className="flex-1">
@@ -136,7 +132,7 @@ export default function LandingPage() {
             className="text-3xl md:text-4xl font-semibold text-[var(--color-text)] mb-14 max-w-md"
             style={{ fontFamily: "var(--font-heading)", letterSpacing: "-0.02em" }}
           >
-            Todo lo que necesita una autora independiente.
+            Todo lo que necesita un autor independiente.
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             {FEATURES.map(({ icon: Icon, title, body }) => (
@@ -182,11 +178,9 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-[var(--color-border)] px-6 py-8">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <span className="text-sm font-semibold text-[var(--color-accent)]" style={{ fontFamily: "var(--font-heading)" }}>
-            Mis Libros
-          </span>
+          <AutoriappLogo size="sm" />
           <p className="text-xs text-[var(--color-text-muted)]">
-            Hecho con cariño para autoras independientes · {new Date().getFullYear()}
+            Hecho con cariño para autores independientes · {new Date().getFullYear()}
           </p>
         </div>
       </footer>
