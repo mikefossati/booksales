@@ -5,6 +5,7 @@ import { toNum } from "@/lib/format";
 import { saleToCLP, calcOutstanding, calcProjectionScenarios, calc3MonthAvg, STOCK_SIGN } from "@/lib/finance";
 import { CATEGORY_LABELS, LEVEL_LABELS, CHANNEL_TYPE_LABEL } from "@/lib/labels";
 import { getCachedReportesData } from "@/lib/data-cache";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   buildXlsx, buildCsv, buildCsvZip,
   salesAoa, expensesAoa, bookStockAoa, consignmentAoa,
@@ -52,6 +53,15 @@ export async function GET(req: NextRequest) {
   if (!user) return new NextResponse("No autorizado", { status: 401 });
 
   const account = await getOrCreateAccount(user.id, user.email ?? "");
+
+  // 10 exports per minute per account — workbook generation is CPU-bound
+  const rl = checkRateLimit(`export:${account.id}`, { limit: 10, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return new NextResponse("Demasiadas descargas. Espera un momento.", {
+      status: 429,
+      headers: { "Retry-After": String(rl.retryAfterSeconds) },
+    });
+  }
 
   const { searchParams } = new URL(req.url);
 

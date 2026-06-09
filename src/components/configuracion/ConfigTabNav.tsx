@@ -8,7 +8,6 @@ const TABS = [
   { id: "perfil",       label: "Perfil"       },
   { id: "preferencias", label: "Preferencias" },
   { id: "canales",      label: "Canales"      },
-  { id: "usuarios",     label: "Usuarios"     },
   { id: "seguridad",    label: "Seguridad"    },
 ];
 

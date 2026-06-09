@@ -11,11 +11,8 @@ import DeleteChannelButton from "@/components/configuracion/DeleteChannelButton"
 import EditProfileForm from "@/components/configuracion/EditProfileForm";
 import PreferenciasForm from "@/components/configuracion/PreferenciasForm";
 import SeguridadForm from "@/components/configuracion/SeguridadForm";
-import InviteUserModal from "@/components/configuracion/InviteUserModal";
-import ChangeMemberRoleButton from "@/components/configuracion/ChangeMemberRoleButton";
-import RevokeMemberButton from "@/components/configuracion/RevokeMemberButton";
-import { Globe, Store, Users, CalendarClock, Crown } from "lucide-react";
-import type { ChannelType, UserRole } from "@/generated/prisma/client";
+import { Globe, Store, Users, CalendarClock } from "lucide-react";
+import type { ChannelType } from "@/generated/prisma/client";
 
 const TYPE_META: Record<ChannelType, { label: string; icon: React.ElementType; color: string }> = {
   DIGITAL:   { label: "Digital",  icon: Globe,         color: "bg-blue-50 text-blue-600"                            },
@@ -23,24 +20,6 @@ const TYPE_META: Record<ChannelType, { label: string; icon: React.ElementType; c
   DIRECT:    { label: "Directo",  icon: Users,         color: "bg-[var(--color-accent-light)] text-[var(--color-accent)]" },
   PRESALE:   { label: "Preventa", icon: CalendarClock, color: "bg-purple-50 text-purple-700"                        },
 };
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  OWNER:  "Propietaria",
-  EDITOR: "Editor",
-  VIEWER: "Visor",
-};
-
-function Avatar({ name, email, avatarUrl, size = "md" }: { name?: string | null; email: string; avatarUrl?: string | null; size?: "sm" | "md" }) {
-  const initials = (name || email || "?").charAt(0).toUpperCase();
-  const dim = size === "sm" ? "w-8 h-8 text-sm" : "w-10 h-10 text-base";
-  return (
-    <div className={`${dim} rounded-full bg-[var(--color-accent-light)] flex items-center justify-center shrink-0 overflow-hidden`}>
-      {avatarUrl
-        ? <img src={avatarUrl} alt={name ?? email} className="w-full h-full object-cover" />
-        : <span className="font-semibold text-[var(--color-accent)]">{initials}</span>}
-    </div>
-  );
-}
 
 export default async function ConfiguracionPage({
   searchParams,
@@ -55,7 +34,7 @@ export default async function ConfiguracionPage({
 
   const account = await getOrCreateAccount(user.id, user.email ?? "");
 
-  const [channels, profile, members, ownerProfile] = await Promise.all([
+  const [channels, profile] = await Promise.all([
     prisma.channel.findMany({
       where: { accountId: account.id },
       orderBy: { createdAt: "asc" },
@@ -63,18 +42,7 @@ export default async function ConfiguracionPage({
     prisma.profile.findUnique({
       where: { supabaseId: user.id },
     }),
-    prisma.accountMember.findMany({
-      where: { accountId: account.id },
-      include: { profile: { select: { id: true, email: true, displayName: true, avatarUrl: true } } },
-      orderBy: { createdAt: "asc" },
-    }),
-    prisma.profile.findUnique({
-      where: { id: account.ownerId },
-      select: { id: true, email: true, displayName: true, avatarUrl: true },
-    }),
   ]);
-
-  const isOwner = ownerProfile?.id === profile?.id;
 
   return (
     <main className="p-5 md:p-8 max-w-4xl">
@@ -168,78 +136,6 @@ export default async function ConfiguracionPage({
               })}
             </div>
           )}
-        </div>
-      )}
-
-      {/* ── USUARIOS ──────────────────────────────────────────────────────── */}
-      {tab === "usuarios" && (
-        <div className="space-y-5">
-          {isOwner && (
-            <div className="flex justify-end">
-              <InviteUserModal accountId={account.id} />
-            </div>
-          )}
-
-          <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-            {/* Owner row */}
-            {ownerProfile && (
-              <div className="flex items-center gap-4 px-5 py-4 border-b border-[var(--color-border)]">
-                <Avatar name={ownerProfile.displayName} email={ownerProfile.email} avatarUrl={ownerProfile.avatarUrl} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--color-text)]">
-                    {ownerProfile.displayName ?? ownerProfile.email}
-                  </p>
-                  {ownerProfile.displayName && (
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{ownerProfile.email}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-accent)]">
-                    <Crown size={12} />
-                    {ROLE_LABELS.OWNER}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Members */}
-            {members.length === 0 ? (
-              <div className="px-5 py-10 text-center">
-                <p className="text-sm text-[var(--color-text-muted)]">Solo tú tienes acceso a esta cuenta.</p>
-                {isOwner && (
-                  <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                    Usa "Agregar usuario" para dar acceso a tu contador o asistente.
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="divide-y divide-[var(--color-border)]">
-                {members.map(m => (
-                  <div key={m.id} className="flex items-center gap-4 px-5 py-4">
-                    <Avatar name={m.profile.displayName} email={m.profile.email} avatarUrl={m.profile.avatarUrl} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--color-text)]">
-                        {m.profile.displayName ?? m.profile.email}
-                      </p>
-                      {m.profile.displayName && (
-                        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{m.profile.email}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {isOwner ? (
-                        <>
-                          <ChangeMemberRoleButton memberId={m.id} currentRole={m.role} />
-                          <RevokeMemberButton memberId={m.id} name={m.profile.displayName ?? m.profile.email} />
-                        </>
-                      ) : (
-                        <span className="text-xs text-[var(--color-text-muted)]">{ROLE_LABELS[m.role]}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
         </div>
       )}
 
