@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AutoriappLogo } from "@/components/brand/Logo";
 import LoginForm from "@/components/auth/LoginForm";
 
@@ -14,7 +15,9 @@ export default function LoginPage() {
       </div>
 
       <div className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] p-7 shadow-[var(--shadow-float)] border border-[var(--color-border)]">
-        <LoginForm />
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

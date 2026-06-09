@@ -40,8 +40,10 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Auth-flow routes (email confirmation callback) must never be intercepted
+  const isAuthFlow = pathname.startsWith("/auth/");
   // Public paths — no auth required
-  const isPublic = pathname === "/" || pathname === "/login";
+  const isPublic = pathname === "/" || pathname === "/login" || isAuthFlow;
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -50,7 +52,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Authenticated users leave the landing and login pages
-  if (user && isPublic) {
+  if (user && isPublic && !isAuthFlow) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

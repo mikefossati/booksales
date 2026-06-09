@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,13 @@ const AUTH_ERRORS: { match: RegExp; message: string }[] = [
   { match: /weak password|easy to guess|pwned/i, message: "Esa contraseña es muy común o ha sido filtrada. Elige una más segura." },
 ];
 
+// Errors arriving via /auth/callback redirect (?error=<code>)
+const CALLBACK_ERRORS: Record<string, string> = {
+  otp_expired:         "El enlace de confirmación expiró o ya fue usado. Ingresa tu correo y solicita uno nuevo.",
+  access_denied:       "El enlace de confirmación no es válido. Ingresa tu correo y solicita uno nuevo.",
+  verification_failed: "No pudimos verificar tu correo. Ingresa tu correo y solicita un nuevo enlace.",
+};
+
 function translateAuthError(err: unknown): string {
   const raw = err instanceof Error ? err.message : "";
   for (const { match, message } of AUTH_ERRORS) {
@@ -29,13 +37,19 @@ function translateAuthError(err: unknown): string {
 }
 
 export default function LoginForm() {
+  const searchParams  = useSearchParams();
+  const callbackError = searchParams.get("error");
+
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    callbackError ? (CALLBACK_ERRORS[callbackError] ?? CALLBACK_ERRORS.verification_failed) : null,
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showResend, setShowResend] = useState(Boolean(callbackError));
 
   const router = useRouter();
   const supabase = createClient();
@@ -45,6 +59,29 @@ export default function LoginForm() {
     setError(null);
     setMessage(null);
     setConfirmPassword("");
+  }
+
+  async function handleResend() {
+    if (!email) {
+      setError("Escribe tu correo arriba y vuelve a intentar.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+      setMessage("Te enviamos un nuevo correo de confirmación.");
+      setShowResend(false);
+    } catch (err) {
+      setError(translateAuthError(err));
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -61,11 +98,18 @@ export default function LoginForm() {
     try {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (/email not confirmed/i.test(error.message)) setShowResend(true);
+          throw error;
+        }
         router.push("/dashboard");
         router.refresh();
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        });
         if (error) throw error;
         setMessage("Revisa tu correo para confirmar tu cuenta.");
       }
@@ -132,6 +176,18 @@ export default function LoginForm() {
         <p role="status" className="text-sm text-[var(--color-success)] bg-[var(--color-success)]/8 rounded-[var(--radius-sm)] px-3 py-2">
           {message}
         </p>
+      )}
+
+      {showResend && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handleResend}
+          disabled={loading}
+        >
+          Reenviar correo de confirmación
+        </Button>
       )}
 
       <Button type="submit" className="w-full" disabled={loading}>
