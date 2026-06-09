@@ -14,7 +14,7 @@ const AUTH_ERRORS: { match: RegExp; message: string }[] = [
   { match: /invalid login credentials/i,        message: "Correo o contraseña incorrectos." },
   { match: /email not confirmed/i,              message: "Tu correo aún no está confirmado. Revisa tu bandeja de entrada." },
   { match: /user already registered/i,          message: "Ya existe una cuenta con este correo. Intenta entrar." },
-  { match: /password should be at least/i,      message: "La contraseña debe tener al menos 8 caracteres." },
+  { match: /password should be at least/i,      message: "La contraseña debe tener al menos 6 caracteres." },
   { match: /rate limit|too many requests/i,     message: "Demasiados intentos. Espera un momento y vuelve a intentarlo." },
   { match: /network|fetch/i,                    message: "Problema de conexión. Revisa tu internet e intenta de nuevo." },
   { match: /weak password|easy to guess|pwned/i, message: "Esa contraseña es muy común o ha sido filtrada. Elige una más segura." },
@@ -99,11 +99,11 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          minLength={8}
+          minLength={6}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
         />
         {mode === "signup" && (
-          <p className="text-[11px] text-[var(--color-text-muted)]">Mínimo 8 caracteres.</p>
+          <p className="text-[11px] text-[var(--color-text-muted)]">Mínimo 6 caracteres.</p>
         )}
       </div>
 
@@ -117,7 +117,7 @@ export default function LoginForm() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            minLength={8}
+            minLength={6}
             autoComplete="new-password"
           />
         </div>
