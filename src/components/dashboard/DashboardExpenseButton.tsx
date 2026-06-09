@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import { todayLocal } from "@/lib/dates";
 import type { ExpenseCategory } from "@/generated/prisma/client";
 
 type Book = { id: string; title: string; coverUrl: string | null };
@@ -41,6 +42,7 @@ export default function DashboardExpenseButton({
   const [amount, setAmount]               = useState("");
   const [level, setLevel]                 = useState<"GENERAL" | "BOOK">("GENERAL");
   const [bookId, setBookId]               = useState("");
+  const [expDate, setExpDate]             = useState(todayLocal());
   const [isPending, startTransition]      = useTransition();
   const panelRef = useModalA11y<HTMLFormElement>(open, () => { if (!isPending) setOpen(false); });
   const router = useRouter();
@@ -65,7 +67,7 @@ export default function DashboardExpenseButton({
   }
 
   function handleOpen() {
-    setAmount(""); setLevel("GENERAL"); setBookId("");
+    setAmount(""); setLevel("GENERAL"); setBookId(""); setExpDate(todayLocal());
     setOpen(true);
   }
 
@@ -82,7 +84,7 @@ export default function DashboardExpenseButton({
         category,
         level:       level === "BOOK" && bookId ? "BOOK" : "GENERAL",
         bookId:      level === "BOOK" && bookId ? bookId : undefined,
-        occurredAt:  new Date().toISOString().split("T")[0],
+        occurredAt:  expDate,
       });
       if (result.error) {
         toast.error(result.error);
@@ -157,12 +159,20 @@ export default function DashboardExpenseButton({
                   placeholder="Descripción del gasto" required className="text-sm" />
               </div>
 
-              {/* Amount */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Monto</label>
-                <Input type="number" min="1" step="1" inputMode="numeric"
-                  value={amount} onChange={e => setAmount(e.target.value)}
-                  placeholder="15000" required className="text-sm" />
+              {/* Amount + date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Monto</label>
+                  <Input type="number" min="1" step="1" inputMode="numeric"
+                    value={amount} onChange={e => setAmount(e.target.value)}
+                    placeholder="15000" required className="text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="de-exp-date" className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Fecha</label>
+                  <Input id="de-exp-date" type="date"
+                    value={expDate} onChange={e => setExpDate(e.target.value)}
+                    max={todayLocal()} required className="text-sm" />
+                </div>
               </div>
 
               {/* Book assignment */}

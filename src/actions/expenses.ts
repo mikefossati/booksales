@@ -5,6 +5,7 @@ import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { ExpenseCategory, ExpenseLevel } from "@/generated/prisma/client";
 import { resolveExpenseAssignments } from "@/lib/finance";
+import { resolveSaleDate } from "@/lib/dates";
 
 export async function createExpense({
   description,
@@ -35,6 +36,9 @@ export async function createExpense({
   if (!description.trim()) return { error: "La descripción es obligatoria." };
   if (amount <= 0)          return { error: "El monto debe ser mayor a 0." };
 
+  const resolvedDate = resolveSaleDate(occurredAt);
+  if (resolvedDate.error) return { error: resolvedDate.error };
+
   try {
     await prisma.expense.create({
       data: {
@@ -45,7 +49,7 @@ export async function createExpense({
         category,
         level,
         ...resolveExpenseAssignments(level, bookId, printRunId),
-        occurredAt:  new Date(occurredAt + "T12:00:00"),
+        occurredAt:  resolvedDate.date,
         notes:       notes?.trim() || null,
       },
     });
@@ -91,6 +95,9 @@ export async function updateExpense({
   });
   if (!owned) return { error: "No encontrado." };
 
+  const resolvedDate = resolveSaleDate(occurredAt);
+  if (resolvedDate.error) return { error: resolvedDate.error };
+
   try {
     await prisma.expense.update({
       where: { id },
@@ -101,7 +108,7 @@ export async function updateExpense({
         category,
         level,
         ...resolveExpenseAssignments(level, bookId, printRunId),
-        occurredAt:  new Date(occurredAt + "T12:00:00"),
+        occurredAt:  resolvedDate.date,
         notes:       notes?.trim() || null,
       },
     });

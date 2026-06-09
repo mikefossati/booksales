@@ -358,6 +358,25 @@ describe("createExpense — input validation", () => {
     const result = await createExpense(valid);
     expect(result.error).toMatch(/error/i);
   });
+
+  it("rejects a future expense date", async () => {
+    const result = await createExpense({ ...valid, occurredAt: "2099-01-01" });
+    expect(result.error).toBe("La fecha no puede ser futura.");
+    expect(mockExpenseCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a malformed expense date", async () => {
+    const result = await createExpense({ ...valid, occurredAt: "15/06/2025" });
+    expect(result.error).toBe("Fecha inválida.");
+  });
+
+  it("stores the provided past date", async () => {
+    await createExpense({ ...valid, occurredAt: "2025-06-15" });
+    const call = mockExpenseCreate.mock.calls[0][0].data;
+    expect(call.occurredAt.getFullYear()).toBe(2025);
+    expect(call.occurredAt.getMonth()).toBe(5);
+    expect(call.occurredAt.getDate()).toBe(15);
+  });
 });
 
 // ── Expenses — updateExpense ──────────────────────────────────────────────────

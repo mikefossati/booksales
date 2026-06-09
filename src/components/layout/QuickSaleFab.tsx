@@ -75,6 +75,7 @@ export default function QuickSaleFab({
   const [expAmount, setExpAmount]     = useState("");
   const [expLevel, setExpLevel]       = useState<"GENERAL" | "BOOK">("GENERAL");
   const [expBookId, setExpBookId]     = useState("");
+  const [expDate, setExpDate]         = useState(todayLocal());
 
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -137,7 +138,7 @@ export default function QuickSaleFab({
     setQuantity(1); setPayment("Efectivo"); setSaleDate(todayLocal());
     setUnitPrice(b0 && c0 ? (lastPrices[`${b0}_${c0}`]?.toFixed(0) ?? "") : "");
     setFxRate(""); setFxLoading(false);
-    setExpAmount(""); setExpLevel("GENERAL"); setExpBookId("");
+    setExpAmount(""); setExpLevel("GENERAL"); setExpBookId(""); setExpDate(todayLocal());
     setOpen(true);
   }
 
@@ -167,7 +168,7 @@ export default function QuickSaleFab({
           category:    expCategory,
           level:       expLevel === "BOOK" && expBookId ? "BOOK" : "GENERAL",
           bookId:      expLevel === "BOOK" && expBookId ? expBookId : undefined,
-          occurredAt:  new Date().toISOString().split("T")[0],
+          occurredAt:  expDate,
         });
         if (result.error) {
           toast.error(result.error);
@@ -311,19 +312,35 @@ export default function QuickSaleFab({
                     />
                   </div>
 
-                  {/* Amount */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                      Monto
-                    </label>
-                    <Input
-                      type="number" min="1" step="1" inputMode="numeric"
-                      value={expAmount}
-                      onChange={e => setExpAmount(e.target.value)}
-                      placeholder="15000"
-                      required
-                      className="text-sm"
-                    />
+                  {/* Amount + date */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+                        Monto
+                      </label>
+                      <Input
+                        type="number" min="1" step="1" inputMode="numeric"
+                        value={expAmount}
+                        onChange={e => setExpAmount(e.target.value)}
+                        placeholder="15000"
+                        required
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="quick-exp-date" className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+                        Fecha
+                      </label>
+                      <Input
+                        id="quick-exp-date"
+                        type="date"
+                        value={expDate}
+                        onChange={e => setExpDate(e.target.value)}
+                        max={todayLocal()}
+                        required
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
 
                   {/* Book assignment */}
