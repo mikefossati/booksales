@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
       channelName:   s.channel.name,
       channelType:   CHANNEL_TYPE_LABEL[s.channel.type] ?? s.channel.type,
       quantity:      s.quantity,
-      unitPrice:     rnd(toNum(s.unitPrice)),
+      unitPrice:     s.isBulk ? `≈ ${rnd(toNum(s.unitPrice))}` : rnd(toNum(s.unitPrice)),
       currency:      s.currency,
       totalAmount:   rnd(toNum(s.totalAmount)),
       amountCLP:     rnd(saleToCLP(s)),

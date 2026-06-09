@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { SaleStatus } from "@/generated/prisma/client";
-import { calcSaleTotal, shouldTrackBookInventory } from "@/lib/finance";
+import { resolvePricing, shouldTrackBookInventory } from "@/lib/finance";
 import { resolveSaleDate } from "@/lib/dates";
 
 export async function createSale({
@@ -12,6 +12,8 @@ export async function createSale({
   channelId,
   quantity,
   unitPrice,
+  totalAmount,
+  isBulk = false,
   currency,
   fxRateToCLP,
   paymentMethod,
@@ -20,7 +22,9 @@ export async function createSale({
   bookId: string;
   channelId: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice?: number;    // per-unit mode (default)
+  totalAmount?: number;  // bulk mode: total entered directly
+  isBulk?: boolean;
   currency: string;
   fxRateToCLP?: number;
   paymentMethod?: string;
@@ -29,8 +33,10 @@ export async function createSale({
   const auth = await requireAccount();
   if ("error" in auth) return auth;
 
-  if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
-  if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
+  if (quantity < 1) return { error: "La cantidad debe ser al menos 1." };
+
+  const pricing = resolvePricing({ isBulk, unitPrice, totalAmount, quantity });
+  if ("error" in pricing) return pricing;
 
   const resolvedDate = resolveSaleDate(saleDate);
   if (resolvedDate.error) return { error: resolvedDate.error };
@@ -49,8 +55,7 @@ export async function createSale({
     if (!bookOwned) return { error: "No encontrado." };
   }
 
-  const total     = calcSaleTotal(quantity, unitPrice);
-  const amountCLP = fxRateToCLP != null ? total * fxRateToCLP : currency === "CLP" ? total : null;
+  const amountCLP = fxRateToCLP != null ? pricing.total * fxRateToCLP : currency === "CLP" ? pricing.total : null;
   const trackInventory = await shouldTrackInventory(bookId, channelId);
 
   try {
@@ -60,8 +65,9 @@ export async function createSale({
           bookId,
           channelId,
           quantity,
-          unitPrice:     unitPrice.toFixed(2),
-          totalAmount:   total.toFixed(2),
+          unitPrice:     pricing.unit.toFixed(2),
+          totalAmount:   pricing.total.toFixed(2),
+          isBulk,
           currency,
           fxRateToCLP:   fxRateToCLP != null ? fxRateToCLP.toFixed(6) : null,
           amountCLP:     amountCLP != null ? amountCLP.toFixed(2) : null,
@@ -95,6 +101,8 @@ export async function updateSale({
   id,
   quantity,
   unitPrice,
+  totalAmount,
+  isBulk = false,
   channelId,
   saleDate,
   fxRateToCLP,
@@ -104,7 +112,9 @@ export async function updateSale({
 }: {
   id: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice?: number;    // per-unit mode (default)
+  totalAmount?: number;  // bulk mode: total entered directly
+  isBulk?: boolean;
   channelId: string;
   saleDate: string;
   fxRateToCLP?: number | null;
@@ -115,8 +125,10 @@ export async function updateSale({
   const auth = await requireAccount();
   if ("error" in auth) return auth;
 
-  if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
-  if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
+  if (quantity < 1) return { error: "La cantidad debe ser al menos 1." };
+
+  const pricing = resolvePricing({ isBulk, unitPrice, totalAmount, quantity });
+  if ("error" in pricing) return pricing;
 
   const owned = await prisma.sale.findFirst({
     where: { id, channel: { accountId: auth.account.id } },
@@ -125,17 +137,17 @@ export async function updateSale({
   if (!owned) return { error: "No encontrado." };
 
   const currency  = owned.currency;
-  const total     = calcSaleTotal(quantity, unitPrice);
   const rate      = fxRateToCLP !== undefined ? fxRateToCLP : null;
-  const amountCLP = rate != null ? total * rate : currency === "CLP" ? total : null;
+  const amountCLP = rate != null ? pricing.total * rate : currency === "CLP" ? pricing.total : null;
 
   try {
     await prisma.sale.update({
       where: { id },
       data: {
         quantity,
-        unitPrice:     unitPrice.toFixed(2),
-        totalAmount:   total.toFixed(2),
+        unitPrice:     pricing.unit.toFixed(2),
+        totalAmount:   pricing.total.toFixed(2),
+        isBulk,
         channelId,
         saleDate:      new Date(saleDate + "T12:00:00"),
         fxRateToCLP:   rate != null ? rate.toFixed(6) : null,

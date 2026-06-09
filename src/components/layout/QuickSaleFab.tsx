@@ -64,6 +64,8 @@ export default function QuickSaleFab({
   const [channelId, setChannelId] = useState(channels[0]?.id ?? "");
   const [quantity, setQuantity]   = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
+  const [priceMode, setPriceMode] = useState<"unit" | "total">("unit");
+  const [bulkTotal, setBulkTotal] = useState("");
   const [payment, setPayment]     = useState("Efectivo");
   const [saleDate, setSaleDate]   = useState(todayLocal());
   const [fxRate, setFxRate]       = useState("");
@@ -122,7 +124,10 @@ export default function QuickSaleFab({
   const selectedChannel = channels.find(c => c.id === channelId);
   const saleCurrency    = selectedChannel?.currency ?? "CLP";
   const needsFx         = saleCurrency !== accountCurrency;
-  const total           = quantity * (parseFloat(unitPrice) || 0);
+  const isBulkMode      = priceMode === "total";
+  const total           = isBulkMode
+    ? (parseFloat(bulkTotal) || 0)
+    : quantity * (parseFloat(unitPrice) || 0);
   const totalCLP        = needsFx && fxRate ? total * parseFloat(fxRate) : total;
 
   function formatMoney(n: number, curr = accountCurrency) {
@@ -136,6 +141,7 @@ export default function QuickSaleFab({
     setMode("libro");
     setBookId(b0); setMerchId(m0); setChannelId(c0);
     setQuantity(1); setPayment("Efectivo"); setSaleDate(todayLocal());
+    setPriceMode("unit"); setBulkTotal("");
     setUnitPrice(b0 && c0 ? (lastPrices[`${b0}_${c0}`]?.toFixed(0) ?? "") : "");
     setFxRate(""); setFxLoading(false);
     setExpAmount(""); setExpLevel("GENERAL"); setExpBookId(""); setExpDate(todayLocal());
@@ -183,12 +189,16 @@ export default function QuickSaleFab({
       let result: { error?: string };
       const fxRateToCLP = needsFx && fxRate ? parseFloat(fxRate) : undefined;
 
+      const pricing = isBulkMode
+        ? { isBulk: true,  totalAmount: parseFloat(bulkTotal) }
+        : { isBulk: false, unitPrice: parseFloat(unitPrice) };
+
       if (mode === "libro") {
         if (!bookId) return;
-        result = await createSale({ bookId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, fxRateToCLP, paymentMethod: payment, saleDate });
+        result = await createSale({ bookId, channelId, quantity, ...pricing, currency: saleCurrency, fxRateToCLP, paymentMethod: payment, saleDate });
       } else {
         if (!merchId) return;
-        result = await createMerchSale({ merchandiseId: merchId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, fxRateToCLP, paymentMethod: payment, saleDate });
+        result = await createMerchSale({ merchandiseId: merchId, channelId, quantity, ...pricing, currency: saleCurrency, fxRateToCLP, paymentMethod: payment, saleDate });
       }
 
       if (result.error) {
@@ -495,17 +505,50 @@ export default function QuickSaleFab({
                               </div>
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Precio unit.</label>
-                              <Input
-                                type="number" min="0" step="1" inputMode="numeric"
-                                value={unitPrice}
-                                onChange={e => setUnitPrice(e.target.value)}
-                                placeholder="8000"
-                                required
-                                className="text-sm"
-                              />
+                              <div className="flex gap-1" role="group" aria-label="Modo de precio">
+                                {([["unit", "Precio unit."], ["total", "Total"]] as const).map(([value, label]) => (
+                                  <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => setPriceMode(value)}
+                                    className={cn(
+                                      "text-xs font-medium uppercase tracking-wide transition-colors",
+                                      priceMode === value
+                                        ? "text-[var(--color-accent)] underline underline-offset-4"
+                                        : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                                    )}
+                                  >
+                                    {label}
+                                  </button>
+                                ))}
+                              </div>
+                              {isBulkMode ? (
+                                <Input
+                                  type="number" min="0" step="1" inputMode="numeric"
+                                  value={bulkTotal}
+                                  onChange={e => setBulkTotal(e.target.value)}
+                                  placeholder="75000"
+                                  required
+                                  className="text-sm"
+                                />
+                              ) : (
+                                <Input
+                                  type="number" min="0" step="1" inputMode="numeric"
+                                  value={unitPrice}
+                                  onChange={e => setUnitPrice(e.target.value)}
+                                  placeholder="8000"
+                                  required
+                                  className="text-sm"
+                                />
+                              )}
                             </div>
                           </div>
+
+                          {isBulkMode && total > 0 && quantity > 0 && (
+                            <p className="text-[10px] text-[var(--color-text-muted)] -mt-3">
+                              ≈ {formatMoney(total / quantity, saleCurrency)} por ejemplar
+                            </p>
+                          )}
 
                           {/* Sale date — editable to register past sales */}
                           <div className="space-y-1.5">
@@ -627,7 +670,12 @@ export default function QuickSaleFab({
                 </div>
                 <Button
                   type="submit"
-                  disabled={isPending || !channelId || !unitPrice || parseFloat(unitPrice) < 0 || (needsFx && !fxRate)}
+                  disabled={
+                    isPending || !channelId || (needsFx && !fxRate) ||
+                    (isBulkMode
+                      ? !bulkTotal || parseFloat(bulkTotal) < 0
+                      : !unitPrice || parseFloat(unitPrice) < 0)
+                  }
                 >
                   {isPending ? "Registrando..." : "Registrar venta"}
                 </Button>

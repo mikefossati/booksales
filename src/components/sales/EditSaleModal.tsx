@@ -26,6 +26,8 @@ type SaleData = {
   id: string;
   quantity: number;
   unitPrice: { toString(): string } | string | number;
+  totalAmount: { toString(): string } | string | number;
+  isBulk: boolean;
   currency: string;
   fxRateToCLP: { toString(): string } | string | number | null;
   channelId: string;
@@ -49,6 +51,8 @@ export default function EditSaleModal({
   const [open, setOpen]               = useState(false);
   const [quantity, setQuantity]       = useState(sale.quantity);
   const [unitPrice, setUnitPrice]     = useState(Number(sale.unitPrice.toString()).toFixed(0));
+  const [priceMode, setPriceMode]     = useState<"unit" | "total">(sale.isBulk ? "total" : "unit");
+  const [bulkTotal, setBulkTotal]     = useState(Number(sale.totalAmount.toString()).toFixed(0));
   const [fxRate, setFxRate]           = useState(sale.fxRateToCLP ? Number(sale.fxRateToCLP.toString()).toFixed(4) : "");
   const [channelId, setChannelId]     = useState(sale.channelId);
   const [saleDate, setSaleDate]       = useState(initialDate);
@@ -67,14 +71,19 @@ export default function EditSaleModal({
     setError(null);
   }
 
+  const isBulkMode = priceMode === "total";
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
+      const pricing = isBulkMode
+        ? { isBulk: true,  totalAmount: parseFloat(bulkTotal) }
+        : { isBulk: false, unitPrice: parseFloat(unitPrice) };
       const result = await updateSale({
         id: sale.id,
         quantity,
-        unitPrice: parseFloat(unitPrice),
+        ...pricing,
         channelId,
         saleDate,
         fxRateToCLP: isForeignCurrency && fxRate ? parseFloat(fxRate) : null,
@@ -87,7 +96,9 @@ export default function EditSaleModal({
     });
   }
 
-  const total = quantity * (parseFloat(unitPrice) || 0);
+  const total = isBulkMode
+    ? (parseFloat(bulkTotal) || 0)
+    : quantity * (parseFloat(unitPrice) || 0);
 
   return (
     <>
@@ -135,11 +146,34 @@ export default function EditSaleModal({
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="es-price">Precio unitario</Label>
-                  <Input id="es-price" type="number" min="0" step="1" inputMode="numeric"
-                    value={unitPrice} onChange={e => setUnitPrice(e.target.value)} required />
+                  <div className="flex gap-2" role="group" aria-label="Modo de precio">
+                    {([["unit", "Precio unit."], ["total", "Total"]] as const).map(([value, label]) => (
+                      <button key={value} type="button" onClick={() => setPriceMode(value)}
+                        className={cn(
+                          "text-xs font-medium transition-colors",
+                          priceMode === value
+                            ? "text-[var(--color-accent)] underline underline-offset-4"
+                            : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                        )}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {isBulkMode ? (
+                    <Input id="es-total" type="number" min="0" step="1" inputMode="numeric"
+                      value={bulkTotal} onChange={e => setBulkTotal(e.target.value)} required />
+                  ) : (
+                    <Input id="es-price" type="number" min="0" step="1" inputMode="numeric"
+                      value={unitPrice} onChange={e => setUnitPrice(e.target.value)} required />
+                  )}
                 </div>
               </div>
+
+              {isBulkMode && total > 0 && quantity > 0 && (
+                <p className="text-[10px] text-[var(--color-text-muted)] -mt-2">
+                  ≈ {sale.currency} {Math.round(total / quantity).toLocaleString("es-CL")} por ejemplar
+                </p>
+              )}
 
               {isForeignCurrency && (
                 <div className="space-y-1.5 rounded-[var(--radius-md)] bg-[var(--color-accent-light)]/60 px-3 py-2.5">

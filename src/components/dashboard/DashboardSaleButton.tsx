@@ -37,6 +37,8 @@ export default function DashboardSaleButton({
   const [channelId, setChannelId] = useState(channels[0]?.id ?? "");
   const [quantity, setQuantity]   = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
+  const [priceMode, setPriceMode] = useState<"unit" | "total">("unit");
+  const [bulkTotal, setBulkTotal] = useState("");
   const [payment, setPayment]     = useState("Efectivo");
   const [saleDate, setSaleDate]   = useState(todayLocal());
   const [fxRate, setFxRate]       = useState("");
@@ -48,7 +50,10 @@ export default function DashboardSaleButton({
   const selectedChannel = channels.find(c => c.id === channelId);
   const saleCurrency    = selectedChannel?.currency ?? "CLP";
   const needsFx         = saleCurrency !== accountCurrency;
-  const total           = quantity * (parseFloat(unitPrice) || 0);
+  const isBulkMode      = priceMode === "total";
+  const total           = isBulkMode
+    ? (parseFloat(bulkTotal) || 0)
+    : quantity * (parseFloat(unitPrice) || 0);
   const totalCLP        = needsFx && fxRate ? total * parseFloat(fxRate) : total;
 
   useEffect(() => {
@@ -77,6 +82,7 @@ export default function DashboardSaleButton({
     const c0 = channels[0]?.id ?? "";
     setBookId(b0); setChannelId(c0); setQuantity(1); setPayment("Efectivo");
     setSaleDate(todayLocal());
+    setPriceMode("unit"); setBulkTotal("");
     setFxRate(""); setFxLoading(false);
     setUnitPrice(b0 && c0 ? (lastPrices[`${b0}_${c0}`]?.toFixed(0) ?? "") : "");
     setOpen(true);
@@ -84,12 +90,16 @@ export default function DashboardSaleButton({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!bookId || !channelId || !unitPrice) return;
+    if (!bookId || !channelId) return;
+    if (isBulkMode ? !bulkTotal : !unitPrice) return;
     const fxRateToCLP = needsFx && fxRate ? parseFloat(fxRate) : undefined;
+    const pricing = isBulkMode
+      ? { isBulk: true,  totalAmount: parseFloat(bulkTotal) }
+      : { isBulk: false, unitPrice: parseFloat(unitPrice) };
     startTransition(async () => {
       const result = await createSale({
         bookId, channelId, quantity,
-        unitPrice: parseFloat(unitPrice),
+        ...pricing,
         currency: saleCurrency, fxRateToCLP, paymentMethod: payment,
         saleDate,
       });
@@ -178,12 +188,36 @@ export default function DashboardSaleButton({
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Precio unit.</label>
-                  <Input type="number" min="0" step="1" inputMode="numeric"
-                    value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
-                    placeholder="8000" required className="text-sm" />
+                  <div className="flex gap-1" role="group" aria-label="Modo de precio">
+                    {([["unit", "Precio unit."], ["total", "Total"]] as const).map(([value, label]) => (
+                      <button key={value} type="button" onClick={() => setPriceMode(value)}
+                        className={cn(
+                          "text-xs font-medium uppercase tracking-wide transition-colors",
+                          priceMode === value
+                            ? "text-[var(--color-accent)] underline underline-offset-4"
+                            : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                        )}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {isBulkMode ? (
+                    <Input type="number" min="0" step="1" inputMode="numeric"
+                      value={bulkTotal} onChange={e => setBulkTotal(e.target.value)}
+                      placeholder="75000" required className="text-sm" />
+                  ) : (
+                    <Input type="number" min="0" step="1" inputMode="numeric"
+                      value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
+                      placeholder="8000" required className="text-sm" />
+                  )}
                 </div>
               </div>
+
+              {isBulkMode && total > 0 && quantity > 0 && (
+                <p className="text-[10px] text-[var(--color-text-muted)] -mt-3">
+                  ≈ {fmt(total / quantity, saleCurrency)} por ejemplar
+                </p>
+              )}
 
               {/* Sale date — editable to register past sales */}
               <div className="space-y-1.5">
@@ -262,7 +296,10 @@ export default function DashboardSaleButton({
                   <p className="text-xs text-[var(--color-text-muted)]">≈ {fmt(totalCLP)}</p>
                 )}
               </div>
-              <Button type="submit" disabled={isPending || !bookId || !unitPrice || (needsFx && !fxRate)}>
+              <Button type="submit" disabled={
+                isPending || !bookId || (needsFx && !fxRate) ||
+                (isBulkMode ? !bulkTotal : !unitPrice)
+              }>
                 {isPending ? "Registrando…" : "Registrar"}
               </Button>
             </div>

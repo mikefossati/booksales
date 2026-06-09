@@ -200,6 +200,44 @@ describe("createSale — input validation", () => {
     expect(movement.occurredAt.getDate()).toBe(10);
   });
 
+
+  it("bulk mode: stores the entered total verbatim with derived unit price and isBulk flag", async () => {
+    await createSale({
+      bookId: "b1", channelId: "c1", quantity: 7, currency: "CLP",
+      isBulk: true, totalAmount: 75000,
+    });
+    const call = mockSaleCreate.mock.calls[0][0].data;
+    expect(call.totalAmount).toBe("75000.00");  // exact, no rounding loss
+    expect(call.unitPrice).toBe("10714.29");    // informational average
+    expect(call.isBulk).toBe(true);
+    expect(call.amountCLP).toBe("75000.00");
+  });
+
+  it("bulk mode: rejects when totalAmount is missing", async () => {
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: 5, currency: "CLP",
+      isBulk: true,
+    });
+    expect(result.error).toBe("El monto total es obligatorio.");
+    expect(mockSaleCreate).not.toHaveBeenCalled();
+  });
+
+  it("bulk mode: applies fx rate to the entered total", async () => {
+    await createSale({
+      bookId: "b1", channelId: "c1", quantity: 4, currency: "USD",
+      isBulk: true, totalAmount: 100, fxRateToCLP: 970,
+    });
+    const call = mockSaleCreate.mock.calls[0][0].data;
+    expect(call.amountCLP).toBe("97000.00");
+  });
+
+  it("per-unit mode: rejects when unitPrice is missing", async () => {
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, currency: "CLP",
+    });
+    expect(result.error).toBe("El precio es obligatorio.");
+  });
+
   it("defaults the sale date to now when omitted", async () => {
     await createSale({
       bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 8000, currency: "CLP",

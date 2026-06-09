@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import type { MerchandiseType } from "@/generated/prisma/client";
-import { calcCostPerUnit, calcSaleTotal } from "@/lib/finance";
+import { calcCostPerUnit, resolvePricing } from "@/lib/finance";
 import { resolveSaleDate } from "@/lib/dates";
 
 // ── Products ──────────────────────────────────────────────────────────────────
@@ -206,6 +206,8 @@ export async function createMerchSale({
   channelId,
   quantity,
   unitPrice,
+  totalAmount,
+  isBulk = false,
   currency,
   fxRateToCLP,
   paymentMethod,
@@ -214,7 +216,9 @@ export async function createMerchSale({
   merchandiseId: string;
   channelId: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice?: number;    // per-unit mode (default)
+  totalAmount?: number;  // bulk mode: total entered directly
+  isBulk?: boolean;
   currency: string;
   fxRateToCLP?: number;
   paymentMethod?: string;
@@ -223,8 +227,10 @@ export async function createMerchSale({
   const auth = await requireAccount();
   if ("error" in auth) return auth;
 
-  if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
-  if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
+  if (quantity < 1) return { error: "La cantidad debe ser al menos 1." };
+
+  const pricing = resolvePricing({ isBulk, unitPrice, totalAmount, quantity });
+  if ("error" in pricing) return pricing;
 
   const resolvedDate = resolveSaleDate(saleDate);
   if (resolvedDate.error) return { error: resolvedDate.error };
@@ -235,8 +241,7 @@ export async function createMerchSale({
   ]);
   if (!channelOwned || !merchOwned) return { error: "No encontrado." };
 
-  const total     = calcSaleTotal(quantity, unitPrice);
-  const amountCLP = fxRateToCLP != null ? total * fxRateToCLP : currency === "CLP" ? total : null;
+  const amountCLP = fxRateToCLP != null ? pricing.total * fxRateToCLP : currency === "CLP" ? pricing.total : null;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -245,8 +250,9 @@ export async function createMerchSale({
           merchandiseId,
           channelId,
           quantity,
-          unitPrice:     unitPrice.toFixed(2),
-          totalAmount:   total.toFixed(2),
+          unitPrice:     pricing.unit.toFixed(2),
+          totalAmount:   pricing.total.toFixed(2),
+          isBulk,
           currency,
           fxRateToCLP:   fxRateToCLP != null ? fxRateToCLP.toFixed(6) : null,
           amountCLP:     amountCLP != null ? amountCLP.toFixed(2) : null,

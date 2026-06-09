@@ -179,10 +179,10 @@ export default async function DashboardPage() {
     stockByBook.set(bookId, (stockByBook.get(bookId) ?? 0) + (STOCK_SIGN[type] ?? 0) * quantity);
   }
 
-  // Last prices for sale button (most recent sale per book+channel)
+  // Last prices for sale button (most recent non-bulk sale per book+channel)
   const lastPrices: Record<string, number> = {};
   for (const s of allSales) {
-    if (!s.bookId) continue;
+    if (!s.bookId || s.isBulk) continue;
     const key = `${s.bookId}_${s.channelId}`;
     if (!(key in lastPrices)) lastPrices[key] = toNum(s.unitPrice);
   }

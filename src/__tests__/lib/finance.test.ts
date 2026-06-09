@@ -18,6 +18,7 @@ import {
   calcOutstanding,
   toBaseCurrency,
   saleToCLP,
+  resolvePricing,
 } from "@/lib/finance";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -708,5 +709,72 @@ describe("saleToCLP", () => {
   it("handles Decimal-like objects for totalAmount fallback", () => {
     const decimalLike = { toString: () => "8000.00" };
     expect(saleToCLP({ totalAmount: decimalLike, amountCLP: null, currency: "CLP" })).toBe(8_000);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// resolvePricing
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("resolvePricing", () => {
+  describe("per-unit mode", () => {
+    it("computes total from quantity × unitPrice", () => {
+      expect(resolvePricing({ isBulk: false, unitPrice: 8000, quantity: 3 }))
+        .toEqual({ unit: 8000, total: 24000 });
+    });
+
+    it("allows unit price of 0 (free item)", () => {
+      expect(resolvePricing({ isBulk: false, unitPrice: 0, quantity: 2 }))
+        .toEqual({ unit: 0, total: 0 });
+    });
+
+    it("rejects missing unit price", () => {
+      expect(resolvePricing({ isBulk: false, quantity: 2 }))
+        .toEqual({ error: "El precio es obligatorio." });
+    });
+
+    it("rejects negative unit price", () => {
+      expect(resolvePricing({ isBulk: false, unitPrice: -1, quantity: 2 }))
+        .toEqual({ error: "El precio no puede ser negativo." });
+    });
+
+    it("rejects NaN unit price", () => {
+      expect(resolvePricing({ isBulk: false, unitPrice: NaN, quantity: 2 }))
+        .toEqual({ error: "El precio es obligatorio." });
+    });
+  });
+
+  describe("bulk mode", () => {
+    it("stores the total verbatim and derives the average unit price", () => {
+      const r = resolvePricing({ isBulk: true, totalAmount: 75000, quantity: 7 });
+      expect("error" in r).toBe(false);
+      if ("total" in r) {
+        expect(r.total).toBe(75000);            // exact — no rounding loss
+        expect(r.unit).toBeCloseTo(10714.2857);
+      }
+    });
+
+    it("ignores unitPrice when bulk", () => {
+      const r = resolvePricing({ isBulk: true, totalAmount: 50000, unitPrice: 999, quantity: 5 });
+      if ("total" in r) {
+        expect(r.total).toBe(50000);
+        expect(r.unit).toBe(10000);
+      }
+    });
+
+    it("rejects missing total", () => {
+      expect(resolvePricing({ isBulk: true, quantity: 5 }))
+        .toEqual({ error: "El monto total es obligatorio." });
+    });
+
+    it("rejects negative total", () => {
+      expect(resolvePricing({ isBulk: true, totalAmount: -100, quantity: 5 }))
+        .toEqual({ error: "El monto no puede ser negativo." });
+    });
+
+    it("allows a total of 0 (gifted bundle)", () => {
+      expect(resolvePricing({ isBulk: true, totalAmount: 0, quantity: 3 }))
+        .toEqual({ total: 0, unit: 0 });
+    });
   });
 });

@@ -31,13 +31,15 @@ export function getCachedLayoutData(accountId: string) {
           select:  { id: true, name: true, type: true, currency: true },
           orderBy: { createdAt: "asc" },
         }),
+        // isBulk excluded: bulk-sale unit prices are derived averages,
+        // not real prices worth suggesting
         prisma.sale.findMany({
-          where:   { channel: { accountId }, bookId: { not: null }, status: { not: "CANCELLED" } },
+          where:   { channel: { accountId }, bookId: { not: null }, status: { not: "CANCELLED" }, isBulk: false },
           select:  { bookId: true, channelId: true, unitPrice: true },
           orderBy: { saleDate: "desc" },
         }),
         prisma.sale.findMany({
-          where:   { channel: { accountId }, merchandiseId: { not: null }, status: { not: "CANCELLED" } },
+          where:   { channel: { accountId }, merchandiseId: { not: null }, status: { not: "CANCELLED" }, isBulk: false },
           select:  { merchandiseId: true, channelId: true, unitPrice: true },
           orderBy: { saleDate: "desc" },
         }),

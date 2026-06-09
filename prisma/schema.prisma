@@ -240,6 +240,7 @@ model Sale {
   quantity          Int
   unitPrice         Decimal    @db.Decimal(10, 2)
   totalAmount       Decimal    @db.Decimal(12, 2)
+  isBulk            Boolean    @default(false) // bulk sale: totalAmount entered directly, unitPrice is the derived average
   currency          String
   fxRateToCLP       Decimal?   @db.Decimal(12, 6)  // null = sale is already in baseCurrency
   amountCLP         Decimal?   @db.Decimal(12, 2)  // pre-computed CLP equivalent; backfilled for legacy records

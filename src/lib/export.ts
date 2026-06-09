@@ -14,7 +14,7 @@ export type SaleRecord = {
   channelName:   string;
   channelType:   string;
   quantity:      number;
-  unitPrice:     number;
+  unitPrice:     number | string; // string ("≈ N") for bulk sales — derived average
   currency:      string;
   totalAmount:   number;
   amountCLP:     number;

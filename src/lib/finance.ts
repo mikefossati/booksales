@@ -308,3 +308,32 @@ export function shouldTrackBookInventory(
 ): boolean {
   return channelType === "DIRECT" && bookFormats.includes("PRINT");
 }
+
+// ── Sale pricing (per-unit vs bulk) ───────────────────────────────────────────
+
+/**
+ * Resolves sale pricing from either entry mode:
+ * - per-unit (default): unitPrice required; total = quantity × unitPrice
+ * - bulk: totalAmount required and stored verbatim; unitPrice becomes the
+ *   derived average (informational only — totals are the source of truth)
+ */
+export function resolvePricing({
+  isBulk,
+  unitPrice,
+  totalAmount,
+  quantity,
+}: {
+  isBulk: boolean;
+  unitPrice?: number;
+  totalAmount?: number;
+  quantity: number;
+}): { unit: number; total: number } | { error: string } {
+  if (isBulk) {
+    if (totalAmount == null || isNaN(totalAmount)) return { error: "El monto total es obligatorio." };
+    if (totalAmount < 0) return { error: "El monto no puede ser negativo." };
+    return { total: totalAmount, unit: quantity > 0 ? totalAmount / quantity : 0 };
+  }
+  if (unitPrice == null || isNaN(unitPrice)) return { error: "El precio es obligatorio." };
+  if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
+  return { unit: unitPrice, total: calcSaleTotal(quantity, unitPrice) };
+}
