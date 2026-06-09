@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { fetchRateToCLP } from "@/lib/fx";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import type { ExpenseCategory } from "@/generated/prisma/client";
 
 type Book    = { id: string; title: string; coverUrl: string | null };
@@ -137,6 +138,8 @@ export default function QuickSaleFab({
     setOpen(true);
   }
 
+  const panelRef = useModalA11y<HTMLFormElement>(open, handleClose);
+
   function handleClose() {
     if (isPending) return;
     setOpen(false);
@@ -213,6 +216,10 @@ export default function QuickSaleFab({
           onClick={handleClose}
         >
           <form
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Registrar venta o gasto"
             onSubmit={handleSubmit}
             className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-sm shadow-xl overflow-hidden max-h-[85vh] flex flex-col"
             onClick={e => e.stopPropagation()}

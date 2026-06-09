@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X, CheckCircle } from "lucide-react";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 export default function RecordPaymentModal({
   channelId,
@@ -32,6 +33,8 @@ export default function RecordPaymentModal({
   const [error, setError]             = useState<string | null>(null);
   const [isPending, startTransition]  = useTransition();
   const router = useRouter();
+
+  const panelRef = useModalA11y<HTMLDivElement>(open, handleClose);
 
   function handleClose() {
     if (isPending) return;
@@ -75,7 +78,7 @@ export default function RecordPaymentModal({
         >
           <div
             className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-sm shadow-xl"
-            onClick={e => e.stopPropagation()}
+            ref={panelRef} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
               <div>

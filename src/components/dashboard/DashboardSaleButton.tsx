@@ -9,6 +9,7 @@ import { Plus, X, BookOpen, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 type Book    = { id: string; title: string; coverUrl: string | null };
 type Channel = { id: string; name: string; type: string; currency: string | null };
@@ -39,6 +40,7 @@ export default function DashboardSaleButton({
   const [fxRate, setFxRate]       = useState("");
   const [fxLoading, setFxLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const panelRef = useModalA11y<HTMLFormElement>(open, () => { if (!isPending) setOpen(false); });
   const router = useRouter();
 
   const selectedChannel = channels.find(c => c.id === channelId);
@@ -114,6 +116,10 @@ export default function DashboardSaleButton({
           onClick={() => { if (!isPending) setOpen(false); }}
         >
           <form
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Registrar venta"
             onSubmit={handleSubmit}
             className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-sm shadow-xl overflow-hidden max-h-[85vh] flex flex-col"
             onClick={e => e.stopPropagation()}

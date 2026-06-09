@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, X } from "lucide-react";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 export default function AddPrintRunModal({ bookId }: { bookId: string }) {
   const today = new Date().toISOString().split("T")[0];
@@ -25,6 +26,8 @@ export default function AddPrintRunModal({ bookId }: { bookId: string }) {
     quantity && totalCost
       ? (parseFloat(totalCost) / parseInt(quantity)).toFixed(0)
       : null;
+
+  const panelRef = useModalA11y<HTMLDivElement>(open, handleClose);
 
   function handleClose() {
     if (isPending) return;
@@ -62,7 +65,7 @@ export default function AddPrintRunModal({ bookId }: { bookId: string }) {
           style={{ backgroundColor: "oklch(0% 0 0 / 0.35)", backdropFilter: "blur(4px)" }}
           onClick={handleClose}
         >
-          <div className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-md shadow-xl" ref={panelRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
               <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
                 Nueva tirada de impresión

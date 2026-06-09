@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, X } from "lucide-react";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 const FORMAT_OPTIONS: { value: BookFormat; label: string }[] = [
   { value: "PRINT", label: "Impreso" },
@@ -28,6 +29,8 @@ export default function AddBookModal({ accountId }: { accountId: string }) {
       prev.includes(format) ? prev.filter((f) => f !== format) : [...prev, format]
     );
   }
+
+  const panelRef = useModalA11y<HTMLDivElement>(open, handleClose);
 
   function handleClose() {
     if (isPending) return;
@@ -67,7 +70,7 @@ export default function AddBookModal({ accountId }: { accountId: string }) {
         >
           <div
             className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-md shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+            ref={panelRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
               <h2

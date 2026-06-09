@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Pencil, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ExchangeStatus } from "@/generated/prisma/client";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 type ExchangeData = {
   id: string;
@@ -52,6 +53,8 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
     setOpen(true);
   }
 
+  const panelRef = useModalA11y<HTMLDivElement>(open, handleClose);
+
   function handleClose() {
     if (isPending) return;
     setOpen(false);
@@ -93,7 +96,7 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
         >
           <div
             className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
+            ref={panelRef} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] sticky top-0 bg-[var(--color-surface)]">
               <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>

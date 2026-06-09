@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/generated/prisma/client";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 const ROLE_OPTIONS: { value: UserRole; label: string; description: string }[] = [
   { value: "EDITOR", label: "Editor",  description: "Puede registrar ventas y ver reportes" },
@@ -22,6 +23,8 @@ export default function InviteUserModal({ accountId }: { accountId: string }) {
   const [error, setError]            = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+
+  const panelRef = useModalA11y<HTMLDivElement>(open, handleClose);
 
   function handleClose() {
     if (isPending) return;
@@ -52,7 +55,7 @@ export default function InviteUserModal({ accountId }: { accountId: string }) {
         >
           <div
             className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-md shadow-xl"
-            onClick={e => e.stopPropagation()}
+            ref={panelRef} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
               <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>

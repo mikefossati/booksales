@@ -9,10 +9,30 @@ import { Label } from "@/components/ui/label";
 
 type Mode = "login" | "signup";
 
+// Map Supabase auth errors (English) to user-facing Spanish messages
+const AUTH_ERRORS: { match: RegExp; message: string }[] = [
+  { match: /invalid login credentials/i,        message: "Correo o contraseña incorrectos." },
+  { match: /email not confirmed/i,              message: "Tu correo aún no está confirmado. Revisa tu bandeja de entrada." },
+  { match: /user already registered/i,          message: "Ya existe una cuenta con este correo. Intenta entrar." },
+  { match: /password should be at least/i,      message: "La contraseña debe tener al menos 8 caracteres." },
+  { match: /rate limit|too many requests/i,     message: "Demasiados intentos. Espera un momento y vuelve a intentarlo." },
+  { match: /network|fetch/i,                    message: "Problema de conexión. Revisa tu internet e intenta de nuevo." },
+  { match: /weak password|easy to guess|pwned/i, message: "Esa contraseña es muy común o ha sido filtrada. Elige una más segura." },
+];
+
+function translateAuthError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : "";
+  for (const { match, message } of AUTH_ERRORS) {
+    if (match.test(raw)) return message;
+  }
+  return "Ocurrió un error inesperado. Inténtalo de nuevo.";
+}
+
 export default function LoginForm() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -20,12 +40,24 @@ export default function LoginForm() {
   const router = useRouter();
   const supabase = createClient();
 
+  function switchMode() {
+    setMode(mode === "login" ? "signup" : "login");
+    setError(null);
+    setMessage(null);
+    setConfirmPassword("");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setMessage(null);
-    setLoading(true);
 
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    setLoading(true);
     try {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -38,7 +70,7 @@ export default function LoginForm() {
         setMessage("Revisa tu correo para confirmar tu cuenta.");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error inesperado");
+      setError(translateAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -67,17 +99,37 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          minLength={6}
+          minLength={8}
+          autoComplete={mode === "login" ? "current-password" : "new-password"}
         />
+        {mode === "signup" && (
+          <p className="text-[11px] text-[var(--color-text-muted)]">Mínimo 8 caracteres.</p>
+        )}
       </div>
 
+      {mode === "signup" && (
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm-password">Confirma tu contraseña</Label>
+          <Input
+            id="confirm-password"
+            type="password"
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+        </div>
+      )}
+
       {error && (
-        <p className="text-sm text-[var(--color-danger)] bg-[var(--color-danger)]/8 rounded-[var(--radius-sm)] px-3 py-2">
+        <p role="alert" className="text-sm text-[var(--color-danger)] bg-[var(--color-danger)]/8 rounded-[var(--radius-sm)] px-3 py-2">
           {error}
         </p>
       )}
       {message && (
-        <p className="text-sm text-[var(--color-success)] bg-[var(--color-success)]/8 rounded-[var(--radius-sm)] px-3 py-2">
+        <p role="status" className="text-sm text-[var(--color-success)] bg-[var(--color-success)]/8 rounded-[var(--radius-sm)] px-3 py-2">
           {message}
         </p>
       )}
@@ -88,7 +140,7 @@ export default function LoginForm() {
 
       <button
         type="button"
-        onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(null); }}
+        onClick={switchMode}
         className="w-full text-sm text-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
       >
         {mode === "login"

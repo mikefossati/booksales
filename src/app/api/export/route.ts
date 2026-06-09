@@ -6,7 +6,7 @@ import { saleToCLP, calcOutstanding, calcProjectionScenarios, calc3MonthAvg, STO
 import { CATEGORY_LABELS, LEVEL_LABELS, CHANNEL_TYPE_LABEL } from "@/lib/labels";
 import { getCachedReportesData } from "@/lib/data-cache";
 import {
-  buildXlsx, buildCsv,
+  buildXlsx, buildCsv, buildCsvZip,
   salesAoa, expensesAoa, bookStockAoa, consignmentAoa,
   exchangesAoa, printRunPnlAoa, merchPnlAoa, projectionsAoa,
   type AOA, type SaleRecord, type ExpenseRecord, type BookStockRecord,
@@ -260,18 +260,28 @@ export async function GET(req: NextRequest) {
     ];
 
     const sheets = SHEET_SETS[tab] ?? SHEET_SETS.all;
-    const fname  = exportFilename(tab, period, format === "xlsx" ? "xlsx" : "csv");
 
     if (format === "csv") {
-      const sheetIdx = Math.max(0, Math.min(Number(searchParams.get("sheet") ?? "0"), sheets.length - 1));
-      const csv = buildCsv(sheets[sheetIdx].aoa);
+      // Multi-sheet tabs return a single .zip so the browser fires one download
+      if (sheets.length > 1) {
+        const zip = buildCsvZip(sheets);
+        return new NextResponse(new Uint8Array(zip), {
+          headers: {
+            "Content-Type":        "application/zip",
+            "Content-Disposition": `attachment; filename="${exportFilename(tab, period, "zip")}"`,
+          },
+        });
+      }
+      const csv = buildCsv(sheets[0].aoa);
       return new NextResponse(csv, {
         headers: {
           "Content-Type":        "text/csv; charset=utf-8",
-          "Content-Disposition": `attachment; filename="${fname}"`,
+          "Content-Disposition": `attachment; filename="${exportFilename(tab, period, "csv")}"`,
         },
       });
     }
+
+    const fname = exportFilename(tab, period, "xlsx");
 
     const buffer = buildXlsx(sheets);
     return new NextResponse(new Uint8Array(buffer), {

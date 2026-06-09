@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Store, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 type Channel = { id: string; name: string };
 
@@ -29,6 +30,8 @@ export default function SendToBookstoreModal({
   const router = useRouter();
 
   if (bookstoreChannels.length === 0) return null;
+
+  const panelRef = useModalA11y<HTMLDivElement>(open, handleClose);
 
   function handleClose() {
     if (isPending) return;
@@ -64,7 +67,7 @@ export default function SendToBookstoreModal({
           style={{ backgroundColor: "oklch(0% 0 0 / 0.35)", backdropFilter: "blur(4px)" }}
           onClick={handleClose}
         >
-          <div className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-sm shadow-xl" ref={panelRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
               <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
                 Enviar a librería

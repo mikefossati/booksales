@@ -284,3 +284,29 @@ describe("projectionsAoa", () => {
     expect(projectionsAoa([row])[1]).toEqual(["julio 2025", 800, 1000, 1200]);
   });
 });
+
+// ── buildCsvZip ───────────────────────────────────────────────────────────────
+
+describe("buildCsvZip", () => {
+  it("returns a valid zip (PK magic bytes)", async () => {
+    const { buildCsvZip } = await import("@/lib/export");
+    const zip = buildCsvZip([
+      { name: "Ventas", aoa: [["A"], ["1"]] },
+      { name: "Gastos", aoa: [["B"], ["2"]] },
+    ]);
+    expect(zip[0]).toBe(0x50); // P
+    expect(zip[1]).toBe(0x4b); // K
+  });
+
+  it("contains one CSV entry per sheet with sanitized names", async () => {
+    const { buildCsvZip } = await import("@/lib/export");
+    const { unzipSync, strFromU8 } = await import("fflate");
+    const zip = buildCsvZip([
+      { name: "Stock Libros",  aoa: [["Libro"], ["Mi novela"]] },
+      { name: "Tiradas P&L",   aoa: [["Libro"], ["Otra"]] },
+    ]);
+    const entries = unzipSync(zip);
+    expect(Object.keys(entries).sort()).toEqual(["stock-libros.csv", "tiradas-p-l.csv"]);
+    expect(strFromU8(entries["stock-libros.csv"])).toContain("Mi novela");
+  });
+});

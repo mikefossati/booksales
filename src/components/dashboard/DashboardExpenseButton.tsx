@@ -8,6 +8,7 @@ import { Plus, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import type { ExpenseCategory } from "@/generated/prisma/client";
 
 type Book = { id: string; title: string; coverUrl: string | null };
@@ -41,6 +42,7 @@ export default function DashboardExpenseButton({
   const [level, setLevel]                 = useState<"GENERAL" | "BOOK">("GENERAL");
   const [bookId, setBookId]               = useState("");
   const [isPending, startTransition]      = useTransition();
+  const panelRef = useModalA11y<HTMLFormElement>(open, () => { if (!isPending) setOpen(false); });
   const router = useRouter();
 
   // Restore last used category
@@ -111,6 +113,10 @@ export default function DashboardExpenseButton({
           onClick={() => { if (!isPending) setOpen(false); }}
         >
           <form
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Registrar gasto"
             onSubmit={handleSubmit}
             className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-sm shadow-xl overflow-hidden max-h-[85vh] flex flex-col"
             onClick={e => e.stopPropagation()}

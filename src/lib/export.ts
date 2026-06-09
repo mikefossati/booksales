@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { zipSync, strToU8 } from "fflate";
 
 // ── Core types ────────────────────────────────────────────────────────────────
 
@@ -182,4 +183,14 @@ export function buildCsv(aoa: AOA): string {
   };
   // UTF-8 BOM so Excel opens it correctly
   return "﻿" + aoa.map(row => row.map(escape).join(",")).join("\r\n");
+}
+
+/** Zip of one CSV per sheet — single download for multi-sheet exports. */
+export function buildCsvZip(sheets: { name: string; aoa: AOA }[]): Uint8Array {
+  const entries: Record<string, Uint8Array> = {};
+  for (const { name, aoa } of sheets) {
+    const filename = name.toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi, "-") + ".csv";
+    entries[filename] = strToU8(buildCsv(aoa));
+  }
+  return zipSync(entries, { level: 6 });
 }
