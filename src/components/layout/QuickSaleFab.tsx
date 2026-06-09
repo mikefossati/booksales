@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { fetchRateToCLP } from "@/lib/fx";
+import { todayLocal } from "@/lib/dates";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import type { ExpenseCategory } from "@/generated/prisma/client";
 
@@ -64,6 +65,7 @@ export default function QuickSaleFab({
   const [quantity, setQuantity]   = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
   const [payment, setPayment]     = useState("Efectivo");
+  const [saleDate, setSaleDate]   = useState(todayLocal());
   const [fxRate, setFxRate]       = useState("");
   const [fxLoading, setFxLoading] = useState(false);
 
@@ -91,17 +93,18 @@ export default function QuickSaleFab({
     if (cat) setExpDescription(cat.full);
   }, [expCategory]);
 
-  // Fetch live FX rate when channel currency changes
+  // Fetch FX rate when channel currency or sale date changes.
+  // Backdated sales use the historical rate for that day.
   useEffect(() => {
     const currency = channels.find(c => c.id === channelId)?.currency ?? "CLP";
     if (currency === accountCurrency) { setFxRate(""); return; }
 
     setFxLoading(true);
-    fetchRateToCLP(currency)
+    fetchRateToCLP(currency, saleDate !== todayLocal() ? saleDate : undefined)
       .then(rate => { if (rate) setFxRate(rate.toFixed(4)); })
       .catch(() => {})
       .finally(() => setFxLoading(false));
-  }, [channelId]);
+  }, [channelId, saleDate]);
 
   // Pre-fill sale price when book / channel selection changes
   useEffect(() => {
@@ -131,7 +134,7 @@ export default function QuickSaleFab({
     const c0 = channels[0]?.id ?? "";
     setMode("libro");
     setBookId(b0); setMerchId(m0); setChannelId(c0);
-    setQuantity(1); setPayment("Efectivo");
+    setQuantity(1); setPayment("Efectivo"); setSaleDate(todayLocal());
     setUnitPrice(b0 && c0 ? (lastPrices[`${b0}_${c0}`]?.toFixed(0) ?? "") : "");
     setFxRate(""); setFxLoading(false);
     setExpAmount(""); setExpLevel("GENERAL"); setExpBookId("");
@@ -181,10 +184,10 @@ export default function QuickSaleFab({
 
       if (mode === "libro") {
         if (!bookId) return;
-        result = await createSale({ bookId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, fxRateToCLP, paymentMethod: payment });
+        result = await createSale({ bookId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, fxRateToCLP, paymentMethod: payment, saleDate });
       } else {
         if (!merchId) return;
-        result = await createMerchSale({ merchandiseId: merchId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, fxRateToCLP, paymentMethod: payment });
+        result = await createMerchSale({ merchandiseId: merchId, channelId, quantity, unitPrice: parseFloat(unitPrice), currency: saleCurrency, fxRateToCLP, paymentMethod: payment, saleDate });
       }
 
       if (result.error) {
@@ -485,6 +488,20 @@ export default function QuickSaleFab({
                                 className="text-sm"
                               />
                             </div>
+                          </div>
+
+                          {/* Sale date — editable to register past sales */}
+                          <div className="space-y-1.5">
+                            <label htmlFor="quick-sale-date" className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Fecha</label>
+                            <Input
+                              id="quick-sale-date"
+                              type="date"
+                              value={saleDate}
+                              onChange={e => setSaleDate(e.target.value)}
+                              max={todayLocal()}
+                              required
+                              className="text-sm"
+                            />
                           </div>
 
                           {/* FX rate — only shown for foreign-currency channels */}

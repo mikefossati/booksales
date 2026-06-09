@@ -97,4 +97,46 @@ describe("fetchRateToCLP", () => {
 
     expect(await fetchRateToCLP("XYZ")).toBeNull();
   });
+
+  // ── Historical rates ────────────────────────────────────────────────────────
+
+  it("uses the dated endpoint when a date is provided", async () => {
+    const spy = vi.spyOn(global, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ usd: { clp: 940 } }),
+    } as Response);
+
+    expect(await fetchRateToCLP("USD", "2026-05-01")).toBe(940);
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining("@2026-05-01"),
+      expect.any(Object),
+    );
+  });
+
+  it("falls back to latest when the dated snapshot is unavailable", async () => {
+    const spy = vi.spyOn(global, "fetch")
+      .mockResolvedValueOnce({ ok: false, json: async () => ({}) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ usd: { clp: 970 } }) } as Response);
+
+    expect(await fetchRateToCLP("USD", "2026-06-09")).toBe(970);
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenLastCalledWith(
+      expect.stringContaining("@latest"),
+      expect.any(Object),
+    );
+  });
+
+  it("ignores malformed dates and goes straight to latest", async () => {
+    const spy = vi.spyOn(global, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ usd: { clp: 970 } }),
+    } as Response);
+
+    expect(await fetchRateToCLP("USD", "garbage")).toBe(970);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining("@latest"),
+      expect.any(Object),
+    );
+  });
 });

@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createSale } from "@/actions/sales";
 import { fetchRateToCLP } from "@/lib/fx";
+import { todayLocal } from "@/lib/dates";
 import { toast } from "sonner";
 import { Plus, X, BookOpen, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export default function DashboardSaleButton({
   const [quantity, setQuantity]   = useState(1);
   const [unitPrice, setUnitPrice] = useState("");
   const [payment, setPayment]     = useState("Efectivo");
+  const [saleDate, setSaleDate]   = useState(todayLocal());
   const [fxRate, setFxRate]       = useState("");
   const [fxLoading, setFxLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -53,11 +55,11 @@ export default function DashboardSaleButton({
     const curr = channels.find(c => c.id === channelId)?.currency ?? "CLP";
     if (curr === accountCurrency) { setFxRate(""); return; }
     setFxLoading(true);
-    fetchRateToCLP(curr)
+    fetchRateToCLP(curr, saleDate !== todayLocal() ? saleDate : undefined)
       .then(rate => { if (rate) setFxRate(rate.toFixed(4)); })
       .catch(() => {})
       .finally(() => setFxLoading(false));
-  }, [channelId]);
+  }, [channelId, saleDate]);
 
   useEffect(() => {
     if (bookId && channelId) {
@@ -74,6 +76,7 @@ export default function DashboardSaleButton({
     const b0 = books[0]?.id ?? "";
     const c0 = channels[0]?.id ?? "";
     setBookId(b0); setChannelId(c0); setQuantity(1); setPayment("Efectivo");
+    setSaleDate(todayLocal());
     setFxRate(""); setFxLoading(false);
     setUnitPrice(b0 && c0 ? (lastPrices[`${b0}_${c0}`]?.toFixed(0) ?? "") : "");
     setOpen(true);
@@ -88,6 +91,7 @@ export default function DashboardSaleButton({
         bookId, channelId, quantity,
         unitPrice: parseFloat(unitPrice),
         currency: saleCurrency, fxRateToCLP, paymentMethod: payment,
+        saleDate,
       });
       if (result.error) {
         toast.error(result.error);
@@ -179,6 +183,14 @@ export default function DashboardSaleButton({
                     value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
                     placeholder="8000" required className="text-sm" />
                 </div>
+              </div>
+
+              {/* Sale date — editable to register past sales */}
+              <div className="space-y-1.5">
+                <label htmlFor="ds-sale-date" className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Fecha</label>
+                <Input id="ds-sale-date" type="date"
+                  value={saleDate} onChange={e => setSaleDate(e.target.value)}
+                  max={todayLocal()} required className="text-sm" />
               </div>
 
               {/* FX */}

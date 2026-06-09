@@ -5,6 +5,7 @@ import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { SaleStatus } from "@/generated/prisma/client";
 import { calcSaleTotal, shouldTrackBookInventory } from "@/lib/finance";
+import { resolveSaleDate } from "@/lib/dates";
 
 export async function createSale({
   bookId,
@@ -14,6 +15,7 @@ export async function createSale({
   currency,
   fxRateToCLP,
   paymentMethod,
+  saleDate,
 }: {
   bookId: string;
   channelId: string;
@@ -22,12 +24,16 @@ export async function createSale({
   currency: string;
   fxRateToCLP?: number;
   paymentMethod?: string;
+  saleDate?: string; // YYYY-MM-DD; omitted → today
 }): Promise<{ error?: string }> {
   const auth = await requireAccount();
   if ("error" in auth) return auth;
 
   if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
+
+  const resolvedDate = resolveSaleDate(saleDate);
+  if (resolvedDate.error) return { error: resolvedDate.error };
 
   const channelOwned = await prisma.channel.findFirst({
     where: { id: channelId, accountId: auth.account.id },
@@ -62,6 +68,7 @@ export async function createSale({
           paymentMethod: paymentMethod ?? null,
           status:        "CONFIRMED",
           origin:        "manual",
+          saleDate:      resolvedDate.date,
         },
       });
 
@@ -72,7 +79,7 @@ export async function createSale({
             type:       "DIRECT_SALE",
             quantity,
             channelId,
-            occurredAt: new Date(),
+            occurredAt: resolvedDate.date,
           },
         });
       }

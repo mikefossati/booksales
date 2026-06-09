@@ -169,6 +169,44 @@ describe("createSale — input validation", () => {
     });
     expect(result.error).toMatch(/error/i);
   });
+
+  it("rejects a future sale date", async () => {
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 8000, currency: "CLP",
+      saleDate: "2099-01-01",
+    });
+    expect(result.error).toBe("La fecha no puede ser futura.");
+    expect(mockSaleCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a malformed sale date", async () => {
+    const result = await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 8000, currency: "CLP",
+      saleDate: "01/06/2026",
+    });
+    expect(result.error).toBe("Fecha inválida.");
+  });
+
+  it("stores the provided past sale date on the sale and inventory movement", async () => {
+    await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 8000, currency: "CLP",
+      saleDate: "2026-03-10",
+    });
+    const sale = mockSaleCreate.mock.calls[0][0].data;
+    expect(sale.saleDate.getFullYear()).toBe(2026);
+    expect(sale.saleDate.getMonth()).toBe(2);
+    expect(sale.saleDate.getDate()).toBe(10);
+    const movement = mockMovementCreate.mock.calls[0][0].data;
+    expect(movement.occurredAt.getDate()).toBe(10);
+  });
+
+  it("defaults the sale date to now when omitted", async () => {
+    await createSale({
+      bookId: "b1", channelId: "c1", quantity: 1, unitPrice: 8000, currency: "CLP",
+    });
+    const sale = mockSaleCreate.mock.calls[0][0].data;
+    expect(Math.abs(sale.saleDate.getTime() - Date.now())).toBeLessThan(5000);
+  });
 });
 
 // ── Sales — updateSale ────────────────────────────────────────────────────────

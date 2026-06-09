@@ -5,6 +5,7 @@ import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import type { MerchandiseType } from "@/generated/prisma/client";
 import { calcCostPerUnit, calcSaleTotal } from "@/lib/finance";
+import { resolveSaleDate } from "@/lib/dates";
 
 // ── Products ──────────────────────────────────────────────────────────────────
 
@@ -208,6 +209,7 @@ export async function createMerchSale({
   currency,
   fxRateToCLP,
   paymentMethod,
+  saleDate,
 }: {
   merchandiseId: string;
   channelId: string;
@@ -216,12 +218,16 @@ export async function createMerchSale({
   currency: string;
   fxRateToCLP?: number;
   paymentMethod?: string;
+  saleDate?: string; // YYYY-MM-DD; omitted → today
 }): Promise<{ error?: string }> {
   const auth = await requireAccount();
   if ("error" in auth) return auth;
 
   if (quantity < 1)  return { error: "La cantidad debe ser al menos 1." };
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
+
+  const resolvedDate = resolveSaleDate(saleDate);
+  if (resolvedDate.error) return { error: resolvedDate.error };
 
   const [channelOwned, merchOwned] = await Promise.all([
     prisma.channel.findFirst({ where: { id: channelId, accountId: auth.account.id }, select: { id: true } }),
@@ -247,6 +253,7 @@ export async function createMerchSale({
           paymentMethod: paymentMethod ?? null,
           status:        "CONFIRMED",
           origin:        "manual",
+          saleDate:      resolvedDate.date,
         },
       });
       await tx.inventoryMovement.create({
@@ -255,7 +262,7 @@ export async function createMerchSale({
           channelId,
           type:       "MERCHANDISE_SALE",
           quantity,
-          occurredAt: new Date(),
+          occurredAt: resolvedDate.date,
         },
       });
     });
