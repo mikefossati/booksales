@@ -7,8 +7,6 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { id: "perfil",       label: "Perfil"       },
   { id: "preferencias", label: "Preferencias" },
-  { id: "canales",      label: "Canales"      },
-  { id: "inventarios",  label: "Inventarios"  },
   { id: "seguridad",    label: "Seguridad"    },
 ];
 

@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   BookOpen,
+  Store,
+  Package,
   DollarSign,
   BarChart3,
   Settings,
@@ -15,10 +17,12 @@ import { createClient } from "@/lib/supabase/client";
 import { AutoriappLogo } from "@/components/brand/Logo";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Inicio" },
-  { href: "/libros",    icon: BookOpen,         label: "Mis Libros" },
-  { href: "/finanzas",  icon: DollarSign,       label: "Finanzas" },
-  { href: "/reportes",  icon: BarChart3,        label: "Reportes" },
+  { href: "/dashboard",  icon: LayoutDashboard, label: "Inicio" },
+  { href: "/libros",     icon: BookOpen,        label: "Mis Libros" },
+  { href: "/canales",    icon: Store,           label: "Canales" },
+  { href: "/inventario", icon: Package,         label: "Inventario" },
+  { href: "/finanzas",   icon: DollarSign,      label: "Finanzas" },
+  { href: "/reportes",   icon: BarChart3,       label: "Reportes" },
   { href: "/configuracion", icon: Settings,     label: "Configuración" },
 ];
 

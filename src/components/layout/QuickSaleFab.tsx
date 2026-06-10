@@ -421,7 +421,7 @@ export default function QuickSaleFab({
                         </a>
                       )}
                       {channels.length === 0 && (
-                        <a href="/configuracion" onClick={handleClose}
+                        <a href="/canales" onClick={handleClose}
                           className="flex items-center justify-between p-3 rounded-[var(--radius-md)] bg-[var(--color-accent-light)] text-[var(--color-accent)] text-sm font-medium">
                           <span>② Configura al menos un canal</span>
                           <ChevronRight size={15} />
