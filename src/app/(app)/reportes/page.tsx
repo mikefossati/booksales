@@ -13,7 +13,7 @@ import GoalCalculator from "@/components/reportes/GoalCalculator";
 import type { ProjectionPoint } from "@/components/reportes/ProjectionChart";
 import type { ExpenseCategory } from "@/generated/prisma/client";
 import {
-  STOCK_SIGN,
+  calcStockMatrix,
   calcRecoveryPct,
   calcProjectionScenarios,
   calc3MonthAvg,
@@ -49,7 +49,7 @@ export default async function ReportesPage({
 
   const {
     channels, allSales, allExpenses, allPayments,
-    books, printRuns, bookMovements, allExchanges, merchandise,
+    books, printRuns, bookMovements, allExchanges, merchandise, inventories,
   } = await getCachedReportesData(account.id);
 
   const channelIds = channels.map(c => c.id);
@@ -98,33 +98,23 @@ export default async function ReportesPage({
 
   // ── Inventario aggregations ───────────────────────────────────────────────
 
-  // Stock per book
-  const stockByBook = new Map<string, number>();
-  const inBookstoreByBook = new Map<string, number>();
-  const inBookstoreByChannel = new Map<string, number>(); // channelId → total units there
+  // Stock per (inventory, book) from the movement ledger
+  const stockMatrix = calcStockMatrix(bookMovements);
+  const printBooks  = books.filter(b => b.formats.includes("PRINT"));
 
-  for (const m of bookMovements) {
-    if (!m.bookId) continue;
-    const sign = STOCK_SIGN[m.type] ?? 0;
-    stockByBook.set(m.bookId, (stockByBook.get(m.bookId) ?? 0) + sign * m.quantity);
-    if (m.type === "SEND_TO_BOOKSTORE") {
-      inBookstoreByBook.set(m.bookId, (inBookstoreByBook.get(m.bookId) ?? 0) + m.quantity);
-      if (m.channelId) inBookstoreByChannel.set(m.channelId, (inBookstoreByChannel.get(m.channelId) ?? 0) + m.quantity);
-    }
-    if (m.type === "BOOKSTORE_RETURN") {
-      inBookstoreByBook.set(m.bookId, (inBookstoreByBook.get(m.bookId) ?? 0) - m.quantity);
-      if (m.channelId) inBookstoreByChannel.set(m.channelId, (inBookstoreByChannel.get(m.channelId) ?? 0) - m.quantity);
-    }
+  const inventoryTotals = new Map<string, number>(); // inventoryId → units across books
+  for (const [invId, byBook] of stockMatrix) {
+    inventoryTotals.set(invId, [...byBook.values()].reduce((s, v) => s + v, 0));
   }
-
-  const printBooks = books.filter(b => b.formats.includes("PRINT"));
 
   // Outstanding per channel
   const salesByChannel   = new Map(channels.map(c => [c.id, allSales.filter(s => s.channelId === c.id).reduce((s, x) => s + saleToCLP(x), 0)]));
   const paymentsByChannel = new Map<string, number>();
   for (const p of allPayments) paymentsByChannel.set(p.channelId, (paymentsByChannel.get(p.channelId) ?? 0) + toNum(p.amount));
 
-  const bookstoreChannels = channels.filter(c => c.type === "BOOKSTORE" && (inBookstoreByChannel.get(c.id) ?? 0) > 0);
+  const bookstoreChannels = channels.filter(c =>
+    c.type === "BOOKSTORE" && c.inventoryId && (inventoryTotals.get(c.inventoryId) ?? 0) !== 0,
+  );
 
   // Canjes summary
   const pendingCanjes     = allExchanges.filter(e => e.status === "PENDING");
@@ -338,9 +328,9 @@ export default async function ReportesPage({
           <div className="flex justify-end">
             <ExportButton tab="inventario" size="sm" />
           </div>
-          {/* Stock de libros */}
+          {/* Existencias por inventario */}
           <section>
-            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Stock de libros impresos</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Existencias por inventario</h2>
             {printBooks.length === 0 ? (
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <CardContent className="py-10 text-center">
@@ -348,26 +338,40 @@ export default async function ReportesPage({
                 </CardContent>
               </Card>
             ) : (
-              <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-                <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
-                  {["Libro", "En mano", "En librerías", "Total impreso"].map((h, i) => (
-                    <span key={h} className={`text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide ${i > 0 ? "text-right" : ""}`}>{h}</span>
-                  ))}
-                </div>
-                <div className="divide-y divide-[var(--color-border)]">
-                  {printBooks.map(book => {
-                    const inHand      = Math.max(0, stockByBook.get(book.id) ?? 0);
-                    const inStores    = Math.max(0, inBookstoreByBook.get(book.id) ?? 0);
-                    const totalPrinted = printRuns.filter(r => r.bookId === book.id).reduce((s, r) => s + r.quantity, 0);
-                    return (
-                      <div key={book.id} className="flex md:grid md:grid-cols-[1fr_auto_auto_auto] items-center gap-3 md:gap-4 px-5 py-3.5">
-                        <p className="text-sm font-medium text-[var(--color-text)] flex-1">{book.title}</p>
-                        <span className={`text-sm font-semibold text-right ${inHand <= 5 && inHand > 0 ? "text-[var(--color-warning)]" : inHand === 0 ? "text-[var(--color-danger)]" : "text-[var(--color-text)]"}`}>{inHand}</span>
-                        <span className="text-sm text-[var(--color-text)] text-right">{inStores}</span>
-                        <span className="text-sm text-[var(--color-text-muted)] text-right">{totalPrinted}</span>
-                      </div>
-                    );
-                  })}
+              <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)] overflow-x-auto">
+                <div className="min-w-fit">
+                  <div className="grid gap-4 px-5 py-2.5 border-b border-[var(--color-border)]"
+                    style={{ gridTemplateColumns: `minmax(140px,1fr) repeat(${inventories.length}, auto) auto auto` }}>
+                    <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Libro</span>
+                    {inventories.map(inv => (
+                      <span key={inv.id} className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide text-right max-w-28 truncate" title={inv.name}>
+                        {inv.name}
+                      </span>
+                    ))}
+                    <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide text-right">Total</span>
+                    <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide text-right">Impreso</span>
+                  </div>
+                  <div className="divide-y divide-[var(--color-border)]">
+                    {printBooks.map(book => {
+                      const perInv = inventories.map(inv => stockMatrix.get(inv.id)?.get(book.id) ?? 0);
+                      const total  = perInv.reduce((s, v) => s + v, 0);
+                      const totalPrinted = printRuns.filter(r => r.bookId === book.id).reduce((s, r) => s + r.quantity, 0);
+                      return (
+                        <div key={book.id} className="grid items-center gap-4 px-5 py-3.5"
+                          style={{ gridTemplateColumns: `minmax(140px,1fr) repeat(${inventories.length}, auto) auto auto` }}>
+                          <p className="text-sm font-medium text-[var(--color-text)]">{book.title}</p>
+                          {perInv.map((stock, i) => (
+                            <span key={inventories[i].id}
+                              className={`text-sm text-right ${stock < 0 ? "text-[var(--color-danger)] font-semibold" : stock === 0 ? "text-[var(--color-text-muted)]" : "text-[var(--color-text)]"}`}>
+                              {stock}
+                            </span>
+                          ))}
+                          <span className={`text-sm font-semibold text-right ${total < 0 ? "text-[var(--color-danger)]" : "text-[var(--color-text)]"}`}>{total}</span>
+                          <span className="text-sm text-[var(--color-text-muted)] text-right">{totalPrinted}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </Card>
             )}
@@ -418,7 +422,7 @@ export default async function ReportesPage({
                 </div>
                 <div className="divide-y divide-[var(--color-border)]">
                   {bookstoreChannels.map(ch => {
-                    const stock       = Math.max(0, inBookstoreByChannel.get(ch.id) ?? 0);
+                    const stock       = ch.inventoryId ? (inventoryTotals.get(ch.inventoryId) ?? 0) : 0;
                     const totalSales  = salesByChannel.get(ch.id) ?? 0;
                     const totalPaid   = paymentsByChannel.get(ch.id) ?? 0;
                     const outstanding = calcOutstanding(totalSales, totalPaid);

@@ -41,7 +41,21 @@ const QUICK_NAMES: Record<ChannelType, string[]> = {
   PRESALE:   ["Preventa Lanzamiento"],
 };
 
-export default function AddChannelModal({ accountId }: { accountId: string }) {
+// Default inventory choice per channel type (mirrors server-side defaults)
+const DEFAULT_INVENTORY_CHOICE: Record<ChannelType, string> = {
+  DIGITAL:   "none",
+  BOOKSTORE: "own",
+  DIRECT:    "default",
+  PRESALE:   "default",
+};
+
+export default function AddChannelModal({
+  accountId,
+  inventories = [],
+}: {
+  accountId: string;
+  inventories?: { id: string; name: string }[];
+}) {
   const [open, setOpen]         = useState(false);
   const [step, setStep]         = useState<1 | 2>(1);
   const [type, setType]         = useState<ChannelType>("DIGITAL");
@@ -50,6 +64,7 @@ export default function AddChannelModal({ accountId }: { accountId: string }) {
   const [consignment, setConsignment] = useState("");
   const [currency, setCurrency] = useState("CLP");
   const [city, setCity]         = useState("");
+  const [inventoryChoice, setInventoryChoice] = useState("none");
   const [error, setError]       = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -71,6 +86,7 @@ export default function AddChannelModal({ accountId }: { accountId: string }) {
   function handleTypeSelect(t: ChannelType) {
     setType(t);
     setName("");
+    setInventoryChoice(DEFAULT_INVENTORY_CHOICE[t]);
     setStep(2);
   }
 
@@ -86,6 +102,7 @@ export default function AddChannelModal({ accountId }: { accountId: string }) {
         consignmentPercent: consignment ? parseFloat(consignment) : null,
         currency:          currency    || null,
         city:              city        || null,
+        inventoryId:       inventoryChoice,
       });
       if (result.error) {
         setError(result.error);
@@ -197,6 +214,25 @@ export default function AddChannelModal({ accountId }: { accountId: string }) {
                     </div>
                   </div>
                 )}
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="ch-inventory">Inventario</Label>
+                  <select
+                    id="ch-inventory"
+                    value={inventoryChoice}
+                    onChange={(e) => setInventoryChoice(e.target.value)}
+                    className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 focus:border-[var(--color-accent)]"
+                  >
+                    <option value="none">Sin inventario (impresión bajo demanda)</option>
+                    <option value="own">Inventario propio (se creará con el nombre del canal)</option>
+                    {inventories.map(i => (
+                      <option key={i.id} value={i.id}>{i.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">
+                    Las ventas de este canal descontarán de este inventario.
+                  </p>
+                </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="ch-currency">Moneda de este canal</Label>

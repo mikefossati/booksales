@@ -5,7 +5,7 @@ import { formatCurrency, formatDate, toNum } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
 import type { ChannelType, ExpenseCategory } from "@/generated/prisma/client";
-import { calcMomPercent, calcOutstanding, STOCK_SIGN, saleToCLP } from "@/lib/finance";
+import { calcMomPercent, calcOutstanding, calcStockMatrix, saleToCLP } from "@/lib/finance";
 import { getCachedReportesData } from "@/lib/data-cache";
 import DashboardSaleButton from "@/components/dashboard/DashboardSaleButton";
 import DashboardExpenseButton from "@/components/dashboard/DashboardExpenseButton";
@@ -115,7 +115,7 @@ export default async function DashboardPage() {
   });
 
   // All other data comes from the shared cache (same dataset as reportes)
-  const { channels, allSales, allExpenses, allPayments, books, bookMovements } =
+  const { channels, allSales, allExpenses, allPayments, books, bookMovements, inventories } =
     await getCachedReportesData(account.id);
 
   // ── Date boundaries ───────────────────────────────────────────────────────
@@ -173,11 +173,12 @@ export default async function DashboardPage() {
   const bookMap    = new Map(books.map(b => [b.id, b]));
   const printBooks = books.filter(b => b.formats.includes("PRINT"));
 
-  const stockByBook = new Map<string, number>();
-  for (const { bookId, type, quantity } of bookMovements) {
-    if (!bookId) continue;
-    stockByBook.set(bookId, (stockByBook.get(bookId) ?? 0) + (STOCK_SIGN[type] ?? 0) * quantity);
-  }
+  // Low-stock alert watches the personal (default) inventory
+  const defaultInventoryId = inventories.find(i => i.isDefault)?.id;
+  const stockMatrix = calcStockMatrix(bookMovements);
+  const stockByBook = defaultInventoryId
+    ? (stockMatrix.get(defaultInventoryId) ?? new Map<string, number>())
+    : new Map<string, number>();
 
   // Last prices for sale button (most recent non-bulk sale per book+channel)
   const lastPrices: Record<string, number> = {};

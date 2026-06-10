@@ -34,8 +34,8 @@ export type ExpenseRecord = {
 
 export type BookStockRecord = {
   title:        string;
-  inHand:       number;
-  inBookstores: number;
+  perInventory: number[]; // aligned with the inventoryNames passed to bookStockAoa
+  total:        number;
   totalPrinted: number;
 };
 
@@ -105,10 +105,10 @@ export function expensesAoa(rows: ExpenseRecord[]): AOA {
   ];
 }
 
-export function bookStockAoa(rows: BookStockRecord[]): AOA {
+export function bookStockAoa(rows: BookStockRecord[], inventoryNames: string[]): AOA {
   return [
-    ["Libro", "En mano", "En librerías", "Total impreso"],
-    ...rows.map(r => [r.title, r.inHand, r.inBookstores, r.totalPrinted]),
+    ["Libro", ...inventoryNames, "Total", "Total impreso"],
+    ...rows.map(r => [r.title, ...r.perInventory, r.total, r.totalPrinted]),
   ];
 }
 

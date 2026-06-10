@@ -180,14 +180,17 @@ describe("expensesAoa", () => {
 // ── bookStockAoa ──────────────────────────────────────────────────────────────
 
 describe("bookStockAoa", () => {
-  const row: BookStockRecord = { title: "Obra maestra", inHand: 50, inBookstores: 20, totalPrinted: 200 };
+  const row: BookStockRecord = { title: "Obra maestra", perInventory: [50, 20], total: 70, totalPrinted: 200 };
+  const invNames = ["Inventario personal", "Librería Feria"];
 
-  it("returns correct headers", () => {
-    expect(bookStockAoa([])[0]).toEqual(["Libro", "En mano", "En librerías", "Total impreso"]);
+  it("returns dynamic per-inventory headers", () => {
+    expect(bookStockAoa([], invNames)[0]).toEqual([
+      "Libro", "Inventario personal", "Librería Feria", "Total", "Total impreso",
+    ]);
   });
 
   it("maps a record correctly", () => {
-    expect(bookStockAoa([row])[1]).toEqual(["Obra maestra", 50, 20, 200]);
+    expect(bookStockAoa([row], invNames)[1]).toEqual(["Obra maestra", 50, 20, 70, 200]);
   });
 });
 

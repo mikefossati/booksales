@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateAccount } from "@/lib/account";
 import { toNum } from "@/lib/format";
-import { saleToCLP, calcOutstanding, calcProjectionScenarios, calc3MonthAvg, STOCK_SIGN } from "@/lib/finance";
+import { saleToCLP, calcOutstanding, calcProjectionScenarios, calc3MonthAvg, calcStockMatrix } from "@/lib/finance";
 import { CATEGORY_LABELS, LEVEL_LABELS, CHANNEL_TYPE_LABEL } from "@/lib/labels";
 import { getCachedReportesData } from "@/lib/data-cache";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
 
     const {
       channels, allSales: rawSales, allExpenses: rawExpenses,
-      allPayments, books, printRuns, bookMovements, allExchanges, merchandise,
+      allPayments, books, printRuns, bookMovements, allExchanges, merchandise, inventories,
     } = await getCachedReportesData(account.id);
 
     const channelMap = new Map(channels.map(c => [c.id, c]));
@@ -138,32 +138,25 @@ export async function GET(req: NextRequest) {
 
     // ── Transform: Inventario ─────────────────────────────────────────────────
 
-    const stockByBook      = new Map<string, number>();
-    const inStoreByBook    = new Map<string, number>();
-    const inStoreByChannel = new Map<string, number>();
+    const stockMatrix = calcStockMatrix(bookMovements);
+    const inventoryNames = inventories.map(i => i.name);
 
-    for (const m of bookMovements) {
-      if (!m.bookId) continue;
-      const sign = (STOCK_SIGN as Record<string, number>)[m.type] ?? 0;
-      stockByBook.set(m.bookId, (stockByBook.get(m.bookId) ?? 0) + sign * m.quantity);
-      if (m.type === "SEND_TO_BOOKSTORE") {
-        inStoreByBook.set(m.bookId, (inStoreByBook.get(m.bookId) ?? 0) + m.quantity);
-        if (m.channelId) inStoreByChannel.set(m.channelId, (inStoreByChannel.get(m.channelId) ?? 0) + m.quantity);
-      }
-      if (m.type === "BOOKSTORE_RETURN") {
-        inStoreByBook.set(m.bookId, (inStoreByBook.get(m.bookId) ?? 0) - m.quantity);
-        if (m.channelId) inStoreByChannel.set(m.channelId, (inStoreByChannel.get(m.channelId) ?? 0) - m.quantity);
-      }
+    const inventoryTotals = new Map<string, number>();
+    for (const [invId, byBook] of stockMatrix) {
+      inventoryTotals.set(invId, [...byBook.values()].reduce((s, v) => s + v, 0));
     }
 
     const printBooks = books.filter(b => b.formats.includes("PRINT"));
 
-    const bookStockRecords: BookStockRecord[] = printBooks.map(b => ({
-      title:        b.title,
-      inHand:       Math.max(0, stockByBook.get(b.id) ?? 0),
-      inBookstores: Math.max(0, inStoreByBook.get(b.id) ?? 0),
-      totalPrinted: printRuns.filter(r => r.bookId === b.id).reduce((s, r) => s + r.quantity, 0),
-    }));
+    const bookStockRecords: BookStockRecord[] = printBooks.map(b => {
+      const perInventory = inventories.map(inv => stockMatrix.get(inv.id)?.get(b.id) ?? 0);
+      return {
+        title:        b.title,
+        perInventory,
+        total:        perInventory.reduce((s, v) => s + v, 0),
+        totalPrinted: printRuns.filter(r => r.bookId === b.id).reduce((s, r) => s + r.quantity, 0),
+      };
+    });
 
     // Consignment uses full history (not period-filtered) — outstanding is lifetime.
     const salesByChannel    = new Map<string, number>();
@@ -175,7 +168,7 @@ export async function GET(req: NextRequest) {
       .filter(c => c.type === "BOOKSTORE")
       .map(ch => ({
         channelName: ch.name,
-        stock:       Math.max(0, inStoreByChannel.get(ch.id) ?? 0),
+        stock:       ch.inventoryId ? (inventoryTotals.get(ch.inventoryId) ?? 0) : 0,
         soldCLP:     rnd(salesByChannel.get(ch.id) ?? 0),
         receivedCLP: rnd(paymentsByChannel.get(ch.id) ?? 0),
         pendingCLP:  rnd(calcOutstanding(salesByChannel.get(ch.id) ?? 0, paymentsByChannel.get(ch.id) ?? 0)),
@@ -251,7 +244,7 @@ export async function GET(req: NextRequest) {
     const SHEET_SETS: Record<string, { name: string; aoa: AOA }[]> = {
       ventas:       [{ name: "Ventas",          aoa: salesAoa(saleRecords) }],
       inventario:   [
-        { name: "Stock Libros",   aoa: bookStockAoa(bookStockRecords) },
+        { name: "Stock Libros",   aoa: bookStockAoa(bookStockRecords, inventoryNames) },
         { name: "Consignaciones", aoa: consignmentAoa(consignmentRecords) },
         { name: "Canjes",         aoa: exchangesAoa(exchangeRecords) },
       ],

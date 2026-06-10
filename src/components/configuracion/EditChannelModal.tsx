@@ -21,13 +21,20 @@ const CURRENCIES = [
   { value: "COP", label: "COP — Peso colombiano"     },
 ];
 
-export default function EditChannelModal({ channel }: { channel: Channel }) {
+export default function EditChannelModal({
+  channel,
+  inventories = [],
+}: {
+  channel: Channel;
+  inventories?: { id: string; name: string }[];
+}) {
   const [open, setOpen]               = useState(false);
   const [name, setName]               = useState(channel.name);
   const [royalty, setRoyalty]         = useState(channel.royaltyPercent?.toString()    ?? "");
   const [consignment, setConsignment] = useState(channel.consignmentPercent?.toString() ?? "");
   const [currency, setCurrency]       = useState(channel.currency ?? "");
   const [city, setCity]               = useState(channel.city ?? "");
+  const [inventoryChoice, setInventoryChoice] = useState(channel.inventoryId ?? "none");
   const [error, setError]             = useState<string | null>(null);
   const [isPending, startTransition]  = useTransition();
   const router = useRouter();
@@ -51,6 +58,7 @@ export default function EditChannelModal({ channel }: { channel: Channel }) {
         consignmentPercent: consignment ? parseFloat(consignment) : null,
         currency:          currency    || null,
         city:              city        || null,
+        inventoryId:       inventoryChoice,
       });
       if (result.error) setError(result.error);
       else { handleClose(); router.refresh(); }
@@ -119,6 +127,20 @@ export default function EditChannelModal({ channel }: { channel: Channel }) {
                 </div>
               )}
 
+              <div className="space-y-1.5">
+                <Label htmlFor="ech-inventory">Inventario</Label>
+                <select
+                  id="ech-inventory"
+                  value={inventoryChoice}
+                  onChange={(e) => setInventoryChoice(e.target.value)}
+                  className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 focus:border-[var(--color-accent)]"
+                >
+                  <option value="none">Sin inventario (impresión bajo demanda)</option>
+                  {inventories.map(i => (
+                    <option key={i.id} value={i.id}>{i.name}</option>
+                  ))}
+                </select>
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="ech-currency">Moneda de este canal</Label>
                 <select

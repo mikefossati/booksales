@@ -64,6 +64,7 @@ export function getCachedReportesData(accountId: string) {
           id: true, name: true, type: true, currency: true,
           consignmentPercent: true, royaltyPercent: true,
           consignmentDays: true, consignmentStartAt: true,
+          inventoryId: true,
         },
         orderBy: { name: "asc" },
       });
@@ -73,7 +74,7 @@ export function getCachedReportesData(accountId: string) {
         status:    { not: "CANCELLED" as const },
       };
 
-      const [allSales, allExpenses, allPayments, books, printRuns, bookMovements, allExchanges, merchandise] =
+      const [allSales, allExpenses, allPayments, books, printRuns, bookMovements, allExchanges, merchandise, inventories] =
         await Promise.all([
           prisma.sale.findMany({
             where:   base,
@@ -104,7 +105,7 @@ export function getCachedReportesData(accountId: string) {
           }),
           prisma.inventoryMovement.findMany({
             where:  { bookId: { not: null }, book: { accountId } },
-            select: { bookId: true, channelId: true, type: true, quantity: true },
+            select: { bookId: true, channelId: true, type: true, quantity: true, inventoryId: true, occurredAt: true },
           }),
           prisma.exchange.findMany({
             where:   { book: { accountId } },
@@ -123,12 +124,18 @@ export function getCachedReportesData(accountId: string) {
             },
             orderBy: { name: "asc" },
           }),
+          prisma.inventory.findMany({
+            where:   { accountId },
+            select:  { id: true, name: true, isDefault: true, channels: { select: { id: true, type: true } } },
+            orderBy: [{ isDefault: "desc" }, { name: "asc" }],
+          }),
         ]);
 
       return {
         channels, channelIds,
         allSales, allExpenses, allPayments,
         books, printRuns, bookMovements, allExchanges, merchandise,
+        inventories,
       };
     },
     [`reportes-${accountId}`],

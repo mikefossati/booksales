@@ -18,9 +18,8 @@ import EditPrintRunModal from "@/components/libros/EditPrintRunModal";
 import WriteoffModal from "@/components/libros/WriteoffModal";
 import BookTabNav from "@/components/libros/BookTabNav";
 import {
-  STOCK_SIGN,
-  calcStockInHand,
-  calcInBookstores,
+  INVENTORY_SIGN,
+  calcStockMatrix,
   calcInExchanges,
   calcRecoveryPct,
   isFullyRecovered,
@@ -44,6 +43,10 @@ const MOVEMENT_LABELS: Record<string, string> = {
   SEND_TO_INFLUENCER: "Enviado a influencer",
   WRITEOFF:           "Baja de inventario",
   BUNDLE_ASSEMBLY:    "Ensamblaje de bundle",
+  TRANSFER_OUT:       "Transferencia (salida)",
+  TRANSFER_IN:        "Transferencia (entrada)",
+  ADJUSTMENT_IN:      "Ajuste de conteo (+)",
+  ADJUSTMENT_OUT:     "Ajuste de conteo (−)",
 };
 
 const MOVEMENT_ICON: Record<string, string> = {
@@ -54,10 +57,13 @@ const MOVEMENT_ICON: Record<string, string> = {
   SEND_TO_INFLUENCER: "🤝",
   WRITEOFF:           "🗑️",
   BUNDLE_ASSEMBLY:    "📦",
+  TRANSFER_OUT:       "🔄",
+  TRANSFER_IN:        "🔄",
+  ADJUSTMENT_IN:      "🧮",
+  ADJUSTMENT_OUT:     "🧮",
 };
 
-// MOVEMENT_SIGN alias — imported as STOCK_SIGN from @/lib/finance
-const MOVEMENT_SIGN = STOCK_SIGN;
+const MOVEMENT_SIGN = INVENTORY_SIGN;
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -83,7 +89,7 @@ export default async function BookDetailPage({
 
   const isPrint = book.formats.includes("PRINT");
 
-  const [salesStats, allSales, printRuns, movements, bookstoreChannels, allChannels] =
+  const [salesStats, allSales, printRuns, movements, bookstoreChannels, allChannels, inventories] =
     await Promise.all([
       prisma.sale.aggregate({
         where: { bookId: book.id, status: { not: "CANCELLED" } },
@@ -103,7 +109,7 @@ export default async function BookDetailPage({
       isPrint
         ? prisma.inventoryMovement.findMany({
             where:   { bookId: book.id },
-            select:  { id: true, type: true, quantity: true, channelId: true, occurredAt: true, notes: true },
+            select:  { id: true, bookId: true, inventoryId: true, type: true, quantity: true, channelId: true, occurredAt: true, notes: true },
             orderBy: { occurredAt: "desc" },
           })
         : Promise.resolve([]),
@@ -117,6 +123,11 @@ export default async function BookDetailPage({
         select:  { id: true, name: true },
         orderBy: { name: "asc" },
       }),
+      prisma.inventory.findMany({
+        where:   { accountId: account.id },
+        select:  { id: true, name: true, isDefault: true, channels: { select: { type: true } } },
+        orderBy: [{ isDefault: "desc" }, { name: "asc" }],
+      }),
     ]);
 
   // ── Derived stock values ──────────────────────────────────────────────────────
@@ -124,8 +135,12 @@ export default async function BookDetailPage({
   const totalUnits   = salesStats._sum.quantity ?? 0;
   const totalRevenue = toNum(salesStats._sum.amountCLP);
 
-  const stockInHand  = calcStockInHand(movements);
-  const inBookstores = calcInBookstores(movements);
+  const stockMatrix = calcStockMatrix(movements);
+  const bookStockIn = (invId: string) => stockMatrix.get(invId)?.get(book.id) ?? 0;
+  const stockInHand  = inventories.filter(i => i.isDefault).reduce((s, i) => s + bookStockIn(i.id), 0);
+  const inBookstores = inventories
+    .filter(i => !i.isDefault && i.channels.some(c => c.type === "BOOKSTORE"))
+    .reduce((s, i) => s + bookStockIn(i.id), 0);
   const inExchanges  = calcInExchanges(movements);
 
   const totalPrintCost = printRuns.reduce((s, r) => s + toNum(r.totalCost), 0);
