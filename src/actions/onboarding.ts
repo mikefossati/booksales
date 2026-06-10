@@ -37,6 +37,18 @@ export async function completeOnboarding({
 
   try {
     await prisma.$transaction(async (tx) => {
+      // Default inventory — every account sells from "Inventario personal"
+      let defaultInventory = await tx.inventory.findFirst({
+        where:  { accountId, isDefault: true },
+        select: { id: true },
+      });
+      if (!defaultInventory) {
+        defaultInventory = await tx.inventory.create({
+          data:   { accountId, name: "Inventario personal", isDefault: true },
+          select: { id: true },
+        });
+      }
+
       let bookId: string | undefined;
 
       if (book?.title.trim()) {
@@ -52,6 +64,17 @@ export async function completeOnboarding({
 
       if (channels?.length) {
         for (const ch of channels) {
+          // BOOKSTORE → own inventory; DIRECT/PRESALE → personal; DIGITAL → none
+          let inventoryId: string | null = null;
+          if (ch.type === "BOOKSTORE") {
+            const own = await tx.inventory.create({
+              data:   { accountId, name: ch.name },
+              select: { id: true },
+            });
+            inventoryId = own.id;
+          } else if (ch.type === "DIRECT" || ch.type === "PRESALE") {
+            inventoryId = defaultInventory.id;
+          }
           await tx.channel.create({
             data: {
               accountId,
@@ -60,6 +83,7 @@ export async function completeOnboarding({
               currency:           ch.currency           ?? null,
               royaltyPercent:     ch.royaltyPercent     ?? null,
               consignmentPercent: ch.consignmentPercent ?? null,
+              inventoryId,
             },
           });
         }
@@ -80,10 +104,11 @@ export async function completeOnboarding({
         await tx.inventoryMovement.create({
           data: {
             bookId,
-            printRunId: run.id,
-            type:       "NEW_PRINT_RUN",
-            quantity:   printRun.quantity,
-            occurredAt: new Date(),
+            printRunId:  run.id,
+            type:        "NEW_PRINT_RUN",
+            quantity:    printRun.quantity,
+            inventoryId: defaultInventory.id,
+            occurredAt:  new Date(),
           },
         });
       }

@@ -337,3 +337,56 @@ export function resolvePricing({
   if (unitPrice < 0) return { error: "El precio no puede ser negativo." };
   return { unit: unitPrice, total: calcSaleTotal(quantity, unitPrice) };
 }
+
+// ── Per-inventory stock ───────────────────────────────────────────────────────
+
+/** Sign of each movement type on the inventory it points to. */
+export const INVENTORY_SIGN: Record<string, number> = {
+  NEW_PRINT_RUN:      +1,
+  TRANSFER_IN:        +1,
+  ADJUSTMENT_IN:      +1,
+  BOOKSTORE_RETURN:   +1, // legacy — converted to transfers by migration
+  DIRECT_SALE:        -1,
+  SEND_TO_INFLUENCER: -1,
+  WRITEOFF:           -1,
+  BUNDLE_ASSEMBLY:    -1,
+  TRANSFER_OUT:       -1,
+  ADJUSTMENT_OUT:     -1,
+  SEND_TO_BOOKSTORE:  -1, // legacy — converted to transfers by migration
+};
+
+export type InventoryStockMovement = {
+  bookId: string | null;
+  inventoryId: string | null;
+  type: string;
+  quantity: number;
+};
+
+/**
+ * Stock per (inventoryId, bookId) from the movement ledger.
+ * Movements without an inventory (e.g. merchandise) are ignored.
+ * Negative results are kept — the UI shows them as warnings.
+ */
+export function calcStockMatrix(
+  movements: InventoryStockMovement[],
+): Map<string, Map<string, number>> {
+  const matrix = new Map<string, Map<string, number>>();
+  for (const m of movements) {
+    if (!m.inventoryId || !m.bookId) continue;
+    const sign = INVENTORY_SIGN[m.type] ?? 0;
+    if (sign === 0) continue;
+    let byBook = matrix.get(m.inventoryId);
+    if (!byBook) { byBook = new Map(); matrix.set(m.inventoryId, byBook); }
+    byBook.set(m.bookId, (byBook.get(m.bookId) ?? 0) + sign * m.quantity);
+  }
+  return matrix;
+}
+
+/** Total stock of one book in one inventory. */
+export function calcInventoryStock(
+  movements: InventoryStockMovement[],
+  inventoryId: string,
+  bookId: string,
+): number {
+  return calcStockMatrix(movements).get(inventoryId)?.get(bookId) ?? 0;
+}

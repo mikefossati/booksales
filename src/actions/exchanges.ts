@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
+import { getOrCreateDefaultInventory } from "@/lib/inventory";
 import type { ExchangeStatus } from "@/generated/prisma/client";
 
 export async function createExchange({
@@ -37,6 +38,7 @@ export async function createExchange({
   if (!book) return { error: "Libro no encontrado." };
 
   const date = new Date(sentAt + "T12:00:00");
+  const defaultInventory = await getOrCreateDefaultInventory(auth.account.id);
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -54,10 +56,11 @@ export async function createExchange({
       await tx.inventoryMovement.create({
         data: {
           bookId,
-          exchangeId: exchange.id,
-          type:       "SEND_TO_INFLUENCER",
+          exchangeId:  exchange.id,
+          type:        "SEND_TO_INFLUENCER",
           quantity,
-          occurredAt: date,
+          inventoryId: defaultInventory.id,
+          occurredAt:  date,
         },
       });
     });

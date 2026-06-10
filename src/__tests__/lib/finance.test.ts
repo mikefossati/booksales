@@ -19,6 +19,8 @@ import {
   toBaseCurrency,
   saleToCLP,
   resolvePricing,
+  calcStockMatrix,
+  calcInventoryStock,
 } from "@/lib/finance";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -776,5 +778,87 @@ describe("resolvePricing", () => {
       expect(resolvePricing({ isBulk: true, totalAmount: 0, quantity: 3 }))
         .toEqual({ total: 0, unit: 0 });
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// calcStockMatrix / calcInventoryStock
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("calcStockMatrix", () => {
+  const mv = (inventoryId: string | null, bookId: string | null, type: string, quantity: number) =>
+    ({ inventoryId, bookId, type, quantity });
+
+  it("returns empty matrix for no movements", () => {
+    expect(calcStockMatrix([]).size).toBe(0);
+  });
+
+  it("accumulates print runs into the destination inventory", () => {
+    const m = calcStockMatrix([mv("personal", "b1", "NEW_PRINT_RUN", 200)]);
+    expect(m.get("personal")?.get("b1")).toBe(200);
+  });
+
+  it("transfers move stock between inventories", () => {
+    const m = calcStockMatrix([
+      mv("personal", "b1", "NEW_PRINT_RUN", 100),
+      mv("personal", "b1", "TRANSFER_OUT", 30),
+      mv("libreria", "b1", "TRANSFER_IN", 30),
+    ]);
+    expect(m.get("personal")?.get("b1")).toBe(70);
+    expect(m.get("libreria")?.get("b1")).toBe(30);
+  });
+
+  it("sales deduct from the inventory they point to", () => {
+    const m = calcStockMatrix([
+      mv("libreria", "b1", "TRANSFER_IN", 30),
+      mv("libreria", "b1", "DIRECT_SALE", 12),
+    ]);
+    expect(m.get("libreria")?.get("b1")).toBe(18);
+  });
+
+  it("adjustments apply signed", () => {
+    const m = calcStockMatrix([
+      mv("personal", "b1", "NEW_PRINT_RUN", 50),
+      mv("personal", "b1", "ADJUSTMENT_OUT", 3),
+      mv("personal", "b1", "ADJUSTMENT_IN", 1),
+    ]);
+    expect(m.get("personal")?.get("b1")).toBe(48);
+  });
+
+  it("keeps negative stock (oversold) without clamping", () => {
+    const m = calcStockMatrix([mv("libreria", "b1", "DIRECT_SALE", 5)]);
+    expect(m.get("libreria")?.get("b1")).toBe(-5);
+  });
+
+  it("ignores movements without inventory or book", () => {
+    const m = calcStockMatrix([
+      mv(null, "b1", "NEW_PRINT_RUN", 10),
+      mv("personal", null, "MERCHANDISE_ENTRY", 10),
+    ]);
+    expect(m.size).toBe(0);
+  });
+
+  it("tracks multiple books independently per inventory", () => {
+    const m = calcStockMatrix([
+      mv("personal", "b1", "NEW_PRINT_RUN", 10),
+      mv("personal", "b2", "NEW_PRINT_RUN", 20),
+      mv("personal", "b1", "DIRECT_SALE", 4),
+    ]);
+    expect(m.get("personal")?.get("b1")).toBe(6);
+    expect(m.get("personal")?.get("b2")).toBe(20);
+  });
+});
+
+describe("calcInventoryStock", () => {
+  it("returns 0 for unknown inventory/book", () => {
+    expect(calcInventoryStock([], "x", "y")).toBe(0);
+  });
+
+  it("returns the stock for the given pair", () => {
+    const movements = [
+      { inventoryId: "personal", bookId: "b1", type: "NEW_PRINT_RUN", quantity: 100 },
+      { inventoryId: "personal", bookId: "b1", type: "WRITEOFF", quantity: 2 },
+    ];
+    expect(calcInventoryStock(movements, "personal", "b1")).toBe(98);
   });
 });

@@ -57,8 +57,8 @@ vi.mock("@/lib/prisma", () => ({
     },
     $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
       fn({
-        sale:              { create: mockSaleCreate },
-        inventoryMovement: { create: mockMovementCreate },
+        sale:              { create: mockSaleCreate, update: mockSaleUpdate },
+        inventoryMovement: { create: mockMovementCreate, deleteMany: vi.fn() },
       }),
     ),
   },
@@ -72,9 +72,9 @@ import { createExpense, updateExpense, deleteExpense } from "@/actions/expenses"
 describe("createSale — input validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockChannelFindFirst.mockResolvedValue({ id: "c1", type: "DIRECT" });
+    mockChannelFindFirst.mockResolvedValue({ id: "c1", type: "DIRECT", inventoryId: "inv1" });
     mockBookFindFirst.mockResolvedValue({ id: "b1", formats: ["PRINT"] });
-    mockSaleCreate.mockResolvedValue({});
+    mockSaleCreate.mockResolvedValue({ id: "s1" });
     mockMovementCreate.mockResolvedValue({});
   });
 
@@ -142,8 +142,8 @@ describe("createSale — input validation", () => {
     expect(call.amountCLP).toBeNull();
   });
 
-  it("creates an inventory movement for DIRECT + PRINT", async () => {
-    mockChannelFindFirst.mockResolvedValue({ id: "c1", type: "DIRECT" });
+  it("creates an inventory movement when the channel has an inventory and the book is PRINT", async () => {
+    mockChannelFindFirst.mockResolvedValue({ id: "c1", type: "DIRECT", inventoryId: "inv1" });
     mockBookFindFirst.mockResolvedValue({ id: "b1", formats: ["PRINT"] });
 
     await createSale({
@@ -152,8 +152,8 @@ describe("createSale — input validation", () => {
     expect(mockMovementCreate).toHaveBeenCalledOnce();
   });
 
-  it("does NOT create an inventory movement for DIGITAL channels", async () => {
-    mockChannelFindFirst.mockResolvedValue({ id: "c1", type: "DIGITAL" });
+  it("does NOT create an inventory movement when the channel has no inventory (POD)", async () => {
+    mockChannelFindFirst.mockResolvedValue({ id: "c1", type: "DIGITAL", inventoryId: null });
     mockBookFindFirst.mockResolvedValue({ id: "b1", formats: ["EBOOK"] });
 
     await createSale({
@@ -252,7 +252,8 @@ describe("createSale — input validation", () => {
 describe("updateSale — input validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSaleFindFirst.mockResolvedValue({ id: "s1", currency: "CLP" });
+    mockSaleFindFirst.mockResolvedValue({ id: "s1", currency: "CLP", bookId: "b1", book: { formats: ["PRINT"] } });
+    mockChannelFindFirst.mockResolvedValue({ id: "c1", inventoryId: "inv1" });
     mockSaleUpdate.mockResolvedValue({});
   });
 

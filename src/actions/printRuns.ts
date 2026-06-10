@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
+import { getOrCreateDefaultInventory } from "@/lib/inventory";
 import { calcCostPerUnit } from "@/lib/finance";
 
 export async function addPrintRun({
@@ -12,6 +13,7 @@ export async function addPrintRun({
   supplier,
   receivedAt,
   notes,
+  inventoryId,
 }: {
   bookId: string;
   quantity: number;
@@ -19,6 +21,7 @@ export async function addPrintRun({
   supplier?: string;
   receivedAt: string; // YYYY-MM-DD
   notes?: string;
+  inventoryId?: string; // destination; omitted → personal inventory
 }): Promise<{ error?: string }> {
   const auth = await requireAccount();
   if ("error" in auth) return auth;
@@ -31,6 +34,18 @@ export async function addPrintRun({
     select: { id: true },
   });
   if (!bookOwned) return { error: "No encontrado." };
+
+  let destinationId: string;
+  if (inventoryId) {
+    const owned = await prisma.inventory.findFirst({
+      where:  { id: inventoryId, accountId: auth.account.id },
+      select: { id: true },
+    });
+    if (!owned) return { error: "Inventario no encontrado." };
+    destinationId = owned.id;
+  } else {
+    destinationId = (await getOrCreateDefaultInventory(auth.account.id)).id;
+  }
 
   const costPerUnit = calcCostPerUnit(totalCost, quantity);
   const date = new Date(receivedAt + "T12:00:00");
@@ -51,10 +66,11 @@ export async function addPrintRun({
       await tx.inventoryMovement.create({
         data: {
           bookId,
-          printRunId: run.id,
-          type:       "NEW_PRINT_RUN",
+          printRunId:  run.id,
+          type:        "NEW_PRINT_RUN",
           quantity,
-          occurredAt: date,
+          inventoryId: destinationId,
+          occurredAt:  date,
         },
       });
     });

@@ -50,7 +50,12 @@ export async function getOrCreateAccount(
   // ── 4. Create account if missing (with P2002 race-condition guard) ────────
   try {
     return await prisma.account.create({
-      data: { ownerId: profile.id, baseCurrency: "CLP", dateFormat: "DD/MM/YYYY" },
+      data: {
+        ownerId: profile.id,
+        baseCurrency: "CLP",
+        dateFormat: "DD/MM/YYYY",
+        inventories: { create: { name: "Inventario personal", isDefault: true } },
+      },
     });
   } catch (err: unknown) {
     if ((err as { code?: string }).code === "P2002") {
