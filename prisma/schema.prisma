@@ -48,6 +48,10 @@ enum InventoryMovementType {
   SEND_TO_INFLUENCER
   BUNDLE_ASSEMBLY
   WRITEOFF
+  TRANSFER_OUT
+  TRANSFER_IN
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
   MERCHANDISE_ENTRY
   MERCHANDISE_SALE
   MERCHANDISE_WRITEOFF
@@ -110,10 +114,11 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  members  AccountMember[]
-  books    Book[]
-  channels Channel[]
-  expenses Expense[]
+  members     AccountMember[]
+  books       Book[]
+  channels    Channel[]
+  expenses    Expense[]
+  inventories Inventory[]
 }
 
 model AccountMember {
@@ -206,6 +211,9 @@ model Channel {
   presaleCloseAt       DateTime?
   presaleDeliveryAt    DateTime?
   isActive             Boolean     @default(true)
+  // Inventory this channel sells from; null = no physical stock (e.g. print-on-demand)
+  inventoryId          String?
+  inventory            Inventory?  @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
 
@@ -213,6 +221,21 @@ model Channel {
   sales            Sale[]
   csvImports       CsvImport[]
   payments         Payment[]
+}
+
+// ─── Inventories (stock locations) ───────────────────────────────────────────
+
+model Inventory {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name      String
+  isDefault Boolean  @default(false) // receives print runs; cannot be deleted
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  channels  Channel[]
+  movements InventoryMovement[]
 }
 
 model BookChannel {
@@ -255,6 +278,8 @@ model Sale {
   notes             String?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
+
+  inventoryMovements InventoryMovement[]
 }
 
 // ─── CSV Imports ─────────────────────────────────────────────────────────────
@@ -303,6 +328,11 @@ model InventoryMovement {
   merchandise   Merchandise?          @relation(fields: [merchandiseId], references: [id])
   type          InventoryMovementType
   quantity      Int
+  inventoryId   String?
+  inventory     Inventory?            @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+  transferGroupId String?             // links the OUT and IN rows of one transfer
+  saleId        String?
+  sale          Sale?                 @relation(fields: [saleId], references: [id], onDelete: Cascade)
   channelId     String?
   exchangeId    String?
   exchange      Exchange?             @relation(fields: [exchangeId], references: [id])
