@@ -30,8 +30,6 @@ export default function EditChannelModal({
 }) {
   const [open, setOpen]               = useState(false);
   const [name, setName]               = useState(channel.name);
-  const [royalty, setRoyalty]         = useState(channel.royaltyPercent?.toString()    ?? "");
-  const [consignment, setConsignment] = useState(channel.consignmentPercent?.toString() ?? "");
   const [currency, setCurrency]       = useState(channel.currency ?? "");
   const [city, setCity]               = useState(channel.city ?? "");
   const [inventoryChoice, setInventoryChoice] = useState(channel.inventoryId ?? "none");
@@ -54,8 +52,6 @@ export default function EditChannelModal({
       const result = await updateChannel({
         id: channel.id,
         name,
-        royaltyPercent:    royalty     ? parseFloat(royalty)     : null,
-        consignmentPercent: consignment ? parseFloat(consignment) : null,
         currency:          currency    || null,
         city:              city        || null,
         inventoryId:       inventoryChoice,
@@ -91,7 +87,7 @@ export default function EditChannelModal({
                   Editar canal
                 </h2>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                  {channel.type === "DIGITAL" ? "Digital" : channel.type === "BOOKSTORE" ? "Librería" : channel.type === "PRESALE" ? "Preventa" : "Directo"}
+                  {channel.type === "DIGITAL" ? "Digital" : channel.type === "BOOKSTORE" ? "Librería" : "Directo"}
                 </p>
               </div>
               <button onClick={handleClose} disabled={isPending} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
@@ -105,25 +101,10 @@ export default function EditChannelModal({
                 <Input id="ech-name" value={name} onChange={e => setName(e.target.value)} required autoFocus />
               </div>
 
-              {channel.type === "DIGITAL" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="ech-royalty">Regalías (%)</Label>
-                  <Input id="ech-royalty" type="number" min="0" max="100" step="0.01"
-                    value={royalty} onChange={e => setRoyalty(e.target.value)} placeholder="35" />
-                </div>
-              )}
-
               {channel.type === "BOOKSTORE" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ech-consignment">Consignación (%)</Label>
-                    <Input id="ech-consignment" type="number" min="0" max="100" step="0.01"
-                      value={consignment} onChange={e => setConsignment(e.target.value)} placeholder="30" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ech-city">Ciudad</Label>
-                    <Input id="ech-city" value={city} onChange={e => setCity(e.target.value)} placeholder="Santiago" />
-                  </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ech-city">Ciudad</Label>
+                  <Input id="ech-city" value={city} onChange={e => setCity(e.target.value)} placeholder="Santiago" />
                 </div>
               )}
 

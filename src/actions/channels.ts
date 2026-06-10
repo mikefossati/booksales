@@ -31,7 +31,7 @@ async function resolveInventoryId(
     return { id: created.id };
   }
 
-  if (choice === "default" || (choice === undefined && (channelType === "DIRECT" || channelType === "PRESALE"))) {
+  if (choice === "default" || (choice === undefined && channelType === "DIRECT")) {
     return { id: (await getOrCreateDefaultInventory(accountId)).id };
   }
 
@@ -58,8 +58,6 @@ async function resolveInventoryId(
 export async function createChannel({
   name,
   type,
-  royaltyPercent,
-  consignmentPercent,
   currency,
   city,
   inventoryId,
@@ -67,8 +65,6 @@ export async function createChannel({
 }: {
   name: string;
   type: ChannelType;
-  royaltyPercent?: number | null;
-  consignmentPercent?: number | null;
   currency?: string | null;
   city?: string | null;
   inventoryId?: string; // "none" | "own" | "default" | existing id; omitted → per-type default
@@ -85,14 +81,12 @@ export async function createChannel({
   try {
     await prisma.channel.create({
       data: {
-        accountId:          auth.account.id,
-        name:               name.trim(),
+        accountId:   auth.account.id,
+        name:        name.trim(),
         type,
-        royaltyPercent:     royaltyPercent    ?? null,
-        consignmentPercent: consignmentPercent ?? null,
-        currency:           currency?.trim()   || null,
-        city:               city?.trim()       || null,
-        inventoryId:        inventory.id,
+        currency:    currency?.trim() || null,
+        city:        city?.trim()     || null,
+        inventoryId: inventory.id,
       },
     });
     updateTag(`config-${auth.account.id}`);
@@ -105,16 +99,12 @@ export async function createChannel({
 export async function updateChannel({
   id,
   name,
-  royaltyPercent,
-  consignmentPercent,
   currency,
   city,
   inventoryId,
 }: {
   id: string;
   name: string;
-  royaltyPercent?: number | null;
-  consignmentPercent?: number | null;
   currency?: string | null;
   city?: string | null;
   inventoryId?: string; // "none" | "own" | "default" | existing id; omitted → unchanged
@@ -141,11 +131,9 @@ export async function updateChannel({
     await prisma.channel.update({
       where: { id },
       data: {
-        name:               name.trim(),
-        royaltyPercent:     royaltyPercent    ?? null,
-        consignmentPercent: consignmentPercent ?? null,
-        currency:           currency?.trim()   || null,
-        city:               city?.trim()       || null,
+        name:     name.trim(),
+        currency: currency?.trim() || null,
+        city:     city?.trim()     || null,
         ...inventoryUpdate,
       },
     });

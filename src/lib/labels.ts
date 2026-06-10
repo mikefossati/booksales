@@ -23,5 +23,4 @@ export const CHANNEL_TYPE_LABEL: Record<ChannelType, string> = {
   DIGITAL:   "Digital",
   BOOKSTORE: "Librería",
   DIRECT:    "Directo",
-  PRESALE:   "Preventa",
 };

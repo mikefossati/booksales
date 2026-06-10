@@ -20,7 +20,6 @@ const CHANNEL_TYPES: {
   { value: "DIGITAL",   label: "Digital",    description: "Amazon KDP, Buscalibre, etc.",     icon: Globe         },
   { value: "BOOKSTORE", label: "Librería",   description: "Consignación o revenue share",      icon: Store         },
   { value: "DIRECT",    label: "Directo",    description: "Ferias, Instagram, en persona",     icon: Users         },
-  { value: "PRESALE",   label: "Preventa",   description: "Campaña antes del lanzamiento",     icon: CalendarClock },
 ];
 
 const CURRENCIES = [
@@ -38,7 +37,6 @@ const QUICK_NAMES: Record<ChannelType, string[]> = {
   DIGITAL:   ["Amazon KDP", "Buscalibre", "Google Play Books"],
   BOOKSTORE: ["Librería Antártica", "Feria del Libro"],
   DIRECT:    ["Instagram", "Ferias", "WhatsApp"],
-  PRESALE:   ["Preventa Lanzamiento"],
 };
 
 // Default inventory choice per channel type (mirrors server-side defaults)
@@ -46,7 +44,6 @@ const DEFAULT_INVENTORY_CHOICE: Record<ChannelType, string> = {
   DIGITAL:   "none",
   BOOKSTORE: "own",
   DIRECT:    "default",
-  PRESALE:   "default",
 };
 
 export default function AddChannelModal({
@@ -60,8 +57,6 @@ export default function AddChannelModal({
   const [step, setStep]         = useState<1 | 2>(1);
   const [type, setType]         = useState<ChannelType>("DIGITAL");
   const [name, setName]         = useState("");
-  const [royalty, setRoyalty]   = useState("");
-  const [consignment, setConsignment] = useState("");
   const [currency, setCurrency] = useState("CLP");
   const [city, setCity]         = useState("");
   const [inventoryChoice, setInventoryChoice] = useState("none");
@@ -76,8 +71,6 @@ export default function AddChannelModal({
     setOpen(false);
     setStep(1);
     setName("");
-    setRoyalty("");
-    setConsignment("");
     setCurrency("CLP");
     setCity("");
     setError(null);
@@ -98,8 +91,6 @@ export default function AddChannelModal({
         accountId,
         name,
         type,
-        royaltyPercent:    royalty     ? parseFloat(royalty)     : null,
-        consignmentPercent: consignment ? parseFloat(consignment) : null,
         currency:          currency    || null,
         city:              city        || null,
         inventoryId:       inventoryChoice,
@@ -195,23 +186,11 @@ export default function AddChannelModal({
                   <Input id="ch-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del canal" required autoFocus />
                 </div>
 
-                {type === "DIGITAL" && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="ch-royalty">Regalías (%)</Label>
-                    <Input id="ch-royalty" type="number" min="0" max="100" step="0.01" value={royalty} onChange={(e) => setRoyalty(e.target.value)} placeholder="35" />
-                  </div>
-                )}
 
                 {type === "BOOKSTORE" && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="ch-consignment">Consignación (%)</Label>
-                      <Input id="ch-consignment" type="number" min="0" max="100" step="0.01" value={consignment} onChange={(e) => setConsignment(e.target.value)} placeholder="30" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="ch-city">Ciudad</Label>
-                      <Input id="ch-city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Santiago" />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ch-city">Ciudad</Label>
+                    <Input id="ch-city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Santiago" />
                   </div>
                 )}
 

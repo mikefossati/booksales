@@ -544,9 +544,13 @@ export default function QuickSaleFab({
                             </div>
                           </div>
 
-                          {isBulkMode && total > 0 && quantity > 0 && (
+                          {isBulkMode && total > 0 && quantity > 0 ? (
                             <p className="text-[10px] text-[var(--color-text-muted)] -mt-3">
                               ≈ {formatMoney(total / quantity, saleCurrency)} por ejemplar
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-[var(--color-text-muted)] -mt-3">
+                              Registra el monto final que recibes tú.
                             </p>
                           )}
 

@@ -7,7 +7,6 @@ import { toNum } from "./format";
 
 // ── Local type aliases (match Prisma enums, no Prisma import needed) ─────────
 
-export type ChannelType    = "DIGITAL" | "BOOKSTORE" | "DIRECT" | "PRESALE";
 export type ExpenseLevel   = "GENERAL" | "BOOK" | "PRINT_RUN";
 export type ExchangeStatus = "PENDING" | "FULFILLED" | "UNFULFILLED";
 export type MovementType   =
@@ -35,29 +34,6 @@ export function calcSaleTotal(quantity: number, unitPrice: number): number {
  */
 export function calcCostPerUnit(totalCost: number, quantity: number): number {
   return quantity > 0 ? totalCost / quantity : 0;
-}
-
-// ── Channel revenue (net of platform commissions) ─────────────────────────────
-
-/**
- * Net amount the author receives from a gross sale amount, given the channel type.
- * - DIGITAL: gross × (royaltyPct / 100)  — platform keeps the rest
- * - BOOKSTORE: gross × ((100 − consignmentPct) / 100)  — librería takes consignmentPct
- * - DIRECT / PRESALE / no applicable %: full gross amount
- */
-export function netChannelRevenue(
-  grossAmount: number,
-  channelType: ChannelType,
-  royaltyPct: number | null,
-  consignmentPct: number | null,
-): number {
-  if (channelType === "DIGITAL" && royaltyPct != null) {
-    return grossAmount * (royaltyPct / 100);
-  }
-  if (channelType === "BOOKSTORE" && consignmentPct != null) {
-    return grossAmount * ((100 - consignmentPct) / 100);
-  }
-  return grossAmount;
 }
 
 // ── Print-run investment recovery ─────────────────────────────────────────────
@@ -296,18 +272,6 @@ export function resolveExpenseAssignments(
 
 // ── Inventory tracking eligibility ───────────────────────────────────────────
 
-/**
- * Whether a book sale should auto-create an inventory movement.
- * Only direct sales of physical books are tracked:
- * - Channel must be DIRECT (not DIGITAL, BOOKSTORE, or PRESALE)
- * - Book must include "PRINT" format
- */
-export function shouldTrackBookInventory(
-  channelType: string,
-  bookFormats:  string[],
-): boolean {
-  return channelType === "DIRECT" && bookFormats.includes("PRINT");
-}
 
 // ── Sale pricing (per-unit vs bulk) ───────────────────────────────────────────
 

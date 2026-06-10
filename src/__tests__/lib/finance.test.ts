@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   calcSaleTotal,
   calcCostPerUnit,
-  netChannelRevenue,
   calcRecoveryPct,
   isFullyRecovered,
   calcMomPercent,
@@ -14,7 +13,6 @@ import {
   calcProjectionScenarios,
   calc3MonthAvg,
   resolveExpenseAssignments,
-  shouldTrackBookInventory,
   calcOutstanding,
   toBaseCurrency,
   saleToCLP,
@@ -68,66 +66,6 @@ describe("calcCostPerUnit", () => {
 
   it("returns 0 when total cost is 0", () => {
     expect(calcCostPerUnit(0, 100)).toBe(0);
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// netChannelRevenue
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe("netChannelRevenue", () => {
-  describe("DIGITAL channel", () => {
-    it("applies royalty percentage", () => {
-      expect(netChannelRevenue(10000, "DIGITAL", 70, null)).toBe(7000);
-    });
-
-    it("applies 35% royalty (Amazon paperback)", () => {
-      expect(netChannelRevenue(10000, "DIGITAL", 35, null)).toBe(3500);
-    });
-
-    it("returns full gross when royaltyPct is null", () => {
-      expect(netChannelRevenue(10000, "DIGITAL", null, null)).toBe(10000);
-    });
-
-    it("returns 0 on zero gross", () => {
-      expect(netChannelRevenue(0, "DIGITAL", 70, null)).toBe(0);
-    });
-  });
-
-  describe("BOOKSTORE channel", () => {
-    it("author receives 100% minus consignment cut", () => {
-      // Librería takes 40%, author gets 60%
-      expect(netChannelRevenue(10000, "BOOKSTORE", null, 40)).toBe(6000);
-    });
-
-    it("handles 30% consignment cut", () => {
-      expect(netChannelRevenue(10000, "BOOKSTORE", null, 30)).toBe(7000);
-    });
-
-    it("returns full gross when consignmentPct is null", () => {
-      expect(netChannelRevenue(10000, "BOOKSTORE", null, null)).toBe(10000);
-    });
-  });
-
-  describe("DIRECT channel", () => {
-    it("returns full gross regardless of percentage params", () => {
-      expect(netChannelRevenue(8000, "DIRECT", 70, 40)).toBe(8000);
-    });
-
-    it("returns full gross with null percentages", () => {
-      expect(netChannelRevenue(8000, "DIRECT", null, null)).toBe(8000);
-    });
-  });
-
-  describe("PRESALE channel", () => {
-    it("returns full gross amount", () => {
-      expect(netChannelRevenue(5000, "PRESALE", null, null)).toBe(5000);
-    });
-  });
-
-  it("ignores consignmentPct when channel is DIGITAL", () => {
-    // DIGITAL uses royaltyPct — consignmentPct should not be applied
-    expect(netChannelRevenue(10000, "DIGITAL", 70, 40)).toBe(7000);
   });
 });
 
@@ -573,48 +511,6 @@ describe("resolveExpenseAssignments", () => {
       expect(resolveExpenseAssignments("PRINT_RUN"))
         .toEqual({ bookId: null, printRunId: null });
     });
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// shouldTrackBookInventory
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe("shouldTrackBookInventory", () => {
-  it("returns true for DIRECT channel + PRINT format", () => {
-    expect(shouldTrackBookInventory("DIRECT", ["PRINT"])).toBe(true);
-  });
-
-  it("returns true for DIRECT + mixed formats including PRINT", () => {
-    expect(shouldTrackBookInventory("DIRECT", ["PRINT", "EBOOK"])).toBe(true);
-  });
-
-  it("returns false for DIGITAL channel even with PRINT format", () => {
-    expect(shouldTrackBookInventory("DIGITAL", ["PRINT"])).toBe(false);
-  });
-
-  it("returns false for BOOKSTORE channel", () => {
-    expect(shouldTrackBookInventory("BOOKSTORE", ["PRINT"])).toBe(false);
-  });
-
-  it("returns false for PRESALE channel", () => {
-    expect(shouldTrackBookInventory("PRESALE", ["PRINT"])).toBe(false);
-  });
-
-  it("returns false for DIRECT channel with only EBOOK format", () => {
-    expect(shouldTrackBookInventory("DIRECT", ["EBOOK"])).toBe(false);
-  });
-
-  it("returns false for DIRECT channel with only AUDIOBOOK format", () => {
-    expect(shouldTrackBookInventory("DIRECT", ["AUDIOBOOK"])).toBe(false);
-  });
-
-  it("returns false for DIRECT channel with empty formats array", () => {
-    expect(shouldTrackBookInventory("DIRECT", [])).toBe(false);
-  });
-
-  it("returns false for unknown channel type", () => {
-    expect(shouldTrackBookInventory("UNKNOWN", ["PRINT"])).toBe(false);
   });
 });
 

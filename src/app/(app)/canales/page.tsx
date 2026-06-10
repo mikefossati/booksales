@@ -6,14 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import AddChannelModal from "@/components/configuracion/AddChannelModal";
 import EditChannelModal from "@/components/configuracion/EditChannelModal";
 import DeleteChannelButton from "@/components/configuracion/DeleteChannelButton";
-import { Globe, Store, Users, CalendarClock } from "lucide-react";
+import { Globe, Store, Users } from "lucide-react";
 import type { ChannelType } from "@/generated/prisma/client";
 
 const TYPE_META: Record<ChannelType, { label: string; icon: React.ElementType; color: string }> = {
   DIGITAL:   { label: "Digital",  icon: Globe,         color: "bg-blue-50 text-blue-600"                            },
   BOOKSTORE: { label: "Librería", icon: Store,         color: "bg-green-50 text-green-700"                          },
   DIRECT:    { label: "Directo",  icon: Users,         color: "bg-[var(--color-accent-light)] text-[var(--color-accent)]" },
-  PRESALE:   { label: "Preventa", icon: CalendarClock, color: "bg-purple-50 text-purple-700"                        },
 };
 
 export default async function CanalesPage() {
@@ -86,13 +85,9 @@ export default async function CanalesPage() {
                       </Badge>
                     </div>
                     <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                      {ch.type === "DIGITAL" && ch.royaltyPercent
-                        ? `Regalías: ${ch.royaltyPercent}% · ${ch.currency ?? "CLP"}`
-                        : ch.type === "BOOKSTORE" && ch.consignmentPercent
-                        ? `Consignación: ${ch.consignmentPercent}%${ch.city ? ` · ${ch.city}` : ""}`
-                        : ch.city ?? meta.label}
-                      {" · "}
-                      {ch.inventory ? `Inventario: ${ch.inventory.name}` : "Sin inventario"}
+                      {[ch.currency ?? "CLP", ch.city, ch.inventory ? `Inventario: ${ch.inventory.name}` : "Sin inventario"]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </p>
                   </div>
                   <EditChannelModal channel={ch} inventories={inventoryOptions} />

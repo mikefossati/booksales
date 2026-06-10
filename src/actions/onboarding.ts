@@ -6,11 +6,9 @@ import { requireAccount } from "@/lib/auth";
 import { BookFormat, ChannelType } from "@/generated/prisma/client";
 
 type PresetChannel = {
-  name:                string;
-  type:                ChannelType;
-  currency?:           string;
-  royaltyPercent?:     number;
-  consignmentPercent?: number;
+  name:      string;
+  type:      ChannelType;
+  currency?: string;
 };
 
 type PrintRunData = {
@@ -64,7 +62,7 @@ export async function completeOnboarding({
 
       if (channels?.length) {
         for (const ch of channels) {
-          // BOOKSTORE → own inventory; DIRECT/PRESALE → personal; DIGITAL → none
+          // BOOKSTORE → own inventory; DIRECT → personal; DIGITAL → none
           let inventoryId: string | null = null;
           if (ch.type === "BOOKSTORE") {
             const own = await tx.inventory.create({
@@ -72,17 +70,15 @@ export async function completeOnboarding({
               select: { id: true },
             });
             inventoryId = own.id;
-          } else if (ch.type === "DIRECT" || ch.type === "PRESALE") {
+          } else if (ch.type === "DIRECT") {
             inventoryId = defaultInventory.id;
           }
           await tx.channel.create({
             data: {
               accountId,
-              name:               ch.name,
-              type:               ch.type,
-              currency:           ch.currency           ?? null,
-              royaltyPercent:     ch.royaltyPercent     ?? null,
-              consignmentPercent: ch.consignmentPercent ?? null,
+              name:     ch.name,
+              type:     ch.type,
+              currency: ch.currency ?? null,
               inventoryId,
             },
           });

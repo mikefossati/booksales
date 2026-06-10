@@ -430,7 +430,6 @@ export default async function ReportesPage({
                       <div key={ch.id} className="flex md:grid md:grid-cols-[minmax(0,1fr)_96px_110px_130px] items-center gap-3 md:gap-4 px-5 py-3.5">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[var(--color-text)]">{ch.name}</p>
-                          {ch.consignmentPercent && <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{toNum(ch.consignmentPercent)}% librería</p>}
                         </div>
                         <span className={`text-sm font-semibold text-right ${stock <= 5 && stock > 0 ? "text-[var(--color-warning)]" : "text-[var(--color-text)]"}`}>{stock} ej.</span>
                         <span className="text-sm text-[var(--color-text-muted)] text-right">{formatCurrency(totalSales, currency)}</span>

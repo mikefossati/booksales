@@ -16,7 +16,7 @@ import {
   TrendingUp, DollarSign, ShoppingBag, AlertCircle,
   CheckCircle2, BookOpen
 } from "lucide-react";
-import { netChannelRevenue, calcOutstanding, saleToCLP } from "@/lib/finance";
+import { calcOutstanding, saleToCLP } from "@/lib/finance";
 import { CATEGORY_LABELS, LEVEL_LABELS, CHANNEL_TYPE_LABEL } from "@/lib/labels";
 
 const PAYMENT_ICONS: Record<string, string> = {
@@ -41,7 +41,7 @@ export default async function FinanzasPage({
 
   const channels = await prisma.channel.findMany({
     where: { accountId: account.id },
-    select: { id: true, name: true, type: true, currency: true, royaltyPercent: true, consignmentPercent: true },
+    select: { id: true, name: true, type: true, currency: true },
     orderBy: { name: "asc" },
   });
   const channelIds = channels.map(c => c.id);
@@ -67,7 +67,7 @@ export default async function FinanzasPage({
     prisma.sale.findMany({
       where: baseFilter,
       include: {
-        channel:     { select: { name: true, type: true, royaltyPercent: true, consignmentPercent: true } },
+        channel:     { select: { name: true, type: true } },
         merchandise: { select: { name: true } },
       },
       orderBy: { saleDate: "desc" },

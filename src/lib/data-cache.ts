@@ -62,8 +62,6 @@ export function getCachedReportesData(accountId: string) {
         where:   { accountId },
         select: {
           id: true, name: true, type: true, currency: true,
-          consignmentPercent: true, royaltyPercent: true,
-          consignmentDays: true, consignmentStartAt: true,
           inventoryId: true,
         },
         orderBy: { name: "asc" },

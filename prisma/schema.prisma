@@ -25,7 +25,6 @@ enum ChannelType {
   DIGITAL
   BOOKSTORE
   DIRECT
-  PRESALE
 }
 
 enum SaleStatus {
@@ -196,20 +195,10 @@ model Channel {
   name                 String
   type                 ChannelType
   currency             String?
-  royaltyPercent       Decimal?    @db.Decimal(5, 2)
-  paymentDelaySays     Int?
   contactPerson        String?
   contactEmail         String?
   city                 String?
   country              String?
-  consignmentPercent   Decimal?    @db.Decimal(5, 2)
-  paymentFrequency     String?
-  consignmentDays      Int?
-  consignmentStartAt   DateTime?
-  // Presale fields
-  isPresale            Boolean     @default(false)
-  presaleCloseAt       DateTime?
-  presaleDeliveryAt    DateTime?
   isActive             Boolean     @default(true)
   // Inventory this channel sells from; null = no physical stock (e.g. print-on-demand)
   inventoryId          String?
