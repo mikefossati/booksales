@@ -307,7 +307,7 @@ export default async function BookDetailPage({
               </p>
             ) : (
               <div className="divide-y divide-[var(--color-border)]">
-                <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-2">
+                <div className="hidden md:grid grid-cols-[minmax(0,1fr)_90px_56px_110px_110px_28px] gap-4 px-5 py-2">
                   {["Canal", "Fecha", "Cant.", "Precio unit.", "Total", ""].map(h => (
                     <span key={h} className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide text-right first:text-left">
                       {h}
@@ -315,7 +315,7 @@ export default async function BookDetailPage({
                   ))}
                 </div>
                 {allSales.map(sale => (
-                  <div key={sale.id} className="grid grid-cols-[1fr_auto_auto] md:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 md:gap-4 px-5 py-3.5 items-center">
+                  <div key={sale.id} className="grid grid-cols-[1fr_auto_auto] md:grid-cols-[minmax(0,1fr)_90px_56px_110px_110px_28px] gap-2 md:gap-4 px-5 py-3.5 items-center">
                     <div>
                       <p className="text-sm text-[var(--color-text)]">{sale.channel.name}</p>
                       <p className="text-xs text-[var(--color-text-muted)] mt-0.5">

@@ -344,13 +344,13 @@ export default async function FinanzasPage({
             </Card>
           ) : (
             <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-              <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
+              <div className="hidden md:grid grid-cols-[minmax(0,1fr)_110px_110px_110px_90px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                 {["Canal", "Vendido", "Cobrado", "Pendiente", ""].map(h => (
                   <span key={h} className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide text-right first:text-left">{h}</span>
                 ))}
               </div>
               {payableData.map(({ channel, totalSales, totalReceived, outstanding }) => (
-                <div key={channel.id} className="flex md:grid md:grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 md:gap-4 px-5 py-4 border-b border-[var(--color-border)] last:border-0">
+                <div key={channel.id} className="flex md:grid md:grid-cols-[minmax(0,1fr)_110px_110px_110px_90px] items-center gap-3 md:gap-4 px-5 py-4 border-b border-[var(--color-border)] last:border-0">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[var(--color-text)]">{channel.name}</p>
                     <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{CHANNEL_TYPE_LABEL[channel.type]}</p>

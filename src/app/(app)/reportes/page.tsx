@@ -237,7 +237,7 @@ export default async function ReportesPage({
             <section>
               <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Por canal</h2>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-                <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
+                <div className="hidden md:grid grid-cols-[minmax(0,1fr)_88px_72px_110px_56px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                   {["Canal", "Tipo", "Unidades", "Ingresos", "% total"].map((h, i) => (
                     <span key={h} className={`text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide ${i > 0 ? "text-right" : ""}`}>{h}</span>
                   ))}
@@ -246,7 +246,7 @@ export default async function ReportesPage({
                   {channelRows.map(({ channel, revenue, units }) => {
                     const pct = totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0;
                     return (
-                      <div key={channel.id} className="flex md:grid md:grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 md:gap-4 px-5 py-3.5">
+                      <div key={channel.id} className="flex md:grid md:grid-cols-[minmax(0,1fr)_88px_72px_110px_56px] items-center gap-3 md:gap-4 px-5 py-3.5">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[var(--color-text)] truncate">{channel.name}</p>
                           <div className="mt-1 h-1 rounded-full bg-[var(--color-border)] max-w-[120px]">
@@ -276,7 +276,7 @@ export default async function ReportesPage({
                   {bookRows.map(row => {
                     const pct = totalRevenue > 0 ? (row.revenue / totalRevenue) * 100 : 0;
                     return (
-                      <div key={row.title} className="grid grid-cols-[1fr_auto_auto] gap-4 px-5 py-3.5 items-center">
+                      <div key={row.title} className="grid grid-cols-[minmax(0,1fr)_72px_110px] gap-4 px-5 py-3.5 items-center">
                         <div>
                           <p className="text-sm font-medium text-[var(--color-text)]">{row.title}</p>
                           <div className="mt-1 h-1 rounded-full bg-[var(--color-border)] max-w-[160px]">
@@ -300,7 +300,7 @@ export default async function ReportesPage({
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="divide-y divide-[var(--color-border)]">
                   {merchRows.map(row => (
-                    <div key={row.name} className="grid grid-cols-[1fr_auto_auto] gap-4 px-5 py-3.5 items-center">
+                    <div key={row.name} className="grid grid-cols-[minmax(0,1fr)_72px_110px] gap-4 px-5 py-3.5 items-center">
                       <p className="text-sm font-medium text-[var(--color-text)]">{row.name}</p>
                       <span className="text-sm text-[var(--color-text-muted)] text-right">{row.units} ej.</span>
                       <span className="text-sm font-semibold text-[var(--color-text)] text-right">{formatCurrency(row.revenue, currency)}</span>
@@ -341,7 +341,7 @@ export default async function ReportesPage({
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)] overflow-x-auto">
                 <div className="min-w-fit">
                   <div className="grid gap-4 px-5 py-2.5 border-b border-[var(--color-border)]"
-                    style={{ gridTemplateColumns: `minmax(140px,1fr) repeat(${inventories.length}, auto) auto auto` }}>
+                    style={{ gridTemplateColumns: `minmax(140px,1fr) repeat(${inventories.length}, 88px) 72px 88px` }}>
                     <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Libro</span>
                     {inventories.map(inv => (
                       <span key={inv.id} className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide text-right max-w-28 truncate" title={inv.name}>
@@ -358,7 +358,7 @@ export default async function ReportesPage({
                       const totalPrinted = printRuns.filter(r => r.bookId === book.id).reduce((s, r) => s + r.quantity, 0);
                       return (
                         <div key={book.id} className="grid items-center gap-4 px-5 py-3.5"
-                          style={{ gridTemplateColumns: `minmax(140px,1fr) repeat(${inventories.length}, auto) auto auto` }}>
+                          style={{ gridTemplateColumns: `minmax(140px,1fr) repeat(${inventories.length}, 88px) 72px 88px` }}>
                           <p className="text-sm font-medium text-[var(--color-text)]">{book.title}</p>
                           {perInv.map((stock, i) => (
                             <span key={inventories[i].id}
@@ -389,7 +389,7 @@ export default async function ReportesPage({
                     const stock    = calcMerchStock(batched, sold);
                     const color    = stock <= 0 ? "text-[var(--color-danger)]" : stock <= 5 ? "text-[var(--color-warning)]" : "text-[var(--color-text)]";
                     return (
-                      <div key={m.id} className="grid grid-cols-[1fr_auto_auto] gap-4 px-5 py-3.5 items-center">
+                      <div key={m.id} className="grid grid-cols-[minmax(0,1fr)_120px_110px] gap-4 px-5 py-3.5 items-center">
                         <div>
                           <p className="text-sm font-medium text-[var(--color-text)]">{m.name}</p>
                           {!m.isActive && <span className="text-[10px] text-[var(--color-text-muted)]">Descontinuado</span>}
@@ -415,7 +415,7 @@ export default async function ReportesPage({
               </Card>
             ) : (
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-                <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
+                <div className="hidden md:grid grid-cols-[minmax(0,1fr)_96px_110px_130px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                   {["Librería", "Stock actual", "Vendido", "Pendiente cobro"].map((h, i) => (
                     <span key={h} className={`text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide ${i > 0 ? "text-right" : ""}`}>{h}</span>
                   ))}
@@ -427,7 +427,7 @@ export default async function ReportesPage({
                     const totalPaid   = paymentsByChannel.get(ch.id) ?? 0;
                     const outstanding = calcOutstanding(totalSales, totalPaid);
                     return (
-                      <div key={ch.id} className="flex md:grid md:grid-cols-[1fr_auto_auto_auto] items-center gap-3 md:gap-4 px-5 py-3.5">
+                      <div key={ch.id} className="flex md:grid md:grid-cols-[minmax(0,1fr)_96px_110px_130px] items-center gap-3 md:gap-4 px-5 py-3.5">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[var(--color-text)]">{ch.name}</p>
                           {ch.consignmentPercent && <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{toNum(ch.consignmentPercent)}% librería</p>}
@@ -534,7 +534,7 @@ export default async function ReportesPage({
               <h2 className="text-sm font-semibold text-[var(--color-text)] mb-1" style={{ fontFamily: "var(--font-heading)" }}>Recuperación de inversión por tiradas</h2>
               <p className="text-xs text-[var(--color-text-muted)] mb-3">Ingresos vs. costos de impresión. Para el resultado neto completo ve a Finanzas → Rentabilidad.</p>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-                <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
+                <div className="hidden md:grid grid-cols-[minmax(0,1fr)_64px_130px_110px_110px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                   {["Libro", "Tiradas", "Costo impresión", "Ingresos", "Resultado"].map((h, i) => (
                     <span key={h} className={`text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide ${i > 0 ? "text-right" : ""}`}>{h}</span>
                   ))}
@@ -544,7 +544,7 @@ export default async function ReportesPage({
                     const net = row.revenue - row.printCost;
                     return (
                       <div key={row.title} className="px-5 py-4">
-                        <div className="flex md:grid md:grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 md:gap-4">
+                        <div className="flex md:grid md:grid-cols-[minmax(0,1fr)_64px_130px_110px_110px] items-center gap-3 md:gap-4">
                           <p className="text-sm font-medium text-[var(--color-text)] flex-1">{row.title}</p>
                           <span className="hidden md:block text-sm text-[var(--color-text-muted)] text-right">{row.tiradas}</span>
                           <span className="hidden md:block text-sm text-[var(--color-text)] text-right">{formatCurrency(row.printCost, currency)}</span>
@@ -572,7 +572,7 @@ export default async function ReportesPage({
             <section>
               <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Rentabilidad de merchandising</h2>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-                <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
+                <div className="hidden md:grid grid-cols-[minmax(0,1fr)_80px_120px_110px_110px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                   {["Producto", "Unidades", "Costo prod.", "Ingresos", "Resultado"].map((h, i) => (
                     <span key={h} className={`text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide ${i > 0 ? "text-right" : ""}`}>{h}</span>
                   ))}
@@ -581,7 +581,7 @@ export default async function ReportesPage({
                   {merchPnl.map(row => {
                     const net = row.revenue - row.cost;
                     return (
-                      <div key={row.name} className="flex md:grid md:grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 md:gap-4 px-5 py-3.5">
+                      <div key={row.name} className="flex md:grid md:grid-cols-[minmax(0,1fr)_80px_120px_110px_110px] items-center gap-3 md:gap-4 px-5 py-3.5">
                         <p className="text-sm font-medium text-[var(--color-text)] flex-1">{row.name}</p>
                         <span className="hidden md:block text-sm text-[var(--color-text-muted)] text-right">{row.units}</span>
                         <span className="hidden md:block text-sm text-[var(--color-text)] text-right">{formatCurrency(row.cost, currency)}</span>
@@ -656,14 +656,14 @@ export default async function ReportesPage({
             <section>
               <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Desglose de escenarios</h2>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
+                <div className="grid grid-cols-[minmax(0,1fr)_160px_120px_150px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                   {["Mes", "Conservador (−20%)", "Realista", "Optimista (+20%)"].map((h, i) => (
                     <span key={h} className={`text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide ${i > 0 ? "text-right" : ""}`}>{h}</span>
                   ))}
                 </div>
                 <div className="divide-y divide-[var(--color-border)]">
                   {projectedMonths.map(m => (
-                    <div key={m.month} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-3 items-center">
+                    <div key={m.month} className="grid grid-cols-[minmax(0,1fr)_160px_120px_150px] gap-4 px-5 py-3 items-center">
                       <span className="text-sm font-medium text-[var(--color-text)] capitalize">{m.month}</span>
                       <span className="text-sm text-[var(--color-text-muted)] text-right">{formatCurrency(m.conservador!, currency)}</span>
                       <span className="text-sm font-semibold text-[var(--color-text)] text-right">{formatCurrency(m.realista!, currency)}</span>

@@ -148,7 +148,7 @@ export default async function LibrosPage({
           </div>
         ) : (
           <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-            <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
+            <div className="hidden md:grid grid-cols-[minmax(0,1fr)_56px_72px_100px_28px_28px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
               {["Producto", "Lotes", "Stock", "Precio", "", ""].map((h, i) => (
                 <span key={i} className={`text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide ${i > 0 ? "text-right" : ""}`}>
                   {h}
@@ -165,7 +165,7 @@ export default async function LibrosPage({
 
                 return (
                   <div key={item.id} className={`px-5 py-4 ${!item.isActive ? "opacity-50" : ""}`}>
-                    <div className="flex md:grid md:grid-cols-[1fr_auto_auto_auto_auto_auto] items-start gap-3 md:gap-4">
+                    <div className="flex md:grid md:grid-cols-[minmax(0,1fr)_56px_72px_100px_28px_28px] items-start gap-3 md:gap-4">
                       {/* Name + badges */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -267,7 +267,7 @@ export default async function LibrosPage({
           </div>
         ) : (
           <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
-            <div className="hidden md:grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
+            <div className="hidden md:grid grid-cols-[24px_minmax(0,1fr)_48px_90px_90px_56px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
               {["", "Destinatario / Libro", "Ej.", "Enviado", "Límite", ""].map((h, i) => (
                 <span key={i} className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">{h}</span>
               ))}
@@ -277,7 +277,7 @@ export default async function LibrosPage({
                 const { dot, label, labelColor } = getStatusMeta(ex.status, ex.deadlineAt);
                 const isOverdue = ex.status === "PENDING" && ex.deadlineAt !== null && new Date(ex.deadlineAt) < new Date();
                 return (
-                  <div key={ex.id} className="flex md:grid md:grid-cols-[auto_1fr_auto_auto_auto_auto] items-start gap-3 md:gap-4 px-5 py-4">
+                  <div key={ex.id} className="flex md:grid md:grid-cols-[24px_minmax(0,1fr)_48px_90px_90px_56px] items-start gap-3 md:gap-4 px-5 py-4">
                     <span className="text-base mt-0.5">{dot}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[var(--color-text)]">{ex.recipient}</p>
