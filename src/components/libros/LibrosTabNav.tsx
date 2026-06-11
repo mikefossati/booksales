@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { id: "libros",          label: "Libros"         },
   { id: "merchandising",   label: "Merchandising"  },
-  { id: "canjes",          label: "Canjes"         },
+  { id: "canjes",          label: "Canjes / Regalos" },
 ];
 
 export default function LibrosTabNav() {
