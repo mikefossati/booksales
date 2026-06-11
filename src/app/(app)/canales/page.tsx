@@ -10,9 +10,9 @@ import { Globe, Store, Users } from "lucide-react";
 import type { ChannelType } from "@/generated/prisma/client";
 
 const TYPE_META: Record<ChannelType, { label: string; icon: React.ElementType; color: string }> = {
-  DIGITAL:   { label: "Digital",  icon: Globe,         color: "bg-blue-50 text-blue-600"                            },
-  BOOKSTORE: { label: "Librería", icon: Store,         color: "bg-green-50 text-green-700"                          },
-  DIRECT:    { label: "Directo",  icon: Users,         color: "bg-[var(--color-accent-light)] text-[var(--color-accent)]" },
+  DIGITAL:   { label: "Digital",  icon: Globe,         color: "bg-[var(--color-secondary-light)] text-[var(--color-warning-text)]" },
+  BOOKSTORE: { label: "Librería", icon: Store,         color: "bg-[var(--color-accent-light)] text-[var(--color-accent)]"          },
+  DIRECT:    { label: "Directo",  icon: Users,         color: "bg-[var(--color-border)]/60 text-[var(--color-text-muted)]"         },
 };
 
 export default async function CanalesPage() {
