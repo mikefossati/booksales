@@ -37,7 +37,7 @@ export default function BookCard({ book }: { book: Book }) {
               <Badge
                 key={format}
                 variant="secondary"
-                className="text-[10px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0"
+                className="text-[11px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0"
               >
                 {FORMAT_LABELS[format] ?? format}
               </Badge>

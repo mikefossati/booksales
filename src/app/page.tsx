@@ -93,7 +93,7 @@ export default function LandingPage() {
                 { label: "Unidades",        value: "31" },
               ].map(({ label, value }) => (
                 <div key={label} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 bg-[var(--color-bg)]">
-                  <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
+                  <p className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
                   <p className="text-lg font-semibold text-[var(--color-text)] mt-1" style={{ fontFamily: "var(--font-heading)" }}>{value}</p>
                 </div>
               ))}
@@ -101,8 +101,8 @@ export default function LandingPage() {
             {/* Faux channel table */}
             <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] overflow-hidden">
               <div className="px-4 py-2.5 bg-[var(--color-bg)] border-b border-[var(--color-border)] flex justify-between">
-                <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Canal</span>
-                <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Ingresos</span>
+                <span className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide">Canal</span>
+                <span className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide">Ingresos</span>
               </div>
               {[
                 { name: "Feria del Libro Santiago", pct: 52, val: "$129.200" },

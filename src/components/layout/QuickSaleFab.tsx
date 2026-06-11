@@ -399,7 +399,7 @@ export default function QuickSaleFab({
                                 ? <img src={b.coverUrl} alt={b.title} className="w-full h-full object-cover" />
                                 : <BookOpen size={16} className="text-[var(--color-accent)] opacity-50" />}
                             </div>
-                            <span className="text-[10px] text-[var(--color-text)] line-clamp-2 text-center leading-tight">{b.title}</span>
+                            <span className="text-[11px] text-[var(--color-text)] line-clamp-2 text-center leading-tight">{b.title}</span>
                           </button>
                         ))}
                       </div>
@@ -452,7 +452,7 @@ export default function QuickSaleFab({
                                     ? <img src={b.coverUrl} alt={b.title} className="w-full h-full object-cover" />
                                     : <BookOpen size={16} className="text-[var(--color-accent)] opacity-50" />}
                                 </div>
-                                <span className="text-[10px] text-[var(--color-text)] line-clamp-2 text-center leading-tight">{b.title}</span>
+                                <span className="text-[11px] text-[var(--color-text)] line-clamp-2 text-center leading-tight">{b.title}</span>
                               </button>
                             ))}
                           </div>
@@ -545,11 +545,11 @@ export default function QuickSaleFab({
                           </div>
 
                           {isBulkMode && total > 0 && quantity > 0 ? (
-                            <p className="text-[10px] text-[var(--color-text-muted)] -mt-3">
+                            <p className="text-xs text-[var(--color-text-muted)] -mt-3">
                               ≈ {formatMoney(total / quantity, saleCurrency)} por ejemplar
                             </p>
                           ) : (
-                            <p className="text-[10px] text-[var(--color-text-muted)] -mt-3">
+                            <p className="text-xs text-[var(--color-text-muted)] -mt-3">
                               Registra el monto final que recibes tú.
                             </p>
                           )}
@@ -589,7 +589,7 @@ export default function QuickSaleFab({
                                 <span className="text-xs font-medium text-[var(--color-text-muted)] shrink-0">CLP</span>
                               </div>
                               {fxRate && total > 0 && (
-                                <p className="text-[10px] text-[var(--color-text-muted)]">
+                                <p className="text-xs text-[var(--color-text-muted)]">
                                   ≈ {formatMoney(totalCLP)} CLP total
                                 </p>
                               )}

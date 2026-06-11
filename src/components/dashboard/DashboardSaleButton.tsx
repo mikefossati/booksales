@@ -165,7 +165,7 @@ export default function DashboardSaleButton({
                           ? <img src={b.coverUrl} alt={b.title} className="w-full h-full object-cover" />
                           : <BookOpen size={16} className="text-[var(--color-accent)] opacity-50" />}
                       </div>
-                      <span className="text-[10px] text-[var(--color-text)] line-clamp-2 text-center leading-tight">{b.title}</span>
+                      <span className="text-[11px] text-[var(--color-text)] line-clamp-2 text-center leading-tight">{b.title}</span>
                     </button>
                   ))}
                 </div>
@@ -214,11 +214,11 @@ export default function DashboardSaleButton({
               </div>
 
               {isBulkMode && total > 0 && quantity > 0 ? (
-                <p className="text-[10px] text-[var(--color-text-muted)] -mt-3">
+                <p className="text-xs text-[var(--color-text-muted)] -mt-3">
                   ≈ {fmt(total / quantity, saleCurrency)} por ejemplar
                 </p>
               ) : (
-                <p className="text-[10px] text-[var(--color-text-muted)] -mt-3">
+                <p className="text-xs text-[var(--color-text-muted)] -mt-3">
                   Registra el monto final que recibes tú.
                 </p>
               )}
@@ -244,7 +244,7 @@ export default function DashboardSaleButton({
                     <span className="text-xs text-[var(--color-text-muted)] shrink-0">CLP</span>
                   </div>
                   {fxRate && total > 0 && (
-                    <p className="text-[10px] text-[var(--color-text-muted)]">≈ {fmt(totalCLP)} total</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">≈ {fmt(totalCLP)} total</p>
                   )}
                 </div>
               )}
@@ -264,7 +264,7 @@ export default function DashboardSaleButton({
                         onChange={() => setChannelId(c.id)} className="accent-[var(--color-accent)]" />
                       <span className="text-sm text-[var(--color-text)] flex-1">{c.name}</span>
                       {c.currency && c.currency !== "CLP" && (
-                        <span className="text-[10px] text-[var(--color-text-muted)] font-medium">{c.currency}</span>
+                        <span className="text-xs text-[var(--color-text-muted)] font-medium">{c.currency}</span>
                       )}
                     </label>
                   ))}

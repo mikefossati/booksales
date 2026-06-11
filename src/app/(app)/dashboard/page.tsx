@@ -30,13 +30,13 @@ function Stat({ label, value, sub, trend }: { label: string; value: string; sub?
   const down = trend !== undefined && trend < 0;
   return (
     <div>
-      <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-0.5">{label}</p>
+      <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-0.5">{label}</p>
       <p className="text-xl font-semibold text-[var(--color-text)] leading-none" style={{ fontFamily: "var(--font-heading)" }}>
         {value}
       </p>
-      {sub && <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{sub}</p>}
+      {sub && <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{sub}</p>}
       {trend !== undefined && (
-        <p className={`text-[10px] font-medium mt-0.5 ${up ? "text-[var(--color-success)]" : down ? "text-[var(--color-danger)]" : "text-[var(--color-text-muted)]"}`}>
+        <p className={`text-xs font-medium mt-0.5 ${up ? "text-[var(--color-success)]" : down ? "text-[var(--color-danger)]" : "text-[var(--color-text-muted)]"}`}>
           {up ? "↑" : down ? "↓" : "→"} {Math.abs(trend).toFixed(0)}% vs. mes ant.
         </p>
       )}
@@ -57,7 +57,7 @@ function Bar({ label, value, pct, currency }: { label: string; value: number; pc
         <div className="flex-1 h-1.5 rounded-full bg-[var(--color-border)]">
           <div className="h-1.5 rounded-full bg-[var(--color-accent)]" style={{ width: `${pct}%` }} />
         </div>
-        <span className="text-[10px] text-[var(--color-text-muted)] w-7 text-right">{pct.toFixed(0)}%</span>
+        <span className="text-xs text-[var(--color-text-muted)] w-7 text-right">{pct.toFixed(0)}%</span>
       </div>
     </div>
   );
@@ -74,7 +74,7 @@ function ExpenseBar({ label, value, pct, currency }: { label: string; value: num
         <div className="flex-1 h-1.5 rounded-full bg-[var(--color-border)]">
           <div className="h-1.5 rounded-full bg-[var(--color-warning)]" style={{ width: `${pct}%` }} />
         </div>
-        <span className="text-[10px] text-[var(--color-text-muted)] w-7 text-right">{pct.toFixed(0)}%</span>
+        <span className="text-xs text-[var(--color-text-muted)] w-7 text-right">{pct.toFixed(0)}%</span>
       </div>
     </div>
   );
@@ -254,13 +254,13 @@ export default async function DashboardPage() {
             Hola, {firstName}
           </h1>
           <div className="text-right pb-0.5">
-            <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Resultado neto del mes</p>
+            <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Resultado neto del mes</p>
             <p className={`text-2xl font-semibold leading-none ${netPositive ? "text-[var(--color-success)]" : "text-[var(--color-danger)]"}`}
               style={{ fontFamily: "var(--font-heading)" }}>
               {netPositive ? "+" : ""}{formatCurrency(netResult, currency)}
             </p>
             {prevNet !== 0 && (
-              <p className={`text-[10px] font-medium mt-0.5 ${netMomPct > 0 ? "text-[var(--color-success)]" : netMomPct < 0 ? "text-[var(--color-danger)]" : "text-[var(--color-text-muted)]"}`}>
+              <p className={`text-xs font-medium mt-0.5 ${netMomPct > 0 ? "text-[var(--color-success)]" : netMomPct < 0 ? "text-[var(--color-danger)]" : "text-[var(--color-text-muted)]"}`}>
                 {netMomPct > 0 ? "↑" : netMomPct < 0 ? "↓" : "→"} {Math.abs(netMomPct).toFixed(0)}% vs. mes anterior
               </p>
             )}
@@ -307,7 +307,7 @@ export default async function DashboardPage() {
           {/* Channel breakdown */}
           {breakdown.length > 0 ? (
             <div className="space-y-3">
-              <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Por canal — este mes</p>
+              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Por canal — este mes</p>
               <div className="space-y-2.5">
                 {breakdown.map(({ channel, revenue }) => (
                   <Bar key={channel.id} label={channel.name}
@@ -329,7 +329,7 @@ export default async function DashboardPage() {
           {/* Recent sales */}
           {recentSales.length > 0 && (
             <div className="space-y-1">
-              <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Últimas ventas</p>
+              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Últimas ventas</p>
               <div className="divide-y divide-[var(--color-border)] -mx-5">
                 {recentSales.map(sale => {
                   const itemName = sale.bookId
@@ -340,7 +340,7 @@ export default async function DashboardPage() {
                     <div key={sale.id} className="flex items-center gap-3 px-5 py-2.5">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-[var(--color-text)] truncate">{itemName}</p>
-                        <p className="text-[10px] text-[var(--color-text-muted)]">
+                        <p className="text-xs text-[var(--color-text-muted)]">
                           {formatDate(sale.saleDate)} · {sale.channel.name}
                         </p>
                       </div>
@@ -348,7 +348,7 @@ export default async function DashboardPage() {
                         <p className="text-sm font-semibold text-[var(--color-text)]">
                           {formatCurrency(saleAmt, currency)}
                         </p>
-                        <p className="text-[10px] text-[var(--color-text-muted)]">{sale.quantity} ej.</p>
+                        <p className="text-xs text-[var(--color-text-muted)]">{sale.quantity} ej.</p>
                       </div>
                     </div>
                   );
@@ -382,7 +382,7 @@ export default async function DashboardPage() {
           {/* Category breakdown */}
           {categoryBreakdown.length > 0 ? (
             <div className="space-y-3">
-              <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Por categoría — este mes</p>
+              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Por categoría — este mes</p>
               <div className="space-y-2.5">
                 {categoryBreakdown.map(([cat, amt]) => (
                   <ExpenseBar
@@ -405,14 +405,14 @@ export default async function DashboardPage() {
           {/* Recent expenses */}
           {expensesThisMonth.length > 0 && (
             <div className="space-y-1">
-              <p className="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Últimos gastos</p>
+              <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Últimos gastos</p>
               <div className="divide-y divide-[var(--color-border)] -mx-5">
                 {expensesThisMonth.slice(0, 5).map(exp => (
                   <div key={exp.id} className="flex items-center gap-3 px-5 py-2.5">
                     <span className="text-base shrink-0">{CATEGORY_EMOJI[exp.category] ?? "💬"}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-[var(--color-text)] truncate">{exp.description}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)]">
+                      <p className="text-xs text-[var(--color-text-muted)]">
                         {formatDate(exp.occurredAt)} · {CATEGORY_LABEL[exp.category] ?? exp.category}
                       </p>
                     </div>

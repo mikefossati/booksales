@@ -80,7 +80,7 @@ export default async function CanalesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm text-[var(--color-text)]">{ch.name}</span>
-                      <Badge variant="secondary" className="text-[10px] px-2 py-0 border-0 bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+                      <Badge variant="secondary" className="text-[11px] px-2 py-0 border-0 bg-[var(--color-accent-light)] text-[var(--color-accent)]">
                         {meta.label}
                       </Badge>
                     </div>

@@ -90,7 +90,7 @@ export default async function InventarioPage() {
                 style={{ fontFamily: "var(--font-heading)" }}>
                 {value} ej.
               </p>
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{hint}</p>
+              <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{hint}</p>
             </CardContent>
           </Card>
         ))}
@@ -112,7 +112,7 @@ export default async function InventarioPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm text-[var(--color-text)]">{inv.name}</span>
                       {inv.isDefault && (
-                        <Badge variant="secondary" className="text-[10px] px-2 py-0 border-0 bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+                        <Badge variant="secondary" className="text-[11px] px-2 py-0 border-0 bg-[var(--color-accent-light)] text-[var(--color-accent)]">
                           Principal
                         </Badge>
                       )}

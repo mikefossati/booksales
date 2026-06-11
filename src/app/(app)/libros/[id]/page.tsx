@@ -332,7 +332,7 @@ export default async function BookDetailPage({
                     <span className="hidden md:block text-sm font-semibold text-[var(--color-text)] text-right">
                       {formatCurrency(toNum(sale.totalAmount), sale.currency)}
                       {sale.currency !== currency && sale.amountCLP && (
-                        <span className="block text-[10px] font-normal text-[var(--color-text-muted)]">
+                        <span className="block text-xs font-normal text-[var(--color-text-muted)]">
                           ≈ {formatCurrency(toNum(sale.amountCLP), currency)}
                         </span>
                       )}

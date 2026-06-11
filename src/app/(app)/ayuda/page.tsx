@@ -301,7 +301,7 @@ function StepList({ items }: { items: Step[] }) {
       {items.map((item, i) => (
         <li key={i} className="flex gap-3 text-sm text-[var(--color-text)] leading-relaxed">
           <span
-            className="shrink-0 w-5 h-5 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center text-[10px] font-bold mt-0.5"
+            className="shrink-0 w-5 h-5 rounded-full bg-[var(--color-accent)] text-white flex items-center justify-center text-xs font-bold mt-0.5"
             aria-hidden="true"
           >
             {i + 1}
@@ -360,7 +360,7 @@ export default function AyudaPage() {
           aria-label="Índice"
           className="hidden lg:flex flex-col gap-0.5 w-44 shrink-0 sticky top-8"
         >
-          <p className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-widest mb-2 px-2">
+          <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-widest mb-2 px-2">
             Índice
           </p>
           {SECTIONS.map(({ id, icon: Icon, title }) => (

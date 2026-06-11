@@ -65,7 +65,7 @@ export default function ExportButton({ tab, size = "default" }: { tab: string; s
           >
             {showPeriod && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Período</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Período</p>
                 <div className="space-y-1.5">
                   {PERIODS.map(p => (
                     <label key={p.value} className="flex items-center gap-2 cursor-pointer select-none">
@@ -85,7 +85,7 @@ export default function ExportButton({ tab, size = "default" }: { tab: string; s
             )}
 
             <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Formato</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-2">Formato</p>
               <button
                 role="menuitem"
                 onClick={() => handleDownload("xlsx")}
@@ -105,7 +105,7 @@ export default function ExportButton({ tab, size = "default" }: { tab: string; s
             </div>
 
             {!showPeriod && (
-              <p className="text-[10px] text-[var(--color-text-muted)] pt-0.5">Incluye datos históricos completos</p>
+              <p className="text-xs text-[var(--color-text-muted)] pt-0.5">Incluye datos históricos completos</p>
             )}
           </div>
         </>

@@ -217,10 +217,10 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate">{name}</p>
-                  <p className="text-[10px] font-normal mt-0.5 text-[var(--color-text-muted)]">{hint}</p>
+                  <p className="text-xs font-normal mt-0.5 text-[var(--color-text-muted)]">{hint}</p>
                 </div>
                 {currency !== "CLP" && (
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-accent-light)] text-[var(--color-accent)] shrink-0">
+                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-[var(--color-accent-light)] text-[var(--color-accent)] shrink-0">
                     {currency}
                   </span>
                 )}

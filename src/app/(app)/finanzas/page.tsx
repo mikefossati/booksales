@@ -214,7 +214,7 @@ export default async function FinanzasPage({
                                 <p className="text-sm font-semibold text-[var(--color-text)]">{formatCurrency(toNum(sale.totalAmount), sale.currency)}</p>
                                 <p className="text-xs text-[var(--color-text-muted)]">{sale.quantity} × {formatCurrency(toNum(sale.unitPrice), sale.currency)}</p>
                               </div>
-                              <Badge variant="secondary" className="text-[10px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0 shrink-0">
+                              <Badge variant="secondary" className="text-[11px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0 shrink-0">
                                 {CHANNEL_TYPE_LABEL[sale.channel.type]}
                               </Badge>
                               <div className="flex items-center gap-1.5 shrink-0">
@@ -253,7 +253,7 @@ export default async function FinanzasPage({
                   <p className="text-lg font-semibold text-[var(--color-text)] mt-0.5" style={{ fontFamily: "var(--font-heading)" }}>
                     {formatCurrency(totalPrintCosts, currency)}
                   </p>
-                  <p className="text-[10px] text-[var(--color-text-muted)]">desde tiradas registradas</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">desde tiradas registradas</p>
                 </CardContent>
               </Card>
             </div>
@@ -284,10 +284,10 @@ export default async function FinanzasPage({
                       <div className="text-right">
                         <p className="text-sm font-semibold text-[var(--color-text)]">{formatCurrency(toNum(exp.amount), exp.currency)}</p>
                       </div>
-                      <Badge variant="secondary" className="text-[10px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0">
+                      <Badge variant="secondary" className="text-[11px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0">
                         {CATEGORY_LABELS[exp.category]}
                       </Badge>
-                      <Badge variant="secondary" className="text-[10px] px-2 py-0 border border-[var(--color-border)] bg-transparent text-[var(--color-text-muted)]">
+                      <Badge variant="secondary" className="text-[11px] px-2 py-0 border border-[var(--color-border)] bg-transparent text-[var(--color-text-muted)]">
                         {LEVEL_LABELS[exp.level]}
                       </Badge>
                       <EditExpenseModal
@@ -320,7 +320,7 @@ export default async function FinanzasPage({
         <div className="space-y-5">
           <div className="flex items-center gap-3 p-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)]">
             {totalOutstanding > 0
-              ? <AlertCircle size={18} className="text-[var(--color-warning)] shrink-0" />
+              ? <AlertCircle size={18} className="text-[var(--color-warning-text)] shrink-0" />
               : <CheckCircle2 size={18} className="text-[var(--color-success)] shrink-0" />}
             <div>
               <p className="text-sm font-medium text-[var(--color-text)]">
@@ -358,7 +358,7 @@ export default async function FinanzasPage({
                   </div>
                   <span className="hidden md:block text-sm text-[var(--color-text-muted)] text-right">{formatCurrency(totalSales, currency)}</span>
                   <span className="hidden md:block text-sm text-[var(--color-success)] text-right">{formatCurrency(totalReceived, currency)}</span>
-                  <span className={`text-sm font-semibold text-right ${outstanding > 0 ? "text-[var(--color-warning)]" : "text-[var(--color-success)]"}`}>
+                  <span className={`text-sm font-semibold text-right ${outstanding > 0 ? "text-[var(--color-warning-text)]" : "text-[var(--color-success)]"}`}>
                     {outstanding > 0 ? formatCurrency(outstanding, currency) : "✓"}
                   </span>
                   {outstanding > 0 ? (
@@ -454,7 +454,7 @@ export default async function FinanzasPage({
                               style={{ width: `${recovered}%` }}
                             />
                           </div>
-                          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                          <p className="text-xs text-[var(--color-text-muted)] mt-1">
                             {recovered.toFixed(0)}% de la inversión recuperada
                           </p>
                         </>

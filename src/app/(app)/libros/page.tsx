@@ -169,7 +169,7 @@ export default async function LibrosPage({
                 const totalSold    = item.sales.reduce((acc, sale) => acc + sale.quantity, 0);
                 const stock        = calcMerchStock(totalBatched, totalSold);
                 const lastBatch    = item.productionBatches[0];
-                const stockColor   = stock <= 0 ? "text-[var(--color-danger)]" : stock <= 5 ? "text-[var(--color-warning)]" : "text-[var(--color-text)]";
+                const stockColor   = stock <= 0 ? "text-[var(--color-danger)]" : stock <= 5 ? "text-[var(--color-warning-text)]" : "text-[var(--color-text)]";
 
                 return (
                   <div key={item.id} className={`px-5 py-4 ${!item.isActive ? "opacity-50" : ""}`}>
@@ -178,16 +178,16 @@ export default async function LibrosPage({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-medium text-[var(--color-text)]">{item.name}</p>
-                          <Badge variant="secondary" className="text-[10px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0">
+                          <Badge variant="secondary" className="text-[11px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0">
                             {TYPE_LABELS[item.type]}
                           </Badge>
                           {item.category && (
-                            <Badge variant="secondary" className="text-[10px] px-2 py-0 border border-[var(--color-border)] bg-transparent text-[var(--color-text-muted)]">
+                            <Badge variant="secondary" className="text-[11px] px-2 py-0 border border-[var(--color-border)] bg-transparent text-[var(--color-text-muted)]">
                               {item.category}
                             </Badge>
                           )}
                           {!item.isActive && (
-                            <Badge variant="secondary" className="text-[10px] px-2 py-0 bg-[var(--color-border)] text-[var(--color-text-muted)] border-0">
+                            <Badge variant="secondary" className="text-[11px] px-2 py-0 bg-[var(--color-border)] text-[var(--color-text-muted)] border-0">
                               Descontinuado
                             </Badge>
                           )}
@@ -291,7 +291,7 @@ export default async function LibrosPage({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium text-[var(--color-text)]">{ex.recipient}</p>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${isGift ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]" : "bg-[var(--color-border)] text-[var(--color-text-muted)]"}`}>
+                        <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${isGift ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]" : "bg-[var(--color-border)] text-[var(--color-text-muted)]"}`}>
                           {isGift ? "Regalo" : "Canje"}
                         </span>
                       </div>

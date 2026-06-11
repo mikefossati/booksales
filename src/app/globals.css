@@ -12,7 +12,8 @@
   --color-secondary:    oklch(68% 0.09 75);      /* warm sand */
   --color-secondary-light: oklch(94% 0.04 75);   /* sand tint */
   --color-success:      oklch(50% 0.14 155);     /* deep sage (same family) */
-  --color-warning:      oklch(68% 0.15 75);      /* amber */
+  --color-warning:      oklch(68% 0.15 75);      /* amber — backgrounds/borders */
+  --color-warning-text: oklch(52% 0.14 75);      /* darker amber — readable as text on light bg */
   --color-danger:       oklch(54% 0.18 25);      /* warm red */
   --color-border:       oklch(88% 0.02 140);     /* soft grey-green */
 

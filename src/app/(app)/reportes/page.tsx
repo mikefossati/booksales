@@ -293,7 +293,7 @@ export default async function ReportesPage({
                             <div className="h-1 rounded-full bg-[var(--color-accent)]" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
-                        <Badge variant="secondary" className="text-[10px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0 shrink-0">
+                        <Badge variant="secondary" className="text-[11px] px-2 py-0 bg-[var(--color-accent-light)] text-[var(--color-accent)] border-0 shrink-0">
                           {CHANNEL_TYPE_LABEL[channel.type]}
                         </Badge>
                         <span className="text-sm text-[var(--color-text)] text-right">{units}</span>
@@ -427,12 +427,12 @@ export default async function ReportesPage({
                     const batched  = m.productionBatches.reduce((s, b) => s + b.quantity, 0);
                     const sold     = m.sales.reduce((s, x) => s + x.quantity, 0);
                     const stock    = calcMerchStock(batched, sold);
-                    const color    = stock <= 0 ? "text-[var(--color-danger)]" : stock <= 5 ? "text-[var(--color-warning)]" : "text-[var(--color-text)]";
+                    const color    = stock <= 0 ? "text-[var(--color-danger)]" : stock <= 5 ? "text-[var(--color-warning-text)]" : "text-[var(--color-text)]";
                     return (
                       <div key={m.id} className="grid grid-cols-[minmax(0,1fr)_120px_110px] gap-4 px-5 py-3.5 items-center">
                         <div>
                           <p className="text-sm font-medium text-[var(--color-text)]">{m.name}</p>
-                          {!m.isActive && <span className="text-[10px] text-[var(--color-text-muted)]">Descontinuado</span>}
+                          {!m.isActive && <span className="text-xs text-[var(--color-text-muted)]">Descontinuado</span>}
                         </div>
                         <span className="text-xs text-[var(--color-text-muted)] text-right">{batched} producidos</span>
                         <span className={`text-sm font-semibold text-right ${color}`}>{stock} en mano</span>
@@ -471,9 +471,9 @@ export default async function ReportesPage({
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[var(--color-text)]">{ch.name}</p>
                         </div>
-                        <span className={`text-sm font-semibold text-right ${stock <= 5 && stock > 0 ? "text-[var(--color-warning)]" : "text-[var(--color-text)]"}`}>{stock} ej.</span>
+                        <span className={`text-sm font-semibold text-right ${stock <= 5 && stock > 0 ? "text-[var(--color-warning-text)]" : "text-[var(--color-text)]"}`}>{stock} ej.</span>
                         <span className="text-sm text-[var(--color-text-muted)] text-right">{formatCurrency(totalSales, currency)}</span>
-                        <span className={`text-sm font-semibold text-right ${outstanding > 0 ? "text-[var(--color-warning)]" : "text-[var(--color-success)]"}`}>
+                        <span className={`text-sm font-semibold text-right ${outstanding > 0 ? "text-[var(--color-warning-text)]" : "text-[var(--color-success)]"}`}>
                           {outstanding > 0 ? formatCurrency(outstanding, currency) : "✓ Al día"}
                         </span>
                       </div>
@@ -490,7 +490,7 @@ export default async function ReportesPage({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               {[
                 { label: "Total",       value: allExchanges.length,      color: ""                           },
-                { label: "Pendientes",  value: pendingCanjes.length,      color: "text-[var(--color-warning)]" },
+                { label: "Pendientes",  value: pendingCanjes.length,      color: "text-[var(--color-warning-text)]" },
                 { label: "Cumplidos",   value: fulfilledCanjes.length,    color: "text-[var(--color-success)]" },
                 { label: "Vencidos",    value: overdueCanjes.length,      color: overdueCanjes.length > 0 ? "text-[var(--color-danger)]" : "" },
               ].map(({ label, value, color }) => (
@@ -565,7 +565,7 @@ export default async function ReportesPage({
                             ? "bg-[var(--color-success)]/15 text-[var(--color-success)]"
                             : discrepancy > 0
                             ? "bg-[var(--color-danger)]/15 text-[var(--color-danger)]"
-                            : "bg-[var(--color-warning)]/15 text-[var(--color-warning)]"
+                            : "bg-[var(--color-warning)]/15 text-[var(--color-warning-text)]"
                         }`}>
                           {cuadra
                             ? "✅ Cuadra"
@@ -601,7 +601,7 @@ export default async function ReportesPage({
                           <div key={label}>
                             <div className="flex items-center gap-1 mb-0.5">
                               {dot && <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${dot}`} />}
-                              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide truncate">{label}</p>
+                              <p className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide truncate">{label}</p>
                             </div>
                             <p className={`text-base font-semibold ${accent}`}>{value}</p>
                           </div>
@@ -639,7 +639,7 @@ export default async function ReportesPage({
                         { label: "Bajas",          value: cuadreTotals.writtenOff   },
                       ].map(({ label, value }) => (
                         <div key={label}>
-                          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-0.5">{label}</p>
+                          <p className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide mb-0.5">{label}</p>
                           <p className="text-base font-semibold text-[var(--color-text)]">{value}</p>
                         </div>
                       ))}
@@ -718,7 +718,7 @@ export default async function ReportesPage({
                           <div className="h-1.5 rounded-full bg-[var(--color-border)] overflow-hidden">
                             <div className={`h-1.5 rounded-full ${row.pct >= 100 ? "bg-[var(--color-success)]" : "bg-[var(--color-accent)]"}`} style={{ width: `${row.pct}%` }} />
                           </div>
-                          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{row.pct.toFixed(0)}% recuperado</p>
+                          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{row.pct.toFixed(0)}% recuperado</p>
                         </div>
                       </div>
                     );
@@ -778,7 +778,7 @@ export default async function ReportesPage({
                       Gestiona cobros y registra pagos en Finanzas
                     </p>
                   </div>
-                  <span className={`text-lg font-semibold shrink-0 ${totalOutstanding > 0 ? "text-[var(--color-warning)]" : "text-[var(--color-success)]"}`}
+                  <span className={`text-lg font-semibold shrink-0 ${totalOutstanding > 0 ? "text-[var(--color-warning-text)]" : "text-[var(--color-success)]"}`}
                     style={{ fontFamily: "var(--font-heading)" }}>
                     {totalOutstanding > 0 ? formatCurrency(totalOutstanding, currency) : "✓"}
                   </span>

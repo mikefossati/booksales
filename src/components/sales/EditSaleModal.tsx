@@ -170,7 +170,7 @@ export default function EditSaleModal({
               </div>
 
               {isBulkMode && total > 0 && quantity > 0 && (
-                <p className="text-[10px] text-[var(--color-text-muted)] -mt-2">
+                <p className="text-xs text-[var(--color-text-muted)] -mt-2">
                   ≈ {sale.currency} {Math.round(total / quantity).toLocaleString("es-CL")} por ejemplar
                 </p>
               )}

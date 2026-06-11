@@ -38,7 +38,7 @@ export default function Error({
           </Button>
         </div>
         {error.digest && (
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-8">
+          <p className="text-xs text-[var(--color-text-muted)] mt-8">
             Código de referencia: {error.digest}
           </p>
         )}

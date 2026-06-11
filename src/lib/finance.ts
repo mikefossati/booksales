@@ -163,7 +163,7 @@ export function getExchangeStatusMeta(
   if (deadlineAt !== null && deadlineAt < now) {
     return { dot: "🔴", label: "Vencido",     labelColor: "text-[var(--color-danger)]"  };
   }
-  return   { dot: "🟡", label: "Pendiente",   labelColor: "text-[var(--color-warning)]" };
+  return   { dot: "🟡", label: "Pendiente",   labelColor: "text-[var(--color-warning-text)]" };
 }
 
 // ── Income projections ────────────────────────────────────────────────────────
