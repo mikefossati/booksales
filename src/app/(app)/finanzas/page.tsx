@@ -104,6 +104,7 @@ export default async function FinanzasPage({
   // ── Computed totals ───────────────────────────────────────────────────────
 
   const totalRevenue      = allSales.reduce((s, sale) => s + saleToCLP(sale), 0);
+  const totalBooksSold    = allSales.reduce((s, sale) => s + sale.quantity, 0);
   const totalExpenses     = allExpenses.reduce((s, e) => s + toNum(e.amount), 0);
   const totalPrintCosts   = printRunsByBook.reduce((s, r) => s + toNum(r.totalCost), 0);
   const monthlyRevenue    = allSales
@@ -155,7 +156,7 @@ export default async function FinanzasPage({
             {[
               { label: "Este mes",        value: formatCurrency(monthlyRevenue, currency),  icon: TrendingUp  },
               { label: "Total acumulado", value: formatCurrency(totalRevenue, currency),    icon: DollarSign  },
-              { label: "Ventas",          value: String(allSales.length),                   icon: ShoppingBag },
+              { label: "Libros vendidos", value: String(totalBooksSold),                    icon: ShoppingBag },
             ].map(({ label, value, icon: Icon }) => (
               <Card key={label} className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <CardHeader className="flex flex-row items-start justify-between pb-1 space-y-0 pt-4 px-4">
