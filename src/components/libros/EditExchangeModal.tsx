@@ -28,6 +28,8 @@ const STATUS_OPTIONS: { value: ExchangeStatus; label: string; icon: string }[] =
 ];
 
 export default function EditExchangeModal({ exchange }: { exchange: ExchangeData }) {
+  const isGift = exchange.expectedResult === null;
+
   const toDateStr = (d: Date | null) =>
     d ? new Date(d).toISOString().split("T")[0] : "";
 
@@ -67,11 +69,11 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
       const result = await updateExchange({
         id:             exchange.id,
         recipient,
-        expectedResult: expectedResult || undefined,
-        deadlineAt:     deadlineAt     || undefined,
-        status,
-        evidenceUrl:    evidenceUrl    || undefined,
-        notes:          notes          || undefined,
+        expectedResult: isGift ? undefined : (expectedResult || undefined),
+        deadlineAt:     isGift ? undefined : (deadlineAt || undefined),
+        status:         isGift ? "FULFILLED" : status,
+        evidenceUrl:    isGift ? undefined : (evidenceUrl || undefined),
+        notes:          notes || undefined,
       });
       if (result.error) setError(result.error);
       else { handleClose(); router.refresh(); }
@@ -83,7 +85,7 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
       <button
         onClick={handleOpen}
         className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
-        title="Editar canje"
+        title={isGift ? "Editar regalo" : "Editar canje"}
       >
         <Pencil size={14} />
       </button>
@@ -100,7 +102,7 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] sticky top-0 bg-[var(--color-surface)]">
               <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
-                Editar canje
+                {isGift ? "Editar regalo" : "Editar canje"}
               </h2>
               <button onClick={handleClose} disabled={isPending} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
                 <X size={18} />
@@ -110,7 +112,7 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="edit-exc-recipient">
-                  Destinatario <span className="text-[var(--color-danger)]">*</span>
+                  {isGift ? "Destinatario" : "Destinatario"} <span className="text-[var(--color-danger)]">*</span>
                 </Label>
                 <Input
                   id="edit-exc-recipient"
@@ -122,68 +124,73 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Estado</Label>
-                <div className="flex gap-2">
-                  {STATUS_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setStatus(opt.value)}
-                      className={cn(
-                        "flex-1 py-2 rounded-[var(--radius-md)] border text-xs font-medium transition-colors",
-                        status === opt.value
-                          ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]"
-                          : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]"
-                      )}
-                    >
-                      {opt.icon} {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Canje-only: status, evidence, expected result, deadline */}
+              {!isGift && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Estado</Label>
+                    <div className="flex gap-2">
+                      {STATUS_OPTIONS.map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setStatus(opt.value)}
+                          className={cn(
+                            "flex-1 py-2 rounded-[var(--radius-md)] border text-xs font-medium transition-colors",
+                            status === opt.value
+                              ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]"
+                              : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]"
+                          )}
+                        >
+                          {opt.icon} {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              {status === "FULFILLED" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="edit-exc-evidence">
-                    Link de evidencia{" "}
-                    <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
-                  </Label>
-                  <Input
-                    id="edit-exc-evidence"
-                    type="url"
-                    value={evidenceUrl}
-                    onChange={e => setEvidence(e.target.value)}
-                    placeholder="https://www.instagram.com/p/..."
-                  />
-                </div>
+                  {status === "FULFILLED" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="edit-exc-evidence">
+                        Link de evidencia{" "}
+                        <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
+                      </Label>
+                      <Input
+                        id="edit-exc-evidence"
+                        type="url"
+                        value={evidenceUrl}
+                        onChange={e => setEvidence(e.target.value)}
+                        placeholder="https://www.instagram.com/p/..."
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-exc-result">
+                      ¿Qué acordaron?{" "}
+                      <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
+                    </Label>
+                    <Input
+                      id="edit-exc-result"
+                      value={expectedResult}
+                      onChange={e => setExpected(e.target.value)}
+                      placeholder="Reseña en Instagram antes del 30 de junio"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="edit-exc-deadline">
+                      Fecha límite{" "}
+                      <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
+                    </Label>
+                    <Input
+                      id="edit-exc-deadline"
+                      type="date"
+                      value={deadlineAt}
+                      onChange={e => setDeadline(e.target.value)}
+                    />
+                  </div>
+                </>
               )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-exc-result">
-                  ¿Qué acordaron?{" "}
-                  <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
-                </Label>
-                <Input
-                  id="edit-exc-result"
-                  value={expectedResult}
-                  onChange={e => setExpected(e.target.value)}
-                  placeholder="Reseña en Instagram antes del 30 de junio"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-exc-deadline">
-                  Fecha límite{" "}
-                  <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
-                </Label>
-                <Input
-                  id="edit-exc-deadline"
-                  type="date"
-                  value={deadlineAt}
-                  onChange={e => setDeadline(e.target.value)}
-                />
-              </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="edit-exc-notes">
@@ -194,7 +201,7 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
                   id="edit-exc-notes"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder="Observaciones adicionales"
+                  placeholder={isGift ? "Ocasión, motivo…" : "Observaciones adicionales"}
                 />
               </div>
 

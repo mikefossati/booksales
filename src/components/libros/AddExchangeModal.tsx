@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useModalA11y } from "@/hooks/useModalA11y";
 
 type BookOption = { id: string; title: string };
+type Tipo = "canje" | "regalo";
 
 export default function AddExchangeModal({
   accountId,
@@ -20,16 +22,17 @@ export default function AddExchangeModal({
 }) {
   const today = new Date().toISOString().split("T")[0];
 
-  const [open, setOpen]                   = useState(false);
-  const [bookId, setBookId]               = useState(books[0]?.id ?? "");
-  const [recipient, setRecipient]         = useState("");
-  const [quantity, setQuantity]           = useState("1");
-  const [sentAt, setSentAt]               = useState(today);
-  const [expectedResult, setExpected]     = useState("");
-  const [deadlineAt, setDeadline]         = useState("");
-  const [notes, setNotes]                 = useState("");
-  const [error, setError]                 = useState<string | null>(null);
-  const [isPending, startTransition]      = useTransition();
+  const [open, setOpen]               = useState(false);
+  const [tipo, setTipo]               = useState<Tipo>("canje");
+  const [bookId, setBookId]           = useState(books[0]?.id ?? "");
+  const [recipient, setRecipient]     = useState("");
+  const [quantity, setQuantity]       = useState("1");
+  const [sentAt, setSentAt]           = useState(today);
+  const [expectedResult, setExpected] = useState("");
+  const [deadlineAt, setDeadline]     = useState("");
+  const [notes, setNotes]             = useState("");
+  const [error, setError]             = useState<string | null>(null);
+  const [isPending, startTransition]  = useTransition();
   const router = useRouter();
 
   const panelRef = useModalA11y<HTMLDivElement>(open, handleClose);
@@ -37,6 +40,7 @@ export default function AddExchangeModal({
   function handleClose() {
     if (isPending) return;
     setOpen(false);
+    setTipo("canje");
     setRecipient(""); setQuantity("1"); setSentAt(today);
     setExpected(""); setDeadline(""); setNotes(""); setError(null);
     if (books[0]) setBookId(books[0].id);
@@ -52,9 +56,10 @@ export default function AddExchangeModal({
         recipient,
         quantity:       parseInt(quantity),
         sentAt,
-        expectedResult: expectedResult || undefined,
-        deadlineAt:     deadlineAt     || undefined,
-        notes:          notes          || undefined,
+        expectedResult: tipo === "canje" ? (expectedResult || undefined) : undefined,
+        deadlineAt:     tipo === "canje" ? (deadlineAt || undefined) : undefined,
+        notes:          notes || undefined,
+        status:         tipo === "regalo" ? "FULFILLED" : "PENDING",
       });
       if (result.error) setError(result.error);
       else { handleClose(); router.refresh(); }
@@ -65,7 +70,7 @@ export default function AddExchangeModal({
     <>
       <Button onClick={() => setOpen(true)} size="sm" className="gap-1.5">
         <Plus size={14} />
-        Nuevo canje
+        Registrar salida
       </Button>
 
       {open && (
@@ -80,7 +85,7 @@ export default function AddExchangeModal({
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] sticky top-0 bg-[var(--color-surface)]">
               <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
-                Registrar canje
+                Registrar salida sin venta
               </h2>
               <button onClick={handleClose} disabled={isPending} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
                 <X size={18} />
@@ -88,9 +93,38 @@ export default function AddExchangeModal({
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+              {/* Tipo toggle */}
+              <div className="space-y-1.5">
+                <Label>Tipo</Label>
+                <div className="flex gap-2">
+                  {(["canje", "regalo"] as Tipo[]).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTipo(t)}
+                      className={cn(
+                        "flex-1 py-2 rounded-[var(--radius-md)] border text-sm font-medium transition-colors capitalize",
+                        tipo === t
+                          ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]"
+                          : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]"
+                      )}
+                    >
+                      {t === "canje" ? "🤝 Canje" : "🎁 Regalo"}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  {tipo === "canje"
+                    ? "El destinatario acordó algo a cambio (reseña, publicación, etc.)"
+                    : "Se da sin expectativa de contraprestación"}
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="exc-recipient">
-                  ¿A quién le enviaste el libro? <span className="text-[var(--color-danger)]">*</span>
+                  {tipo === "canje" ? "¿A quién le enviaste el libro?" : "¿A quién se lo regalaste?"}{" "}
+                  <span className="text-[var(--color-danger)]">*</span>
                 </Label>
                 <Input
                   id="exc-recipient"
@@ -138,7 +172,7 @@ export default function AddExchangeModal({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="exc-sent">¿Cuándo lo enviaste?</Label>
+                  <Label htmlFor="exc-sent">Fecha</Label>
                   <Input
                     id="exc-sent"
                     type="date"
@@ -149,31 +183,36 @@ export default function AddExchangeModal({
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="exc-result">
-                  ¿Qué acordaron?{" "}
-                  <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
-                </Label>
-                <Input
-                  id="exc-result"
-                  value={expectedResult}
-                  onChange={e => setExpected(e.target.value)}
-                  placeholder="Reseña en Instagram antes del 30 de junio"
-                />
-              </div>
+              {/* Canje-only fields */}
+              {tipo === "canje" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="exc-result">
+                      ¿Qué acordaron?{" "}
+                      <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
+                    </Label>
+                    <Input
+                      id="exc-result"
+                      value={expectedResult}
+                      onChange={e => setExpected(e.target.value)}
+                      placeholder="Reseña en Instagram antes del 30 de junio"
+                    />
+                  </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="exc-deadline">
-                  Fecha límite{" "}
-                  <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
-                </Label>
-                <Input
-                  id="exc-deadline"
-                  type="date"
-                  value={deadlineAt}
-                  onChange={e => setDeadline(e.target.value)}
-                />
-              </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="exc-deadline">
+                      Fecha límite{" "}
+                      <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span>
+                    </Label>
+                    <Input
+                      id="exc-deadline"
+                      type="date"
+                      value={deadlineAt}
+                      onChange={e => setDeadline(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="exc-notes">
@@ -184,7 +223,7 @@ export default function AddExchangeModal({
                   id="exc-notes"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder="Dirección de envío, acuerdo adicional…"
+                  placeholder={tipo === "canje" ? "Dirección de envío, acuerdo adicional…" : "Ocasión, motivo…"}
                 />
               </div>
 
@@ -199,7 +238,7 @@ export default function AddExchangeModal({
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isPending || !recipient.trim() || !bookId || !quantity}>
-                  {isPending ? "Guardando..." : "Registrar canje"}
+                  {isPending ? "Guardando..." : tipo === "canje" ? "Registrar canje" : "Registrar regalo"}
                 </Button>
               </div>
             </form>

@@ -14,6 +14,7 @@ export async function createExchange({
   expectedResult,
   deadlineAt,
   notes,
+  status = "PENDING",
   accountId: _ignored,
 }: {
   bookId: string;
@@ -23,6 +24,7 @@ export async function createExchange({
   expectedResult?: string;
   deadlineAt?: string;
   notes?: string;
+  status?: ExchangeStatus;
   accountId?: string; // derived from session; caller value is ignored
 }): Promise<{ error?: string }> {
   const auth = await requireAccount();
@@ -51,6 +53,7 @@ export async function createExchange({
           expectedResult: expectedResult?.trim() || null,
           deadlineAt:     deadlineAt ? new Date(deadlineAt + "T12:00:00") : null,
           notes:          notes?.trim() || null,
+          status,
         },
       });
       await tx.inventoryMovement.create({

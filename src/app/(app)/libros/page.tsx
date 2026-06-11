@@ -85,11 +85,19 @@ export default async function LibrosPage({
 
   const bookOptions = books.map(b => ({ id: b.id, title: b.title }));
 
+  const nCanjes  = exchanges.filter(e => e.expectedResult !== null).length;
+  const nRegalos = exchanges.filter(e => e.expectedResult === null).length;
+  const exchangeSubtitle = exchanges.length === 0
+    ? "Sin salidas registradas"
+    : [nCanjes  > 0 ? `${nCanjes} ${nCanjes  === 1 ? "canje"  : "canjes"}`  : null,
+       nRegalos > 0 ? `${nRegalos} ${nRegalos === 1 ? "regalo" : "regalos"}` : null]
+        .filter(Boolean).join(" · ");
+
   const subtitle = tab === "libros"
     ? books.length === 0 ? "Aún no tienes libros" : `${books.length} ${books.length === 1 ? "libro" : "libros"}`
     : tab === "merchandising"
     ? `${merchandise.length} ${merchandise.length === 1 ? "producto" : "productos"}`
-    : `${exchanges.length} ${exchanges.length === 1 ? "canje" : "canjes"} registrados`;
+    : exchangeSubtitle;
 
   return (
     <main className="p-5 md:p-8 max-w-6xl">
@@ -250,7 +258,7 @@ export default async function LibrosPage({
         )
       )}
 
-      {/* ── CANJES ──────────────────────────────────────────────────────── */}
+      {/* ── CANJES / REGALOS ────────────────────────────────────────────── */}
       {tab === "canjes" && (
         exchanges.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
@@ -258,9 +266,9 @@ export default async function LibrosPage({
               <Handshake size={28} />
             </div>
             <div>
-              <p className="text-base font-medium text-[var(--color-text)]">Aún no enviaste libros a colaboradores</p>
+              <p className="text-base font-medium text-[var(--color-text)]">Sin salidas sin venta registradas</p>
               <p className="text-sm text-[var(--color-text-muted)] mt-1 max-w-xs">
-                Registra los canjes con influencers y bloggers para llevar el seguimiento de los acuerdos.
+                Registra regalos y canjes con influencers o colaboradores. Descontarán del inventario sin generar una venta.
               </p>
             </div>
             <AddExchangeModal accountId={account.id} books={bookOptions} />
@@ -274,13 +282,19 @@ export default async function LibrosPage({
             </div>
             <div className="divide-y divide-[var(--color-border)]">
               {exchanges.map(ex => {
+                const isGift = ex.expectedResult === null;
                 const { dot, label, labelColor } = getStatusMeta(ex.status, ex.deadlineAt);
-                const isOverdue = ex.status === "PENDING" && ex.deadlineAt !== null && new Date(ex.deadlineAt) < new Date();
+                const isOverdue = !isGift && ex.status === "PENDING" && ex.deadlineAt !== null && new Date(ex.deadlineAt) < new Date();
                 return (
                   <div key={ex.id} className="flex md:grid md:grid-cols-[24px_minmax(0,1fr)_48px_90px_90px_56px] items-start gap-3 md:gap-4 px-5 py-4">
-                    <span className="text-base mt-0.5">{dot}</span>
+                    <span className="text-base mt-0.5">{isGift ? "🎁" : dot}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--color-text)]">{ex.recipient}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-[var(--color-text)]">{ex.recipient}</p>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${isGift ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]" : "bg-[var(--color-border)] text-[var(--color-text-muted)]"}`}>
+                          {isGift ? "Regalo" : "Canje"}
+                        </span>
+                      </div>
                       <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{ex.book.title}</p>
                       {ex.expectedResult && <p className="text-xs text-[var(--color-text-muted)] mt-0.5 italic">"{ex.expectedResult}"</p>}
                       {ex.evidenceUrl && (
@@ -289,12 +303,12 @@ export default async function LibrosPage({
                           Ver evidencia →
                         </a>
                       )}
-                      <span className={`md:hidden text-xs font-medium mt-1 block ${labelColor}`}>{label}</span>
+                      {!isGift && <span className={`md:hidden text-xs font-medium mt-1 block ${labelColor}`}>{label}</span>}
                     </div>
                     <span className="hidden md:block text-sm text-[var(--color-text)] text-right mt-0.5">{ex.quantity}</span>
                     <span className="hidden md:block text-xs text-[var(--color-text-muted)] text-right mt-0.5 whitespace-nowrap">{formatDate(ex.sentAt)}</span>
                     <span className={`hidden md:block text-xs text-right mt-0.5 whitespace-nowrap ${isOverdue ? "text-[var(--color-danger)] font-medium" : "text-[var(--color-text-muted)]"}`}>
-                      {ex.deadlineAt ? formatDate(ex.deadlineAt) : "—"}{isOverdue && " ⚠️"}
+                      {isGift ? "—" : ex.deadlineAt ? formatDate(ex.deadlineAt) : "—"}{isOverdue && " ⚠️"}
                     </span>
                     <div className="flex items-center gap-1 shrink-0">
                       <EditExchangeModal exchange={{ id: ex.id, recipient: ex.recipient, expectedResult: ex.expectedResult, deadlineAt: ex.deadlineAt, status: ex.status, evidenceUrl: ex.evidenceUrl, notes: ex.notes }} />
