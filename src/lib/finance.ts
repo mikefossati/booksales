@@ -354,3 +354,56 @@ export function calcInventoryStock(
 ): number {
   return calcStockMatrix(movements).get(inventoryId)?.get(bookId) ?? 0;
 }
+
+// ── Cuadre (reconciliation) ───────────────────────────────────────────────────
+
+export type CuadreRow = {
+  totalPrinted: number;
+  inPersonal:   number;
+  inBookstores: number;
+  inOther:      number;
+  totalInStock: number;
+  sold:         number;
+  exchanged:    number;
+  writtenOff:   number;
+  discrepancy:  number;
+};
+
+/**
+ * Reconciliation totals for one book.
+ * All three inventory categories are counted so nothing is silently dropped:
+ *   inPersonal   = isDefault inventories
+ *   inBookstores = !isDefault inventories with a BOOKSTORE channel
+ *   inOther      = everything else (staging areas, fair booths, etc.)
+ */
+export function calcCuadreRow(params: {
+  bookId:          string;
+  totalPrinted:    number;
+  sold:            number;
+  exchanged:       number;
+  writtenOff:      number;
+  stockMatrix:     Map<string, Map<string, number>>;
+  defaultInvIds:   Set<string>;
+  bookstoreInvIds: Set<string>;
+}): CuadreRow {
+  let inPersonal = 0, inBookstores = 0, inOther = 0;
+  for (const [invId, byBook] of params.stockMatrix) {
+    const qty = byBook.get(params.bookId) ?? 0;
+    if (params.defaultInvIds.has(invId))        inPersonal   += qty;
+    else if (params.bookstoreInvIds.has(invId)) inBookstores += qty;
+    else                                          inOther      += qty;
+  }
+  const totalInStock = inPersonal + inBookstores + inOther;
+  const discrepancy  = params.totalPrinted - totalInStock - params.sold - params.exchanged - params.writtenOff;
+  return {
+    totalPrinted: params.totalPrinted,
+    inPersonal,
+    inBookstores,
+    inOther,
+    totalInStock,
+    sold:       params.sold,
+    exchanged:  params.exchanged,
+    writtenOff: params.writtenOff,
+    discrepancy,
+  };
+}

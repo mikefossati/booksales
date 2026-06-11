@@ -19,6 +19,7 @@ import {
   resolvePricing,
   calcStockMatrix,
   calcInventoryStock,
+  calcCuadreRow,
 } from "@/lib/finance";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -756,5 +757,127 @@ describe("calcInventoryStock", () => {
       { inventoryId: "personal", bookId: "b1", type: "WRITEOFF", quantity: 2 },
     ];
     expect(calcInventoryStock(movements, "personal", "b1")).toBe(98);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// calcCuadreRow
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("calcCuadreRow", () => {
+  const makeMatrix = (entries: [string, string, number][]) => {
+    const matrix = new Map<string, Map<string, number>>();
+    for (const [invId, bookId, qty] of entries) {
+      let byBook = matrix.get(invId);
+      if (!byBook) { byBook = new Map(); matrix.set(invId, byBook); }
+      byBook.set(bookId, (byBook.get(bookId) ?? 0) + qty);
+    }
+    return matrix;
+  };
+
+  const DEFAULT_INV   = new Set(["personal"]);
+  const BOOKSTORE_INV = new Set(["libreria"]);
+
+  it("returns zero discrepancy when everything accounts for totalPrinted", () => {
+    const matrix = makeMatrix([["personal", "b1", 50], ["libreria", "b1", 30]]);
+    const row = calcCuadreRow({
+      bookId: "b1", totalPrinted: 100,
+      sold: 15, exchanged: 3, writtenOff: 2,
+      stockMatrix: matrix, defaultInvIds: DEFAULT_INV, bookstoreInvIds: BOOKSTORE_INV,
+    });
+    expect(row.inPersonal).toBe(50);
+    expect(row.inBookstores).toBe(30);
+    expect(row.inOther).toBe(0);
+    expect(row.totalInStock).toBe(80);
+    expect(row.discrepancy).toBe(0);
+  });
+
+  it("counts inOther for inventories in neither category", () => {
+    const matrix = makeMatrix([
+      ["personal", "b1", 40],
+      ["libreria", "b1", 20],
+      ["staging",  "b1", 10],  // not personal, not bookstore
+    ]);
+    const row = calcCuadreRow({
+      bookId: "b1", totalPrinted: 100,
+      sold: 20, exchanged: 5, writtenOff: 5,
+      stockMatrix: matrix, defaultInvIds: DEFAULT_INV, bookstoreInvIds: BOOKSTORE_INV,
+    });
+    expect(row.inPersonal).toBe(40);
+    expect(row.inBookstores).toBe(20);
+    expect(row.inOther).toBe(10);
+    expect(row.totalInStock).toBe(70);
+    expect(row.discrepancy).toBe(0);
+  });
+
+  it("shows positive discrepancy when stock+sold+exchanged+writtenOff < totalPrinted", () => {
+    const matrix = makeMatrix([["personal", "b1", 80]]);
+    const row = calcCuadreRow({
+      bookId: "b1", totalPrinted: 100,
+      sold: 5, exchanged: 0, writtenOff: 0,
+      stockMatrix: matrix, defaultInvIds: DEFAULT_INV, bookstoreInvIds: BOOKSTORE_INV,
+    });
+    expect(row.discrepancy).toBe(15);
+  });
+
+  it("shows negative discrepancy when totals exceed totalPrinted (data error)", () => {
+    const matrix = makeMatrix([["personal", "b1", 100]]);
+    const row = calcCuadreRow({
+      bookId: "b1", totalPrinted: 100,
+      sold: 20, exchanged: 0, writtenOff: 0,
+      stockMatrix: matrix, defaultInvIds: DEFAULT_INV, bookstoreInvIds: BOOKSTORE_INV,
+    });
+    expect(row.discrepancy).toBe(-20);
+  });
+
+  it("handles an empty stock matrix (all books unaccounted for)", () => {
+    const row = calcCuadreRow({
+      bookId: "b1", totalPrinted: 200,
+      sold: 0, exchanged: 0, writtenOff: 0,
+      stockMatrix: new Map(), defaultInvIds: DEFAULT_INV, bookstoreInvIds: BOOKSTORE_INV,
+    });
+    expect(row.inPersonal).toBe(0);
+    expect(row.inBookstores).toBe(0);
+    expect(row.inOther).toBe(0);
+    expect(row.totalInStock).toBe(0);
+    expect(row.discrepancy).toBe(200);
+  });
+
+  it("ignores stock for a different book", () => {
+    const matrix = makeMatrix([["personal", "b2", 50]]);
+    const row = calcCuadreRow({
+      bookId: "b1", totalPrinted: 100,
+      sold: 0, exchanged: 0, writtenOff: 0,
+      stockMatrix: matrix, defaultInvIds: DEFAULT_INV, bookstoreInvIds: BOOKSTORE_INV,
+    });
+    expect(row.inPersonal).toBe(0);
+    expect(row.discrepancy).toBe(100);
+  });
+
+  it("counts exchanges and writtenOff in the accounting", () => {
+    const matrix = makeMatrix([["personal", "b1", 90]]);
+    const row = calcCuadreRow({
+      bookId: "b1", totalPrinted: 100,
+      sold: 0, exchanged: 7, writtenOff: 3,
+      stockMatrix: matrix, defaultInvIds: DEFAULT_INV, bookstoreInvIds: BOOKSTORE_INV,
+    });
+    expect(row.exchanged).toBe(7);
+    expect(row.writtenOff).toBe(3);
+    expect(row.discrepancy).toBe(0);
+  });
+
+  it("multiple inventories in same category are summed", () => {
+    const matrix = makeMatrix([
+      ["personal-1", "b1", 30],
+      ["personal-2", "b1", 20],
+    ]);
+    const defaultTwo = new Set(["personal-1", "personal-2"]);
+    const row = calcCuadreRow({
+      bookId: "b1", totalPrinted: 100,
+      sold: 50, exchanged: 0, writtenOff: 0,
+      stockMatrix: matrix, defaultInvIds: defaultTwo, bookstoreInvIds: new Set(),
+    });
+    expect(row.inPersonal).toBe(50);
+    expect(row.discrepancy).toBe(0);
   });
 });

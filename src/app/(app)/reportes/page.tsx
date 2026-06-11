@@ -21,6 +21,7 @@ import {
   getExchangeStatusMeta,
   calcOutstanding,
   saleToCLP,
+  calcCuadreRow,
 } from "@/lib/finance";
 import { CATEGORY_LABELS, CHANNEL_TYPE_LABEL } from "@/lib/labels";
 
@@ -136,19 +137,14 @@ export default async function ReportesPage({
         .reduce((s, r) => s + r.quantity, 0);
       if (totalPrinted === 0) return null;
 
-      let inPersonal = 0; let inBookstores = 0;
-      for (const [invId, byBook] of stockMatrix) {
-        const qty = byBook.get(book.id) ?? 0;
-        if (defaultInvIds.has(invId))        inPersonal   += qty;
-        else if (bookstoreInvIds.has(invId)) inBookstores += qty;
-      }
-
       const sold       = allSales.filter(s => s.bookId === book.id).reduce((s, x) => s + x.quantity, 0);
       const exchanged  = allExchanges.filter(e => e.bookId === book.id).reduce((s, e) => s + e.quantity, 0);
       const writtenOff = bookMovements.filter(m => m.bookId === book.id && m.type === "WRITEOFF").reduce((s, m) => s + m.quantity, 0);
-      const discrepancy = totalPrinted - inPersonal - inBookstores - sold - exchanged - writtenOff;
 
-      return { book, totalPrinted, inPersonal, inBookstores, sold, exchanged, writtenOff, discrepancy };
+      return {
+        book,
+        ...calcCuadreRow({ bookId: book.id, totalPrinted, sold, exchanged, writtenOff, stockMatrix, defaultInvIds, bookstoreInvIds }),
+      };
     })
     .filter((r): r is NonNullable<typeof r> => r !== null);
 
@@ -157,12 +153,13 @@ export default async function ReportesPage({
       totalPrinted: acc.totalPrinted + r.totalPrinted,
       inPersonal:   acc.inPersonal   + r.inPersonal,
       inBookstores: acc.inBookstores + r.inBookstores,
+      inOther:      acc.inOther      + r.inOther,
       sold:         acc.sold         + r.sold,
       exchanged:    acc.exchanged    + r.exchanged,
       writtenOff:   acc.writtenOff   + r.writtenOff,
       discrepancy:  acc.discrepancy  + r.discrepancy,
     }),
-    { totalPrinted: 0, inPersonal: 0, inBookstores: 0, sold: 0, exchanged: 0, writtenOff: 0, discrepancy: 0 },
+    { totalPrinted: 0, inPersonal: 0, inBookstores: 0, inOther: 0, sold: 0, exchanged: 0, writtenOff: 0, discrepancy: 0 },
   );
 
   // ── Finanzas aggregations ─────────────────────────────────────────────────
@@ -546,11 +543,12 @@ export default async function ReportesPage({
           ) : (
             <>
               {cuadreRows.map(row => {
-                const { book, totalPrinted, inPersonal, inBookstores, sold, exchanged, writtenOff, discrepancy } = row;
+                const { book, totalPrinted, inPersonal, inBookstores, inOther, sold, exchanged, writtenOff, discrepancy } = row;
                 const cuadra = discrepancy === 0;
                 const segments = [
                   { label: "En mano",        value: inPersonal,   color: "bg-[var(--color-accent)]"   },
                   { label: "En librerías",   value: inBookstores, color: "bg-orange-400"              },
+                  ...(inOther > 0 ? [{ label: "Otros",           value: inOther,      color: "bg-sky-400"                  }] : []),
                   { label: "Vendidos",       value: sold,         color: "bg-[var(--color-success)]"  },
                   { label: "Canjes/Regalos", value: exchanged,    color: "bg-purple-400"              },
                   { label: "Bajas",          value: writtenOff,   color: "bg-[var(--color-border)]"   },
@@ -595,6 +593,7 @@ export default async function ReportesPage({
                           { label: "Impresos",       value: totalPrinted, accent: "font-bold text-[var(--color-text)]",          dot: null         },
                           { label: "En mano",        value: inPersonal,   accent: "text-[var(--color-text)]",                   dot: "bg-[var(--color-accent)]"  },
                           { label: "En librerías",   value: inBookstores, accent: "text-[var(--color-text)]",                   dot: "bg-orange-400"              },
+                          ...(inOther > 0 ? [{ label: "Otros inv.",     value: inOther,      accent: "text-[var(--color-text)]",   dot: "bg-sky-400"     }] : []),
                           { label: "Vendidos",       value: sold,         accent: "text-[var(--color-text)]",                   dot: "bg-[var(--color-success)]" },
                           { label: "Canjes/Regalos", value: exchanged,    accent: "text-[var(--color-text)]",                   dot: "bg-purple-400"              },
                           { label: "Bajas",          value: writtenOff,   accent: "text-[var(--color-text-muted)]",             dot: "bg-[var(--color-border)]"   },
@@ -634,6 +633,7 @@ export default async function ReportesPage({
                         { label: "Impresos",       value: cuadreTotals.totalPrinted },
                         { label: "En mano",        value: cuadreTotals.inPersonal   },
                         { label: "En librerías",   value: cuadreTotals.inBookstores },
+                        ...(cuadreTotals.inOther > 0 ? [{ label: "Otros inv.", value: cuadreTotals.inOther }] : []),
                         { label: "Vendidos",       value: cuadreTotals.sold         },
                         { label: "Canjes/Regalos", value: cuadreTotals.exchanged    },
                         { label: "Bajas",          value: cuadreTotals.writtenOff   },
