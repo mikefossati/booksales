@@ -25,7 +25,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[var(--color-surface)] border-t border-[var(--color-border)] flex md:hidden z-30 safe-area-inset-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] flex md:hidden z-30 safe-area-inset-bottom">
       {navItems.map(({ href, icon: Icon, label }) => {
         const active = pathname === href || pathname.startsWith(href + "/");
         return (
@@ -33,7 +33,7 @@ export default function BottomNav() {
             key={href}
             href={href}
             className={cn(
-              "flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors duration-[var(--duration-fast)]",
+              "flex-1 h-16 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors duration-[var(--duration-fast)]",
               active
                 ? "text-[var(--color-accent)]"
                 : "text-[var(--color-text-muted)]"

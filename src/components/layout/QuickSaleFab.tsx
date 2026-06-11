@@ -217,7 +217,7 @@ export default function QuickSaleFab({
     <>
       <button
         onClick={handleOpen}
-        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 w-14 h-14 rounded-full bg-[var(--color-accent)] text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-40"
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 md:bottom-6 md:right-6 w-14 h-14 rounded-full bg-[var(--color-accent)] text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-40"
         aria-label="Registrar venta o gasto"
       >
         <Plus size={24} />

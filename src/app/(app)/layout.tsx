@@ -42,7 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Sidebar userEmail={user.email ?? ""} />
-      <div className="md:pl-60 pb-16 md:pb-0">
+      <div className="md:pl-60 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
         {children}
       </div>
       <BottomNav />
