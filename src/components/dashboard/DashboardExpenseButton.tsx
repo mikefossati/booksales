@@ -127,7 +127,7 @@ export default function DashboardExpenseButton({
               <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
                 Registrar gasto
               </h2>
-              <button type="button" onClick={() => setOpen(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
+              <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
                 <X size={18} />
               </button>
             </div>

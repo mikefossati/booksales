@@ -497,7 +497,13 @@ export default function QuickSaleFab({
                                   className="px-3 py-2 text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)] transition-colors">
                                   <Minus size={14} />
                                 </button>
-                                <span className="flex-1 text-center text-sm font-semibold">{quantity}</span>
+                                <input
+                                  type="number" min={1} step={1} inputMode="numeric" aria-label="Cantidad"
+                                  value={quantity === 0 ? "" : quantity}
+                                  onChange={e => setQuantity(e.target.value === "" ? 0 : Math.max(1, parseInt(e.target.value) || 1))}
+                                  onBlur={() => { if (quantity < 1) setQuantity(1); }}
+                                  className="flex-1 w-full min-w-0 text-center text-sm font-semibold bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
                                 <button type="button" onClick={() => setQuantity(quantity + 1)}
                                   className="px-3 py-2 text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)] transition-colors">
                                   <Plus size={14} />
@@ -675,7 +681,7 @@ export default function QuickSaleFab({
                 <Button
                   type="submit"
                   disabled={
-                    isPending || !channelId || (needsFx && !fxRate) ||
+                    isPending || !channelId || quantity < 1 || (needsFx && !fxRate) ||
                     (isBulkMode
                       ? !bulkTotal || parseFloat(bulkTotal) < 0
                       : !unitPrice || parseFloat(unitPrice) < 0)
