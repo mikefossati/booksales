@@ -88,7 +88,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
 
   function nextStep() {
     if (step === 2 && !formats.includes("PRINT")) {
-      submit({ skip: false });
+      setStep(4); // no print run to register — jump straight to the summary
     } else {
       setStep(prev => Math.min(prev + 1, 4) as Step);
     }
@@ -174,7 +174,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
                     : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]/40"
                 )}
               >
-                <span className="text-2xl">{emoji}</span>
+                <span className="text-2xl" aria-hidden="true">{emoji}</span>
                 {label}
               </button>
             ))}
@@ -230,7 +230,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
         </div>
 
         <p className="text-xs text-[var(--color-text-muted)]">
-          ¿Vendes en Argentina, México u otro país? Agrega canales con moneda local desde Configuración después de completar esto.
+          ¿Vendes en Argentina, México u otro país? Agrega canales con moneda local desde la sección Canales después de completar esto.
         </p>
       </div>
     ),
@@ -352,7 +352,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
           )}
           {!title && selectedChannels.length === 0 && (
             <p className="text-sm text-[var(--color-text-muted)] py-2">
-              Saltaste la configuración inicial — puedes agregar todo desde Configuración cuando quieras.
+              Saltaste la configuración inicial — puedes agregar tus libros desde «Mis Libros» y tus canales desde «Canales» cuando quieras.
             </p>
           )}
         </div>
@@ -390,7 +390,9 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
-  const isLastStep = step === 4 || (step === 3 && !formats.includes("PRINT"));
+  const isLastStep = step === 4;
+  // Without PRINT the wizard has 3 visible steps; internal step 4 (summary) displays as 3
+  const displayStep = (formats.includes("PRINT") ? step : Math.min(step, 3)) as Step;
 
   const canAdvanceStep1 = step === 1 && title.trim().length > 0;
   const canAdvanceStep3 = step === 3 && (hasPrint === false || (hasPrint === true && printQty));
@@ -406,14 +408,14 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
       {/* Top bar */}
       <header className="flex items-center justify-between px-6 py-5">
         <AutoriappLogo size="sm" />
-        <StepDots current={step} total={totalSteps} />
+        <StepDots current={displayStep} total={totalSteps} />
       </header>
 
       {/* Content */}
       <main className="flex-1 flex items-start justify-center px-6 pt-10 pb-6">
         <div className="w-full max-w-lg">
           <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-widest mb-6">
-            Paso {step} de {totalSteps}
+            Paso {displayStep} de {totalSteps}
           </p>
 
           {stepContent[step]}
