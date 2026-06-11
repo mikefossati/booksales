@@ -383,6 +383,9 @@ export default async function FinanzasPage({
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[var(--color-text)]">{channel.name}</p>
                     <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{CHANNEL_TYPE_LABEL[channel.type]}</p>
+                    <p className="md:hidden text-xs text-[var(--color-text-muted)] mt-0.5">
+                      Vendido {formatCurrency(totalSales, currency)} · Cobrado {formatCurrency(totalReceived, currency)}
+                    </p>
                   </div>
                   <span className="hidden md:block text-sm text-[var(--color-text-muted)] text-right">{formatCurrency(totalSales, currency)}</span>
                   <span className="hidden md:block text-sm text-[var(--color-success)] text-right">{formatCurrency(totalReceived, currency)}</span>

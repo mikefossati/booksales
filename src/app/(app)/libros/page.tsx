@@ -199,8 +199,13 @@ export default async function LibrosPage({
                           </p>
                         )}
                         {/* Mobile stats */}
-                        <p className={`md:hidden text-xs font-medium mt-1 ${stockColor}`}>
-                          Stock: {stock} ej.
+                        <p className="md:hidden text-xs mt-1">
+                          <span className={`font-medium ${stockColor}`}>Stock: {stock} ej.</span>
+                          {item.suggestedPrice ? (
+                            <span className="text-[var(--color-text-muted)]">
+                              {" "}· {formatCurrency(toNum(item.suggestedPrice), currency)}
+                            </span>
+                          ) : null}
                         </p>
                       </div>
 
@@ -304,6 +309,14 @@ export default async function LibrosPage({
                         </a>
                       )}
                       {!isGift && <span className={`md:hidden text-xs font-medium mt-1 block ${labelColor}`}>{label}</span>}
+                      <span className="md:hidden text-xs text-[var(--color-text-muted)] mt-0.5 block">
+                        {ex.quantity} ej. · {formatDate(ex.sentAt)}
+                        {!isGift && ex.deadlineAt && (
+                          <span className={isOverdue ? "text-[var(--color-danger)] font-medium" : ""}>
+                            {" "}· límite {formatDate(ex.deadlineAt)}
+                          </span>
+                        )}
+                      </span>
                     </div>
                     <span className="hidden md:block text-sm text-[var(--color-text)] text-right mt-0.5">{ex.quantity}</span>
                     <span className="hidden md:block text-xs text-[var(--color-text-muted)] text-right mt-0.5 whitespace-nowrap">{formatDate(ex.sentAt)}</span>
