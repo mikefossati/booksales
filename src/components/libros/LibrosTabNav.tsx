@@ -15,7 +15,7 @@ export default function LibrosTabNav() {
   const active = params.get("tab") ?? "libros";
 
   return (
-    <div className="flex gap-1 border-b border-[var(--color-border)] mb-7">
+    <div className="flex gap-1 border-b border-[var(--color-border)] mb-7 overflow-x-auto">
       {TABS.map(({ id, label }) => (
         <Link
           key={id}

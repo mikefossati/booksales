@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
+// Labels make explicit that these are analyses, distinct from the
+// management pages Finanzas (transactions) and Inventario (stock ops).
 const TABS = [
-  { id: "ventas",        label: "Ventas"        },
-  { id: "inventario",    label: "Inventario"    },
-  { id: "cuadre",        label: "Cuadre"        },
-  { id: "finanzas",      label: "Finanzas"      },
-  { id: "proyecciones",  label: "Proyecciones"  },
+  { id: "ventas",        label: "Análisis de ventas"   },
+  { id: "inventario",    label: "Estado de inventario" },
+  { id: "cuadre",        label: "Cuadre"               },
+  { id: "finanzas",      label: "Resumen financiero"   },
+  { id: "proyecciones",  label: "Proyecciones"         },
 ];
 
 export default function ReportesTabNav() {

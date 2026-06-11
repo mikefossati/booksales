@@ -5,7 +5,9 @@ import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { id: "ingresos",      label: "Ingresos"         },
+  // id "ingresos" kept for existing deep links; label matches the
+  // dashboard vocabulary ("Mis Ventas", "Ver todas las ventas")
+  { id: "ingresos",      label: "Ventas"           },
   { id: "gastos",        label: "Gastos"            },
   { id: "deben",         label: "¿Qué me deben?"   },
   { id: "rentabilidad",  label: "Rentabilidad"      },
@@ -16,7 +18,7 @@ export default function TabNav() {
   const active = params.get("tab") ?? "ingresos";
 
   return (
-    <div className="flex gap-1 border-b border-[var(--color-border)] mb-7">
+    <div className="flex gap-1 border-b border-[var(--color-border)] mb-7 overflow-x-auto">
       {TABS.map(({ id, label }) => (
         <Link
           key={id}

@@ -194,7 +194,7 @@ const SECTIONS: Section[] = [
       {
         kind: "table",
         rows: [
-          ["Ingresos", "Historial de todas las ventas registradas, con filtros por período."],
+          ["Ventas", "Historial de todas las ventas registradas, con filtros por período."],
           ["Gastos", "Historial de gastos operativos (impresión, diseño, envíos, publicidad, etc.)."],
           ["Te deben", "Pagos pendientes de canales tipo Librería o Digital. Muestra cuánto vendiste vs. cuánto te pagaron."],
         ],
@@ -244,10 +244,10 @@ const SECTIONS: Section[] = [
       {
         kind: "table",
         rows: [
-          ["Ventas", "Ingresos totales por período, desglose por canal y por libro. Comparativa mes a mes."],
-          ["Inventario", "Existencias actuales por inventario y por libro. Estado de consignaciones en librerías."],
+          ["Análisis de ventas", "Ingresos totales por período, desglose por canal y por libro. Comparativa mes a mes."],
+          ["Estado de inventario", "Existencias actuales por inventario y por libro. Estado de consignaciones en librerías."],
           ["Cuadre", "Verifica que los números cierren: total impreso = en inventarios + vendidos + canjes/regalos + bajas. Si aparece una discrepancia, hay ejemplares sin contabilizar."],
-          ["Finanzas", "Gastos por categoría, rentabilidad por libro, P&L de merchandising."],
+          ["Resumen financiero", "Gastos por categoría, rentabilidad por libro, P&L de merchandising."],
           ["Proyecciones", "Estimación de ventas futuras basada en el promedio de los últimos 3 meses, con escenario conservador (−20%) y optimista (+20%)."],
         ],
       },
