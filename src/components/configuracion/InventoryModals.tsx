@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 // ── Shared modal shell ────────────────────────────────────────────────────────
 
@@ -144,22 +145,34 @@ export function EditInventoryButton({ id, name }: { id: string; name: string }) 
 // ── Delete ────────────────────────────────────────────────────────────────────
 
 export function DeleteInventoryButton({ id, name }: { id: string; name: string }) {
+  const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   function handleDelete() {
-    if (!confirm(`¿Eliminar el inventario "${name}"? Los canales asociados quedarán sin inventario.`)) return;
     startTransition(async () => {
       const result = await deleteInventory(id);
       if (result.error) toast.error(result.error);
       else { toast.success("Inventario eliminado"); router.refresh(); }
+      setOpen(false);
     });
   }
 
   return (
-    <button onClick={handleDelete} disabled={isPending} title="Eliminar"
-      className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors">
-      <Trash2 size={14} />
-    </button>
+    <>
+      <button onClick={() => setOpen(true)} disabled={isPending}
+        aria-label={`Eliminar inventario ${name}`} title="Eliminar"
+        className="p-2 -m-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/8 transition-colors">
+        <Trash2 size={14} />
+      </button>
+      <ConfirmDialog
+        open={open}
+        title={`¿Eliminar el inventario "${name}"?`}
+        description="Los canales asociados quedarán sin inventario."
+        loading={isPending}
+        onConfirm={handleDelete}
+        onClose={() => setOpen(false)}
+      />
+    </>
   );
 }

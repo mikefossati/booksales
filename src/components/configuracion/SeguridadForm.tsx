@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, LogOut } from "lucide-react";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 export default function SeguridadForm() {
   const [newPw, setNewPw]               = useState("");
@@ -15,6 +16,7 @@ export default function SeguridadForm() {
   const [pwError, setPwError]           = useState<string | null>(null);
   const [pwLoading, setPwLoading]       = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [logoutConfirm, setLogoutConfirm] = useState(false);
   const router = useRouter();
 
   async function handleChangePassword(e: React.FormEvent) {
@@ -33,7 +35,6 @@ export default function SeguridadForm() {
   }
 
   async function handleLogoutAll() {
-    if (!window.confirm("¿Cerrar sesión en todos tus dispositivos? Tendrás que volver a iniciar sesión.")) return;
     setLogoutLoading(true);
     const supabase = createClient();
     await supabase.auth.signOut({ scope: "global" });
@@ -92,13 +93,23 @@ export default function SeguridadForm() {
         <Button
           type="button"
           variant="outline"
-          onClick={handleLogoutAll}
+          onClick={() => setLogoutConfirm(true)}
           disabled={logoutLoading}
           className="gap-2 text-[var(--color-danger)] border-[var(--color-danger)]/30 hover:bg-[var(--color-danger)]/6 hover:text-[var(--color-danger)]"
         >
           <LogOut size={15} />
           {logoutLoading ? "Cerrando sesiones..." : "Cerrar todas las sesiones"}
         </Button>
+        <ConfirmDialog
+          open={logoutConfirm}
+          title="¿Cerrar sesión en todos tus dispositivos?"
+          description="Tendrás que volver a iniciar sesión, incluido en este dispositivo."
+          confirmLabel="Cerrar sesiones"
+          loadingLabel="Cerrando sesiones..."
+          loading={logoutLoading}
+          onConfirm={handleLogoutAll}
+          onClose={() => setLogoutConfirm(false)}
+        />
       </section>
     </div>
   );
