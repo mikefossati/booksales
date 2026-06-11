@@ -19,6 +19,10 @@ export default function BookCard({ book }: { book: Book }) {
             <img
               src={book.coverUrl}
               alt={book.title}
+              width={300}
+              height={400}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
             />
           ) : (

@@ -162,7 +162,7 @@ export default function DashboardSaleButton({
                       )}>
                       <div className="w-12 h-16 rounded bg-[var(--color-accent-light)] flex items-center justify-center overflow-hidden">
                         {b.coverUrl
-                          ? <img src={b.coverUrl} alt={b.title} className="w-full h-full object-cover" />
+                          ? <img src={b.coverUrl} alt={b.title} width={48} height={64} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                           : <BookOpen size={16} className="text-[var(--color-accent)] opacity-50" />}
                       </div>
                       <span className="text-[11px] text-[var(--color-text)] line-clamp-2 text-center leading-tight">{b.title}</span>

@@ -166,7 +166,7 @@ export default async function BookDetailPage({
       <header className="flex items-start gap-5 mb-6">
         <div className="w-20 h-28 rounded-[var(--radius-md)] bg-[var(--color-accent-light)] flex items-center justify-center shrink-0 overflow-hidden">
           {book.coverUrl
-            ? <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover" />
+            ? <img src={book.coverUrl} alt={book.title} width={80} height={112} decoding="async" className="w-full h-full object-cover" />
             : <BookOpen size={24} className="text-[var(--color-accent)] opacity-50" />}
         </div>
         <div className="flex-1 min-w-0">

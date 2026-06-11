@@ -287,7 +287,7 @@ export default async function LibrosPage({
                 const isOverdue = !isGift && ex.status === "PENDING" && ex.deadlineAt !== null && new Date(ex.deadlineAt) < new Date();
                 return (
                   <div key={ex.id} className="flex md:grid md:grid-cols-[24px_minmax(0,1fr)_48px_90px_90px_56px] items-start gap-3 md:gap-4 px-5 py-4">
-                    <span className="text-base mt-0.5">{isGift ? "🎁" : dot}</span>
+                    <span className="text-base mt-0.5" aria-hidden="true">{isGift ? "🎁" : dot}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium text-[var(--color-text)]">{ex.recipient}</p>
