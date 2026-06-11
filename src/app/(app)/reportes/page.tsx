@@ -122,6 +122,49 @@ export default async function ReportesPage({
   const unfulfilledCanjes = allExchanges.filter(e => e.status === "UNFULFILLED");
   const overdueCanjes     = pendingCanjes.filter(e => e.deadlineAt && new Date(e.deadlineAt) < now);
 
+  // ── Cuadre de ejemplares ─────────────────────────────────────────────────
+
+  const defaultInvIds   = new Set(inventories.filter(i => i.isDefault).map(i => i.id));
+  const bookstoreInvIds = new Set(
+    inventories.filter(i => !i.isDefault && i.channels.some(c => c.type === "BOOKSTORE")).map(i => i.id),
+  );
+
+  const cuadreRows = printBooks
+    .map(book => {
+      const totalPrinted = printRuns
+        .filter(r => r.bookId === book.id)
+        .reduce((s, r) => s + r.quantity, 0);
+      if (totalPrinted === 0) return null;
+
+      let inPersonal = 0; let inBookstores = 0;
+      for (const [invId, byBook] of stockMatrix) {
+        const qty = byBook.get(book.id) ?? 0;
+        if (defaultInvIds.has(invId))        inPersonal   += qty;
+        else if (bookstoreInvIds.has(invId)) inBookstores += qty;
+      }
+
+      const sold       = allSales.filter(s => s.bookId === book.id).reduce((s, x) => s + x.quantity, 0);
+      const exchanged  = allExchanges.filter(e => e.bookId === book.id).reduce((s, e) => s + e.quantity, 0);
+      const writtenOff = bookMovements.filter(m => m.bookId === book.id && m.type === "WRITEOFF").reduce((s, m) => s + m.quantity, 0);
+      const discrepancy = totalPrinted - inPersonal - inBookstores - sold - exchanged - writtenOff;
+
+      return { book, totalPrinted, inPersonal, inBookstores, sold, exchanged, writtenOff, discrepancy };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
+
+  const cuadreTotals = cuadreRows.reduce(
+    (acc, r) => ({
+      totalPrinted: acc.totalPrinted + r.totalPrinted,
+      inPersonal:   acc.inPersonal   + r.inPersonal,
+      inBookstores: acc.inBookstores + r.inBookstores,
+      sold:         acc.sold         + r.sold,
+      exchanged:    acc.exchanged    + r.exchanged,
+      writtenOff:   acc.writtenOff   + r.writtenOff,
+      discrepancy:  acc.discrepancy  + r.discrepancy,
+    }),
+    { totalPrinted: 0, inPersonal: 0, inBookstores: 0, sold: 0, exchanged: 0, writtenOff: 0, discrepancy: 0 },
+  );
+
   // ── Finanzas aggregations ─────────────────────────────────────────────────
 
   const expenseByCategory = new Map<ExpenseCategory, number>();
@@ -487,6 +530,125 @@ export default async function ReportesPage({
               </Card>
             )}
           </section>
+        </div>
+      )}
+
+      {/* ── CUADRE ────────────────────────────────────────────────────────── */}
+      {tab === "cuadre" && (
+        <div className="space-y-4">
+          {cuadreRows.length === 0 ? (
+            <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
+              <CardContent className="py-16 text-center">
+                <p className="text-sm font-medium text-[var(--color-text)]">Sin tiradas registradas</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">Registra tiradas de impresión para ver el cuadre de ejemplares</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {cuadreRows.map(row => {
+                const { book, totalPrinted, inPersonal, inBookstores, sold, exchanged, writtenOff, discrepancy } = row;
+                const cuadra = discrepancy === 0;
+                const segments = [
+                  { label: "En mano",        value: inPersonal,   color: "bg-[var(--color-accent)]"   },
+                  { label: "En librerías",   value: inBookstores, color: "bg-orange-400"              },
+                  { label: "Vendidos",       value: sold,         color: "bg-[var(--color-success)]"  },
+                  { label: "Canjes/Regalos", value: exchanged,    color: "bg-purple-400"              },
+                  { label: "Bajas",          value: writtenOff,   color: "bg-[var(--color-border)]"   },
+                  ...(discrepancy > 0 ? [{ label: "Sin contabilizar", value: discrepancy, color: "bg-[var(--color-danger)]" }] : []),
+                ];
+                return (
+                  <Card key={book.id} className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
+                    <CardContent className="p-5">
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm font-semibold text-[var(--color-text)]">{book.title}</p>
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                          cuadra
+                            ? "bg-[var(--color-success)]/15 text-[var(--color-success)]"
+                            : discrepancy > 0
+                            ? "bg-[var(--color-danger)]/15 text-[var(--color-danger)]"
+                            : "bg-[var(--color-warning)]/15 text-[var(--color-warning)]"
+                        }`}>
+                          {cuadra
+                            ? "✅ Cuadra"
+                            : discrepancy > 0
+                            ? `⚠️ ${discrepancy} ej. sin contabilizar`
+                            : `⚠️ ${Math.abs(discrepancy)} ej. de más`}
+                        </span>
+                      </div>
+
+                      {/* Stacked bar */}
+                      <div className="h-2.5 rounded-full overflow-hidden flex mb-4 bg-[var(--color-border)]">
+                        {segments.filter(s => s.value > 0).map(s => (
+                          <div
+                            key={s.label}
+                            className={`h-full ${s.color} transition-all`}
+                            style={{ width: `${Math.max((s.value / totalPrinted) * 100, 0)}%` }}
+                            title={`${s.label}: ${s.value}`}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Legend + numbers */}
+                      <div className="grid grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-3">
+                        {[
+                          { label: "Impresos",       value: totalPrinted, accent: "font-bold text-[var(--color-text)]",          dot: null         },
+                          { label: "En mano",        value: inPersonal,   accent: "text-[var(--color-text)]",                   dot: "bg-[var(--color-accent)]"  },
+                          { label: "En librerías",   value: inBookstores, accent: "text-[var(--color-text)]",                   dot: "bg-orange-400"              },
+                          { label: "Vendidos",       value: sold,         accent: "text-[var(--color-text)]",                   dot: "bg-[var(--color-success)]" },
+                          { label: "Canjes/Regalos", value: exchanged,    accent: "text-[var(--color-text)]",                   dot: "bg-purple-400"              },
+                          { label: "Bajas",          value: writtenOff,   accent: "text-[var(--color-text-muted)]",             dot: "bg-[var(--color-border)]"   },
+                        ].map(({ label, value, accent, dot }) => (
+                          <div key={label}>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              {dot && <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${dot}`} />}
+                              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide truncate">{label}</p>
+                            </div>
+                            <p className={`text-base font-semibold ${accent}`}>{value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+
+              {/* Totals row */}
+              {cuadreRows.length > 1 && (
+                <Card className="border-[var(--color-border)] bg-[var(--color-accent-light)]/40 shadow-[var(--shadow-card)]">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm font-semibold text-[var(--color-text)]">Total general</p>
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                        cuadreTotals.discrepancy === 0
+                          ? "bg-[var(--color-success)]/15 text-[var(--color-success)]"
+                          : "bg-[var(--color-danger)]/15 text-[var(--color-danger)]"
+                      }`}>
+                        {cuadreTotals.discrepancy === 0
+                          ? "✅ Cuadra"
+                          : `⚠️ ${Math.abs(cuadreTotals.discrepancy)} ej. sin contabilizar`}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-3">
+                      {[
+                        { label: "Impresos",       value: cuadreTotals.totalPrinted },
+                        { label: "En mano",        value: cuadreTotals.inPersonal   },
+                        { label: "En librerías",   value: cuadreTotals.inBookstores },
+                        { label: "Vendidos",       value: cuadreTotals.sold         },
+                        { label: "Canjes/Regalos", value: cuadreTotals.exchanged    },
+                        { label: "Bajas",          value: cuadreTotals.writtenOff   },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide mb-0.5">{label}</p>
+                          <p className="text-base font-semibold text-[var(--color-text)]">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
         </div>
       )}
 
