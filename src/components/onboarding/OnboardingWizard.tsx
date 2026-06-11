@@ -139,7 +139,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
     1: (
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+          <h2 className="text-3xl font-semibold text-[var(--color-text)] font-heading">
             ¿Cómo se llama tu libro?
           </h2>
           <p className="text-[var(--color-text-muted)] mt-2">
@@ -186,7 +186,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
     2: (
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+          <h2 className="text-3xl font-semibold text-[var(--color-text)] font-heading">
             ¿Dónde vendes tu libro?
           </h2>
           <p className="text-[var(--color-text-muted)] mt-2">
@@ -238,7 +238,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
     3: (
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+          <h2 className="text-3xl font-semibold text-[var(--color-text)] font-heading">
             ¿Tienes ejemplares impresos?
           </h2>
           <p className="text-[var(--color-text-muted)] mt-2">
@@ -303,7 +303,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
           <div className="w-14 h-14 rounded-full bg-[var(--color-accent-light)] flex items-center justify-center mb-5">
             <Check size={26} className="text-[var(--color-accent)]" />
           </div>
-          <h2 className="text-3xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+          <h2 className="text-3xl font-semibold text-[var(--color-text)] font-heading">
             ¡Todo listo!
           </h2>
           <p className="text-[var(--color-text-muted)] mt-2">

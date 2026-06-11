@@ -31,7 +31,7 @@ function Stat({ label, value, sub, trend }: { label: string; value: string; sub?
   return (
     <div>
       <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-0.5">{label}</p>
-      <p className="text-xl font-semibold text-[var(--color-text)] leading-none" style={{ fontFamily: "var(--font-heading)" }}>
+      <p className="text-xl font-semibold text-[var(--color-text)] leading-none font-heading">
         {value}
       </p>
       {sub && <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{sub}</p>}
@@ -86,7 +86,7 @@ function Section({ title, action, children }: { title: string; action: React.Rea
   return (
     <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)] overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)]">
-        <h2 className="text-base font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+        <h2 className="text-base font-semibold text-[var(--color-text)] font-heading">
           {title}
         </h2>
         {action}
@@ -250,13 +250,12 @@ export default async function DashboardPage() {
           {currentMonth}
         </p>
         <div className="flex items-end justify-between gap-4">
-          <h1 className="text-4xl font-semibold text-[var(--color-text)] leading-none" style={{ fontFamily: "var(--font-heading)" }}>
+          <h1 className="text-4xl font-semibold text-[var(--color-text)] leading-none font-heading">
             Hola, {firstName}
           </h1>
           <div className="text-right pb-0.5">
             <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Resultado neto del mes</p>
-            <p className={`text-2xl font-semibold leading-none ${netPositive ? "text-[var(--color-success)]" : "text-[var(--color-danger)]"}`}
-              style={{ fontFamily: "var(--font-heading)" }}>
+            <p className={`text-2xl font-semibold leading-none ${netPositive ? "text-[var(--color-success)]" : "text-[var(--color-danger)]"} font-heading`}>
               {netPositive ? "+" : ""}{formatCurrency(netResult, currency)}
             </p>
             {prevNet !== 0 && (

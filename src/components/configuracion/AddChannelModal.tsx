@@ -124,7 +124,7 @@ export default function AddChannelModal({
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+                <h2 className="text-lg font-semibold text-[var(--color-text)] font-heading">
                   {step === 1 ? "Agregar canal" : "Detalles del canal"}
                 </h2>
                 {step === 2 && (

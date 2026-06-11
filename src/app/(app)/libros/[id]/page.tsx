@@ -171,8 +171,7 @@ export default async function BookDetailPage({
         </div>
         <div className="flex-1 min-w-0">
           <h1
-            className="text-2xl font-semibold text-[var(--color-text)] leading-tight"
-            style={{ fontFamily: "var(--font-heading)" }}
+            className="text-2xl font-semibold text-[var(--color-text)] leading-tight font-heading"
           >
             {book.title}
           </h1>
@@ -208,7 +207,7 @@ export default async function BookDetailPage({
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 px-4 pb-4">
-              <p className="text-xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+              <p className="text-xl font-semibold text-[var(--color-text)] font-heading">
                 {value}
               </p>
             </CardContent>
@@ -253,7 +252,7 @@ export default async function BookDetailPage({
           {/* Last 5 sales preview */}
           <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+              <CardTitle className="text-sm font-semibold text-[var(--color-text)] font-heading">
                 Últimas ventas
               </CardTitle>
               {allSales.length > 5 && (
@@ -296,7 +295,7 @@ export default async function BookDetailPage({
       {tab === "ventas" && (
         <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
           <CardHeader>
-            <CardTitle className="text-sm font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+            <CardTitle className="text-sm font-semibold text-[var(--color-text)] font-heading">
               Historial de ventas
             </CardTitle>
           </CardHeader>
@@ -470,7 +469,7 @@ export default async function BookDetailPage({
           {/* Movements list */}
           <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+              <CardTitle className="text-sm font-semibold text-[var(--color-text)] font-heading">
                 Historial de movimientos
               </CardTitle>
             </CardHeader>

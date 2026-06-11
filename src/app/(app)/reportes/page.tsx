@@ -234,7 +234,7 @@ export default async function ReportesPage({
   return (
     <main className="p-5 md:p-8 max-w-5xl">
       <header className="mb-7 flex items-start justify-between gap-4">
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+        <h1 className="text-2xl font-semibold text-[var(--color-text)] font-heading">
           Reportes
         </h1>
         <ExportButton tab="all" />
@@ -266,7 +266,7 @@ export default async function ReportesPage({
                   <CardTitle className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">{label}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 px-4 pb-4">
-                  <p className="text-xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>{value}</p>
+                  <p className="text-xl font-semibold text-[var(--color-text)] font-heading">{value}</p>
                 </CardContent>
               </Card>
             ))}
@@ -275,7 +275,7 @@ export default async function ReportesPage({
           {/* By channel */}
           {channelRows.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Por canal</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Por canal</h2>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="hidden md:grid grid-cols-[minmax(0,1fr)_88px_72px_110px_56px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                   {["Canal", "Tipo", "Unidades", "Ingresos", "% total"].map((h, i) => (
@@ -310,7 +310,7 @@ export default async function ReportesPage({
           {/* By book */}
           {bookRows.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Por libro</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Por libro</h2>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="divide-y divide-[var(--color-border)]">
                   {bookRows.map(row => {
@@ -336,7 +336,7 @@ export default async function ReportesPage({
           {/* By merch */}
           {merchRows.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Por merchandising</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Por merchandising</h2>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="divide-y divide-[var(--color-border)]">
                   {merchRows.map(row => (
@@ -370,7 +370,7 @@ export default async function ReportesPage({
           </div>
           {/* Existencias por inventario */}
           <section>
-            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Existencias por inventario</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Existencias por inventario</h2>
             {printBooks.length === 0 ? (
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <CardContent className="py-10 text-center">
@@ -420,7 +420,7 @@ export default async function ReportesPage({
           {/* Stock de merch */}
           {merchandise.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Stock de merchandising</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Stock de merchandising</h2>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="divide-y divide-[var(--color-border)]">
                   {merchandise.map(m => {
@@ -446,7 +446,7 @@ export default async function ReportesPage({
 
           {/* Estado de consignaciones */}
           <section>
-            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Estado de consignaciones</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Estado de consignaciones</h2>
             {bookstoreChannels.length === 0 ? (
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <CardContent className="py-10 text-center">
@@ -486,7 +486,7 @@ export default async function ReportesPage({
 
           {/* Canjes */}
           <section>
-            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Canjes y colaboraciones</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Canjes y colaboraciones</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               {[
                 { label: "Total",       value: allExchanges.length,      color: ""                           },
@@ -497,7 +497,7 @@ export default async function ReportesPage({
                 <Card key={label} className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                   <CardContent className="p-4">
                     <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
-                    <p className={`text-2xl font-semibold mt-1 ${color || "text-[var(--color-text)]"}`} style={{ fontFamily: "var(--font-heading)" }}>{value}</p>
+                    <p className={`text-2xl font-semibold mt-1 ${color || "text-[var(--color-text)]"} font-heading`}>{value}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -660,7 +660,7 @@ export default async function ReportesPage({
           </div>
           {/* Expenses by category */}
           <section>
-            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Gastos por categoría</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Gastos por categoría</h2>
             {expenseCategoryRows.length === 0 ? (
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <CardContent className="py-10 text-center"><p className="text-sm text-[var(--color-text-muted)]">Sin gastos registrados</p></CardContent>
@@ -692,7 +692,7 @@ export default async function ReportesPage({
           {/* Print run P&L */}
           {printBookPnl.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-1" style={{ fontFamily: "var(--font-heading)" }}>Recuperación de inversión por tiradas</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-1 font-heading">Recuperación de inversión por tiradas</h2>
               <p className="text-xs text-[var(--color-text-muted)] mb-3">Ingresos vs. costos de impresión. Para el resultado neto completo ve a Finanzas → Rentabilidad.</p>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="hidden md:grid grid-cols-[minmax(0,1fr)_64px_130px_110px_110px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
@@ -731,7 +731,7 @@ export default async function ReportesPage({
           {/* Merch P&L */}
           {merchPnl.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Rentabilidad de merchandising</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Rentabilidad de merchandising</h2>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="hidden md:grid grid-cols-[minmax(0,1fr)_80px_120px_110px_110px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                   {["Producto", "Unidades", "Costo prod.", "Ingresos", "Resultado"].map((h, i) => (
@@ -760,7 +760,7 @@ export default async function ReportesPage({
 
           {/* ¿Qué me deben? — summary + link to the actionable view */}
           <section>
-            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>¿Qué me deben?</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">¿Qué me deben?</h2>
             {(() => {
               const totalOutstanding = channels
                 .filter(c => c.type === "BOOKSTORE" || c.type === "DIGITAL")
@@ -778,8 +778,7 @@ export default async function ReportesPage({
                       Gestiona cobros y registra pagos en Finanzas
                     </p>
                   </div>
-                  <span className={`text-lg font-semibold shrink-0 ${totalOutstanding > 0 ? "text-[var(--color-warning-text)]" : "text-[var(--color-success)]"}`}
-                    style={{ fontFamily: "var(--font-heading)" }}>
+                  <span className={`text-lg font-semibold shrink-0 ${totalOutstanding > 0 ? "text-[var(--color-warning-text)]" : "text-[var(--color-success)]"} font-heading`}>
                     {totalOutstanding > 0 ? formatCurrency(totalOutstanding, currency) : "✓"}
                   </span>
                 </a>
@@ -798,7 +797,7 @@ export default async function ReportesPage({
           {/* Chart */}
           <section>
             <div className="flex items-baseline justify-between mb-3">
-              <h2 className="text-sm font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] font-heading">
                 Proyección de ingresos — próximos 6 meses
               </h2>
               <p className="text-xs text-[var(--color-text-muted)]">Basado en promedio de los últimos 3 meses</p>
@@ -815,7 +814,7 @@ export default async function ReportesPage({
           {/* Projection table */}
           {last3Avg > 0 && (
             <section>
-              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Desglose de escenarios</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Desglose de escenarios</h2>
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <div className="grid grid-cols-[minmax(0,1fr)_160px_120px_150px] gap-4 px-5 py-2.5 border-b border-[var(--color-border)]">
                   {["Mes", "Conservador (−20%)", "Realista", "Optimista (+20%)"].map((h, i) => (
@@ -838,7 +837,7 @@ export default async function ReportesPage({
 
           {/* Goal calculator */}
           <section>
-            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3" style={{ fontFamily: "var(--font-heading)" }}>Calculadora de meta</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-text)] mb-3 font-heading">Calculadora de meta</h2>
             <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
               <CardContent className="p-6">
                 <GoalCalculator

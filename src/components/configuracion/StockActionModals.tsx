@@ -87,7 +87,7 @@ export function TransferStockModal({ books, inventories }: { books: Option[]; in
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2 className="text-lg font-semibold text-[var(--color-text)] font-heading">
                 Transferir existencias
               </h2>
               <button type="button" onClick={handleClose} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
@@ -187,7 +187,7 @@ export function AdjustStockModal({ books, inventories }: { books: Option[]; inve
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2 className="text-lg font-semibold text-[var(--color-text)] font-heading">
                 Ajustar conteo físico
               </h2>
               <button type="button" onClick={handleClose} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">

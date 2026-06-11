@@ -79,7 +79,7 @@ export default function AddBatchModal({
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+                <h2 className="text-lg font-semibold text-[var(--color-text)] font-heading">
                   Nuevo lote de producción
                 </h2>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{productName}</p>

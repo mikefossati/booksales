@@ -57,7 +57,7 @@ export default function ConfirmDialog({
             <AlertTriangle size={17} />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-semibold text-[var(--color-text)] leading-snug" style={{ fontFamily: "var(--font-heading)" }}>
+            <h2 className="text-base font-semibold text-[var(--color-text)] leading-snug font-heading">
               {title}
             </h2>
             {description && (

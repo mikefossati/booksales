@@ -103,7 +103,7 @@ export default async function LibrosPage({
     <main className="p-5 md:p-8 max-w-6xl">
       <header className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+          <h1 className="text-2xl font-semibold text-[var(--color-text)] font-heading">
             Mis Libros
           </h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">{subtitle}</p>

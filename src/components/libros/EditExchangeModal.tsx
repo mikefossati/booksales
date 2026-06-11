@@ -101,7 +101,7 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
             ref={panelRef} role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] sticky top-0 bg-[var(--color-surface)]">
-              <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2 className="text-lg font-semibold text-[var(--color-text)] font-heading">
                 {isGift ? "Editar regalo" : "Editar canje"}
               </h2>
               <button onClick={handleClose} disabled={isPending} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">

@@ -10,14 +10,12 @@ export default function NotFound() {
           <AutoriappLogo size="md" />
         </div>
         <p
-          className="text-7xl font-semibold text-[var(--color-accent)] mb-2"
-          style={{ fontFamily: "var(--font-heading)" }}
+          className="text-7xl font-semibold text-[var(--color-accent)] mb-2 font-heading"
         >
           404
         </p>
         <h1
-          className="text-2xl font-semibold text-[var(--color-text)] mb-2"
-          style={{ fontFamily: "var(--font-heading)" }}
+          className="text-2xl font-semibold text-[var(--color-text)] mb-2 font-heading"
         >
           Página no encontrada
         </h1>

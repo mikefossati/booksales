@@ -46,8 +46,8 @@ export default function LandingPage() {
             Para autores independientes
           </p>
           <h1
-            className="text-5xl md:text-7xl font-semibold text-[var(--color-text)] leading-[1.05]"
-            style={{ fontFamily: "var(--font-heading)", letterSpacing: "-0.025em" }}
+            className="text-5xl md:text-7xl font-semibold text-[var(--color-text)] leading-[1.05] font-heading"
+            style={{ letterSpacing: "-0.025em" }}
           >
             Tus ventas, tan claras como tus palabras.
           </h1>
@@ -82,7 +82,7 @@ export default function LandingPage() {
           {/* Faux dashboard */}
           <div className="p-6 md:p-8">
             <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mb-1">Junio de 2026</p>
-            <p className="text-3xl font-semibold text-[var(--color-text)] mb-6" style={{ fontFamily: "var(--font-heading)" }}>
+            <p className="text-3xl font-semibold text-[var(--color-text)] mb-6 font-heading">
               Hola, Ana
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -94,7 +94,7 @@ export default function LandingPage() {
               ].map(({ label, value }) => (
                 <div key={label} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 bg-[var(--color-bg)]">
                   <p className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
-                  <p className="text-lg font-semibold text-[var(--color-text)] mt-1" style={{ fontFamily: "var(--font-heading)" }}>{value}</p>
+                  <p className="text-lg font-semibold text-[var(--color-text)] mt-1 font-heading">{value}</p>
                 </div>
               ))}
             </div>
@@ -129,8 +129,8 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-6 py-20 md:py-24">
           <p className="text-xs font-medium text-[var(--color-accent)] uppercase tracking-widest mb-3">Funcionalidades</p>
           <h2
-            className="text-3xl md:text-4xl font-semibold text-[var(--color-text)] mb-14 max-w-md"
-            style={{ fontFamily: "var(--font-heading)", letterSpacing: "-0.02em" }}
+            className="text-3xl md:text-4xl font-semibold text-[var(--color-text)] mb-14 max-w-md font-heading"
+            style={{ letterSpacing: "-0.02em" }}
           >
             Todo lo que necesita un autor independiente.
           </h2>
@@ -141,7 +141,7 @@ export default function LandingPage() {
                   <Icon size={16} className="text-[var(--color-accent)]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+                  <h3 className="text-base font-semibold text-[var(--color-text)] font-heading">
                     {title}
                   </h3>
                   <p className="text-sm text-[var(--color-text-muted)] mt-1.5 leading-relaxed">{body}</p>
@@ -157,8 +157,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-6 py-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
             <h2
-              className="text-3xl font-semibold text-white leading-tight"
-              style={{ fontFamily: "var(--font-heading)" }}
+              className="text-3xl font-semibold text-white leading-tight font-heading"
             >
               Empieza gratis hoy.
             </h2>

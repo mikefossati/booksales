@@ -59,7 +59,7 @@ export default async function InventarioPage() {
     <main className="p-5 md:p-8 max-w-4xl">
       <header className="mb-5 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+          <h1 className="text-2xl font-semibold text-[var(--color-text)] font-heading">
             Inventario
           </h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-1">
@@ -86,8 +86,7 @@ export default async function InventarioPage() {
                 <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
                 <Icon size={13} className="text-[var(--color-accent)] mt-0.5 shrink-0" />
               </div>
-              <p className={`text-xl font-semibold ${value < 0 ? "text-[var(--color-danger)]" : "text-[var(--color-text)]"}`}
-                style={{ fontFamily: "var(--font-heading)" }}>
+              <p className={`text-xl font-semibold ${value < 0 ? "text-[var(--color-danger)]" : "text-[var(--color-text)]"} font-heading`}>
                 {value} ej.
               </p>
               <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{hint}</p>

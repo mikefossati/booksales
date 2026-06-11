@@ -22,8 +22,7 @@ export default function Error({
           <AutoriappLogo size="md" />
         </div>
         <h1
-          className="text-3xl font-semibold text-[var(--color-text)] mb-2"
-          style={{ fontFamily: "var(--font-heading)" }}
+          className="text-3xl font-semibold text-[var(--color-text)] mb-2 font-heading"
         >
           Algo salió mal
         </h1>

@@ -344,8 +344,7 @@ export default function AyudaPage() {
           Manual de uso
         </p>
         <h1
-          className="text-4xl font-semibold text-[var(--color-text)] leading-none mb-3"
-          style={{ fontFamily: "var(--font-heading)" }}
+          className="text-4xl font-semibold text-[var(--color-text)] leading-none mb-3 font-heading"
         >
           Ayuda
         </h1>
@@ -385,8 +384,7 @@ export default function AyudaPage() {
                   <Icon size={16} className="text-white" />
                 </div>
                 <h2
-                  className="text-xl font-semibold text-[var(--color-text)]"
-                  style={{ fontFamily: "var(--font-heading)" }}
+                  className="text-xl font-semibold text-[var(--color-text)] font-heading"
                 >
                   {title}
                 </h2>

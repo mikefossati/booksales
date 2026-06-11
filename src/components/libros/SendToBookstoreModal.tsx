@@ -69,7 +69,7 @@ export default function SendToBookstoreModal({
         >
           <div className="bg-[var(--color-surface)] rounded-[var(--radius-lg)] w-full max-w-sm shadow-xl" ref={panelRef} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-              <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2 className="text-lg font-semibold text-[var(--color-text)] font-heading">
                 Enviar a librería
               </h2>
               <button onClick={handleClose} disabled={isPending} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">

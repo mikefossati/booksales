@@ -41,7 +41,7 @@ export default async function CanalesPage() {
     <main className="p-5 md:p-8 max-w-4xl">
       <header className="mb-5 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+          <h1 className="text-2xl font-semibold text-[var(--color-text)] font-heading">
             Canales
           </h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-1">

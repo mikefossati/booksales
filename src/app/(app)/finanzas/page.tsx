@@ -148,7 +148,7 @@ export default async function FinanzasPage({
   return (
     <main className="p-5 md:p-8 max-w-5xl">
       <header className="mb-7">
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+        <h1 className="text-2xl font-semibold text-[var(--color-text)] font-heading">
           Finanzas
         </h1>
       </header>
@@ -172,7 +172,7 @@ export default async function FinanzasPage({
                   <Icon size={13} className="text-[var(--color-accent)] mt-0.5" />
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-0">
-                  <p className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>{value}</p>
+                  <p className="text-lg font-semibold text-[var(--color-text)] font-heading">{value}</p>
                 </CardContent>
               </Card>
             ))}
@@ -210,7 +210,7 @@ export default async function FinanzasPage({
                   return (
                     <section key={month}>
                       <div className="flex items-baseline justify-between mb-2">
-                        <h2 className="text-sm font-semibold text-[var(--color-text)] capitalize" style={{ fontFamily: "var(--font-heading)" }}>{month}</h2>
+                        <h2 className="text-sm font-semibold text-[var(--color-text)] capitalize font-heading">{month}</h2>
                         <span className="text-sm font-semibold text-[var(--color-accent)]">{formatCurrency(monthTotal, currency)}</span>
                       </div>
                       <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
@@ -260,7 +260,7 @@ export default async function FinanzasPage({
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <CardContent className="p-4">
                   <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">Gastos registrados</p>
-                  <p className="text-lg font-semibold text-[var(--color-text)] mt-0.5" style={{ fontFamily: "var(--font-heading)" }}>
+                  <p className="text-lg font-semibold text-[var(--color-text)] mt-0.5 font-heading">
                     {formatCurrency(totalExpenses, currency)}
                   </p>
                 </CardContent>
@@ -268,7 +268,7 @@ export default async function FinanzasPage({
               <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                 <CardContent className="p-4">
                   <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">Costos de impresión</p>
-                  <p className="text-lg font-semibold text-[var(--color-text)] mt-0.5" style={{ fontFamily: "var(--font-heading)" }}>
+                  <p className="text-lg font-semibold text-[var(--color-text)] mt-0.5 font-heading">
                     {formatCurrency(totalPrintCosts, currency)}
                   </p>
                   <p className="text-xs text-[var(--color-text-muted)]">desde tiradas registradas</p>
@@ -422,7 +422,7 @@ export default async function FinanzasPage({
                 ].map(({ label, value, color }) => (
                   <div key={label}>
                     <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
-                    <p className={`text-lg font-semibold mt-0.5 ${color}`} style={{ fontFamily: "var(--font-heading)" }}>{value}</p>
+                    <p className={`text-lg font-semibold mt-0.5 ${color} font-heading`}>{value}</p>
                   </div>
                 ))}
               </div>
@@ -444,7 +444,7 @@ export default async function FinanzasPage({
             </Card>
           ) : (
             <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>Por libro</h2>
+              <h2 className="text-sm font-semibold text-[var(--color-text)] font-heading">Por libro</h2>
               {bookPnl.map(({ book, bookSales, bookExpenses, bookPrintCosts, netProfit }) => {
                 const totalCost = bookExpenses + bookPrintCosts;
                 const recovered = totalCost > 0 ? Math.min((bookSales / totalCost) * 100, 100) : 100;

@@ -82,8 +82,8 @@ export function AutoriappLogo({ className, size = "md", markOnly = false }: Logo
       <AutoriappMark size={mark} />
       {!markOnly && (
         <span
-          className={`font-semibold tracking-tight ${text} leading-none`}
-          style={{ fontFamily: "var(--font-heading)", letterSpacing: "-0.02em" }}
+          className={`font-semibold tracking-tight ${text} leading-none font-heading`}
+          style={{ letterSpacing: "-0.02em" }}
         >
           autoriapp
         </span>

@@ -124,7 +124,7 @@ export default function DashboardExpenseButton({
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)] shrink-0">
-              <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2 className="text-lg font-semibold text-[var(--color-text)] font-heading">
                 Registrar gasto
               </h2>
               <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
@@ -219,7 +219,7 @@ export default function DashboardExpenseButton({
             <div className="px-5 pb-5 pt-3 flex items-center justify-between gap-3 border-t border-[var(--color-border)] shrink-0">
               <div>
                 <p className="text-xs text-[var(--color-text-muted)]">Monto</p>
-                <p className="text-xl font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
+                <p className="text-xl font-semibold text-[var(--color-text)] font-heading">
                   {amount
                     ? new Intl.NumberFormat("es-CL", { style: "currency", currency, maximumFractionDigits: 0 }).format(parseFloat(amount) || 0)
                     : "—"}

@@ -31,8 +31,7 @@ export default function BookCard({ book }: { book: Book }) {
         </div>
         <CardContent className="p-4">
           <h3
-            className="font-semibold text-sm text-[var(--color-text)] line-clamp-2 leading-snug mb-2"
-            style={{ fontFamily: "var(--font-heading)" }}
+            className="font-semibold text-sm text-[var(--color-text)] line-clamp-2 leading-snug mb-2 font-heading"
           >
             {book.title}
           </h3>
