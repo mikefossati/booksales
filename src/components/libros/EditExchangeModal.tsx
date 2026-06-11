@@ -84,8 +84,8 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
     <>
       <button
         onClick={handleOpen}
-        className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
-        title={isGift ? "Editar regalo" : "Editar canje"}
+        className="p-2 -m-0.5 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
+        aria-label={isGift ? "Editar regalo" : "Editar canje"} title={isGift ? "Editar regalo" : "Editar canje"}
       >
         <Pencil size={14} />
       </button>
@@ -104,7 +104,7 @@ export default function EditExchangeModal({ exchange }: { exchange: ExchangeData
               <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
                 {isGift ? "Editar regalo" : "Editar canje"}
               </h2>
-              <button onClick={handleClose} disabled={isPending} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+              <button onClick={handleClose} disabled={isPending} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
                 <X size={18} />
               </button>
             </div>

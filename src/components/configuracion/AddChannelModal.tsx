@@ -133,7 +133,7 @@ export default function AddChannelModal({
                   </button>
                 )}
               </div>
-              <button onClick={handleClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors" disabled={isPending}>
+              <button onClick={handleClose} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors" disabled={isPending}>
                 <X size={18} />
               </button>
             </div>

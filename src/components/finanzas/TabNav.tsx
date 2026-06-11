@@ -23,6 +23,7 @@ export default function TabNav() {
         <Link
           key={id}
           href={`/finanzas?tab=${id}`}
+          aria-current={active === id ? "page" : undefined}
           className={cn(
             "px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors duration-[var(--duration-fast)] whitespace-nowrap",
             active === id

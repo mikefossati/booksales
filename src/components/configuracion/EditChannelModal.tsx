@@ -65,8 +65,8 @@ export default function EditChannelModal({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
-        title="Editar canal"
+        className="p-2 -m-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
+        aria-label="Editar canal" title="Editar canal"
       >
         <Pencil size={15} />
       </button>
@@ -90,7 +90,7 @@ export default function EditChannelModal({
                   {channel.type === "DIGITAL" ? "Digital" : channel.type === "BOOKSTORE" ? "Librería" : "Directo"}
                 </p>
               </div>
-              <button onClick={handleClose} disabled={isPending} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+              <button onClick={handleClose} disabled={isPending} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
                 <X size={18} />
               </button>
             </div>

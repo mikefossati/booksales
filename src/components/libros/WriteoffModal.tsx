@@ -77,7 +77,7 @@ export default function WriteoffModal({
               <button
                 onClick={handleClose}
                 disabled={isPending}
-                className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+                aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
               >
                 <X size={18} />
               </button>

@@ -24,6 +24,7 @@ export default function ReportesTabNav() {
         <Link
           key={id}
           href={`/reportes?tab=${id}`}
+          aria-current={active === id ? "page" : undefined}
           className={cn(
             "px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap",
             active === id

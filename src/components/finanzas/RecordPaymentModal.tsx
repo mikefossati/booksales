@@ -87,7 +87,7 @@ export default function RecordPaymentModal({
                 </h2>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{channelName}</p>
               </div>
-              <button onClick={handleClose} disabled={isPending} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
+              <button onClick={handleClose} disabled={isPending} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
                 <X size={18} />
               </button>
             </div>

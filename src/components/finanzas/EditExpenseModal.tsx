@@ -119,8 +119,8 @@ export default function EditExpenseModal({
     <>
       <button
         onClick={handleOpen}
-        className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
-        title="Editar gasto"
+        className="p-2 -m-0.5 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
+        aria-label="Editar gasto" title="Editar gasto"
       >
         <Pencil size={14} />
       </button>
@@ -139,7 +139,7 @@ export default function EditExpenseModal({
               <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
                 Editar gasto
               </h2>
-              <button onClick={handleClose} disabled={isPending} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+              <button onClick={handleClose} disabled={isPending} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
                 <X size={18} />
               </button>
             </div>

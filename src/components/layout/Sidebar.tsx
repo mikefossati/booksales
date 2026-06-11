@@ -54,6 +54,7 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
             <Link
               key={href}
               href={href}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium transition-colors duration-[var(--duration-fast)]",
                 active
@@ -78,7 +79,8 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
           </span>
           <button
             onClick={handleLogout}
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors"
+            className="p-2 -m-1.5 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/8 transition-colors"
+            aria-label="Cerrar sesión"
             title="Cerrar sesión"
           >
             <LogOut size={15} />

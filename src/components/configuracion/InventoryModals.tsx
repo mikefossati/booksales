@@ -51,7 +51,7 @@ function NameModal({
           <h2 className="text-lg font-semibold text-[var(--color-text)]" style={{ fontFamily: "var(--font-heading)" }}>
             {title}
           </h2>
-          <button onClick={onClose} disabled={isPending} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
+          <button onClick={onClose} disabled={isPending} aria-label="Cerrar" className="p-2 -m-2 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -127,8 +127,8 @@ export function EditInventoryButton({ id, name }: { id: string; name: string }) 
 
   return (
     <>
-      <button onClick={() => setOpen(true)} title="Renombrar"
-        className="text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors">
+      <button onClick={() => setOpen(true)} aria-label="Renombrar inventario" title="Renombrar"
+        className="p-2 -m-1 rounded-[var(--radius-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors">
         <Pencil size={14} />
       </button>
       {open && (
