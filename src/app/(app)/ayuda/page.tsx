@@ -116,11 +116,9 @@ const SECTIONS: Section[] = [
       {
         kind: "table",
         rows: [
-          ["Venta directa (DIRECT)", "Ventas que hacés vos directamente: redes sociales, eventos, boca a boca."],
+          ["Venta directa (DIRECT)", "Ventas que hacés vos directamente: redes sociales, ferias, eventos, boca a boca."],
           ["Librería (BOOKSTORE)", "Libros en consignación. El sistema rastrea el stock que enviaste y los pagos pendientes."],
-          ["Digital (DIGITAL)", "Plataformas de ebook o audiolibro (Amazon KDP, Audible, etc.)."],
-          ["Feria / Evento (EVENTS)", "Ventas en ferias del libro u otros eventos presenciales."],
-          ["Mayorista (WHOLESALE)", "Distribuidoras u operaciones de venta al por mayor."],
+          ["Digital (DIGITAL)", "Plataformas de ebook, audiolibro o impresión bajo demanda (Amazon KDP, Buscalibre, etc.)."],
         ],
       },
       {
