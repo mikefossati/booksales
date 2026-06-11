@@ -12,6 +12,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  HelpCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AutoriappLogo } from "@/components/brand/Logo";
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/finanzas",   icon: DollarSign,      label: "Finanzas" },
   { href: "/reportes",   icon: BarChart3,       label: "Reportes" },
   { href: "/configuracion", icon: Settings,     label: "Configuración" },
+  { href: "/ayuda",         icon: HelpCircle,  label: "Ayuda" },
 ];
 
 export default function Sidebar({ userEmail }: { userEmail: string }) {

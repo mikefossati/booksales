@@ -9,14 +9,16 @@ import {
   DollarSign,
   BarChart3,
   Settings,
+  HelpCircle,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Inicio" },
-  { href: "/libros", icon: BookOpen, label: "Libros" },
-  { href: "/finanzas", icon: DollarSign, label: "Finanzas" },
-  { href: "/reportes", icon: BarChart3, label: "Reportes" },
-  { href: "/configuracion", icon: Settings, label: "Config" },
+  { href: "/dashboard",     icon: LayoutDashboard, label: "Inicio" },
+  { href: "/libros",        icon: BookOpen,        label: "Libros" },
+  { href: "/finanzas",      icon: DollarSign,      label: "Finanzas" },
+  { href: "/reportes",      icon: BarChart3,       label: "Reportes" },
+  { href: "/configuracion", icon: Settings,        label: "Config" },
+  { href: "/ayuda",         icon: HelpCircle,      label: "Ayuda" },
 ];
 
 export default function BottomNav() {
