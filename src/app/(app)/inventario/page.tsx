@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AddInventoryModal, EditInventoryButton, DeleteInventoryButton } from "@/components/configuracion/InventoryModals";
 import { TransferStockModal, AdjustStockModal } from "@/components/configuracion/StockActionModals";
 import { calcStockMatrix } from "@/lib/finance";
-import { Package } from "lucide-react";
+import { Package, Home, Store, Layers } from "lucide-react";
 
 export default async function InventarioPage() {
   const supabase = await createClient();
@@ -18,7 +18,7 @@ export default async function InventarioPage() {
   const [inventories, books, bookMovements] = await Promise.all([
     prisma.inventory.findMany({
       where:   { accountId: account.id },
-      select:  { id: true, name: true, isDefault: true, channels: { select: { id: true, name: true } } },
+      select:  { id: true, name: true, isDefault: true, channels: { select: { id: true, name: true, type: true } } },
       orderBy: [{ isDefault: "desc" }, { name: "asc" }],
     }),
     prisma.book.findMany({
@@ -35,6 +35,25 @@ export default async function InventarioPage() {
   const stockMatrix      = calcStockMatrix(bookMovements);
   const bookOptions      = books.map(b => ({ id: b.id, name: b.title }));
   const inventoryOptions = inventories.map(i => ({ id: i.id, name: i.name }));
+
+  // ── Aggregated totals ────────────────────────────────────────────────────────
+  let totalEnMano       = 0;
+  let totalEnLibrerias  = 0;
+  let totalCirculacion  = 0;
+  const bookTotals      = new Map<string, number>();
+
+  for (const inv of inventories) {
+    const byBook = stockMatrix.get(inv.id);
+    if (!byBook) continue;
+    for (const [bookId, qty] of byBook.entries()) {
+      if (inv.isDefault)                                          totalEnMano      += qty;
+      else if (inv.channels.some(c => c.type === "BOOKSTORE"))   totalEnLibrerias += qty;
+      totalCirculacion += qty;
+      bookTotals.set(bookId, (bookTotals.get(bookId) ?? 0) + qty);
+    }
+  }
+
+  const bookTotalEntries = [...bookTotals.entries()].filter(([, qty]) => qty !== 0);
 
   return (
     <main className="p-5 md:p-8 max-w-4xl">
@@ -54,6 +73,30 @@ export default async function InventarioPage() {
         </div>
       </header>
 
+      {/* ── Stats strip ─────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {[
+          { label: "En mano",          value: totalEnMano,      icon: Home,   hint: "Inventario principal" },
+          { label: "En librerías",     value: totalEnLibrerias, icon: Store,  hint: "Inventarios de librerías" },
+          { label: "Total circulación",value: totalCirculacion, icon: Layers, hint: "Suma de todos" },
+        ].map(({ label, value, icon: Icon, hint }) => (
+          <Card key={label} className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-1.5">
+                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
+                <Icon size={13} className="text-[var(--color-accent)] mt-0.5 shrink-0" />
+              </div>
+              <p className={`text-xl font-semibold ${value < 0 ? "text-[var(--color-danger)]" : "text-[var(--color-text)]"}`}
+                style={{ fontFamily: "var(--font-heading)" }}>
+                {value} ej.
+              </p>
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{hint}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* ── Per-inventory cards ─────────────────────────────────────────────── */}
       <div className="space-y-3">
         {inventories.map(inv => {
           const byBook = stockMatrix.get(inv.id);
@@ -106,6 +149,36 @@ export default async function InventarioPage() {
             </Card>
           );
         })}
+
+        {/* ── Total por libro ────────────────────────────────────────────────── */}
+        {bookTotalEntries.length > 0 && (
+          <Card className="border-[var(--color-border)] bg-[var(--color-accent-light)]/40 shadow-[var(--shadow-card)]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2.5 rounded-[var(--radius-md)] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+                  <Layers size={18} />
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-[var(--color-text)]">Total por libro</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">Suma de todos los inventarios</p>
+                </div>
+                <span className="ml-auto text-sm font-semibold text-[var(--color-text)]">
+                  {totalCirculacion} ej.
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-x-6 gap-y-1.5 pt-3 border-t border-[var(--color-border)]">
+                {bookTotalEntries.map(([bookId, qty]) => (
+                  <span key={bookId} className="text-xs text-[var(--color-text-muted)]">
+                    {books.find(b => b.id === bookId)?.title ?? "Libro"}:{" "}
+                    <strong className={`${qty < 0 ? "text-[var(--color-danger)]" : "text-[var(--color-accent)]"}`}>
+                      {qty}
+                    </strong>
+                  </span>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </main>
   );
