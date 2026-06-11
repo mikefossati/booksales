@@ -10,16 +10,17 @@ const PERIODS = [
   { id: "todo", label: "Histórico" },
 ];
 
-export default function PeriodNav() {
-  const params  = useSearchParams();
-  const active  = params.get("period") ?? "mes";
+export default function PeriodNav({ basePath = "/reportes" }: { basePath?: string }) {
+  const params = useSearchParams();
+  const active = params.get("period") ?? "mes";
+  const tab    = params.get("tab");
 
   return (
     <div className="flex gap-1.5 mb-6">
       {PERIODS.map(({ id, label }) => (
         <Link
           key={id}
-          href={`/reportes?tab=ventas&period=${id}`}
+          href={`${basePath}?${tab ? `tab=${tab}&` : ""}period=${id}`}
           className={cn(
             "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
             active === id

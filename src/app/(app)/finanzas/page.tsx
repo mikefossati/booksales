@@ -6,6 +6,7 @@ import { formatCurrency, formatDate, toNum } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import TabNav from "@/components/finanzas/TabNav";
+import PeriodNav from "@/components/reportes/PeriodNav";
 import AddExpenseModal from "@/components/finanzas/AddExpenseModal";
 import RecordPaymentModal from "@/components/finanzas/RecordPaymentModal";
 import DeleteExpenseButton from "@/components/finanzas/DeleteExpenseButton";
@@ -28,9 +29,9 @@ const PAYMENT_ICONS: Record<string, string> = {
 export default async function FinanzasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; period?: string }>;
 }) {
-  const { tab: activeTab = "ingresos" } = await searchParams;
+  const { tab: activeTab = "ingresos", period = "mes" } = await searchParams;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -54,6 +55,9 @@ export default async function FinanzasPage({
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const yearStart  = new Date(now.getFullYear(), 0, 1);
+  const periodStart =
+    period === "todo" ? new Date(0) : period === "año" ? yearStart : monthStart;
 
   // ── Data for all tabs (fetched once) ─────────────────────────────────────
 
@@ -110,6 +114,10 @@ export default async function FinanzasPage({
   const monthlyRevenue    = allSales
     .filter(s => new Date(s.saleDate) >= monthStart)
     .reduce((s, sale) => s + saleToCLP(sale), 0);
+
+  // Period-filtered lists for the Ventas / Gastos tabs
+  const salesInPeriod    = allSales.filter(s => new Date(s.saleDate) >= periodStart);
+  const expensesInPeriod = allExpenses.filter(e => new Date(e.occurredAt) >= periodStart);
 
   // "¿Qué me deben?" — per non-direct channel
   const payableChannels = channels.filter(c => c.type === "BOOKSTORE" || c.type === "DIGITAL");
@@ -170,17 +178,27 @@ export default async function FinanzasPage({
             ))}
           </div>
 
-          {allSales.length === 0 ? (
+          <Suspense>
+            <PeriodNav basePath="/finanzas" />
+          </Suspense>
+
+          {salesInPeriod.length === 0 ? (
             <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
               <CardContent className="py-16 text-center">
-                <p className="text-sm font-medium text-[var(--color-text)]">Sin ventas registradas</p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1">Usa el botón + para registrar tu primera venta</p>
+                <p className="text-sm font-medium text-[var(--color-text)]">
+                  {allSales.length === 0 ? "Sin ventas registradas" : "Sin ventas en este período"}
+                </p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                  {allSales.length === 0
+                    ? "Usa el botón + para registrar tu primera venta"
+                    : "Elige otro período para ver más ventas"}
+                </p>
               </CardContent>
             </Card>
           ) : (() => {
             // Group by month
-            const grouped = new Map<string, typeof allSales>();
-            for (const sale of allSales) {
+            const grouped = new Map<string, typeof salesInPeriod>();
+            for (const sale of salesInPeriod) {
               const key = new Date(sale.saleDate).toLocaleString("es-CL", { month: "long", year: "numeric" });
               if (!grouped.has(key)) grouped.set(key, []);
               grouped.get(key)!.push(sale);
@@ -260,17 +278,27 @@ export default async function FinanzasPage({
             <AddExpenseModal accountId={account.id} currency={currency} books={booksWithRuns} />
           </div>
 
-          {allExpenses.length === 0 ? (
+          <Suspense>
+            <PeriodNav basePath="/finanzas" />
+          </Suspense>
+
+          {expensesInPeriod.length === 0 ? (
             <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
               <CardContent className="py-14 text-center">
-                <p className="text-sm font-medium text-[var(--color-text)]">Sin gastos registrados</p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1">Diseño, edición, publicidad, ferias — todo suma a tu rentabilidad real.</p>
+                <p className="text-sm font-medium text-[var(--color-text)]">
+                  {allExpenses.length === 0 ? "Sin gastos registrados" : "Sin gastos en este período"}
+                </p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                  {allExpenses.length === 0
+                    ? "Diseño, edición, publicidad, ferias — todo suma a tu rentabilidad real."
+                    : "Elige otro período para ver más gastos"}
+                </p>
               </CardContent>
             </Card>
           ) : (
             <Card className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
               <div className="divide-y divide-[var(--color-border)]">
-                {allExpenses.map(exp => (
+                {expensesInPeriod.map(exp => (
                   <div key={exp.id} className="flex items-center gap-4 px-5 py-3.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[var(--color-text)] truncate">{exp.description}</p>
