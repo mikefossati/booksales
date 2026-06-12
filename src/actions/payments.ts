@@ -16,15 +16,21 @@ export async function recordPayment({
   channelId: string;
   amount: number;
   currency: string;
-  periodStart: string; // YYYY-MM-DD
-  periodEnd: string;   // YYYY-MM-DD
-  receivedAt: string;  // YYYY-MM-DD
+  periodStart?: string; // YYYY-MM-DD — settlement window (optional, both or none)
+  periodEnd?: string;   // YYYY-MM-DD
+  receivedAt: string;   // YYYY-MM-DD
   notes?: string;
 }): Promise<{ error?: string }> {
   const auth = await requireAccount();
   if ("error" in auth) return auth;
 
   if (amount <= 0) return { error: "El monto debe ser mayor a 0." };
+  if (Boolean(periodStart) !== Boolean(periodEnd)) {
+    return { error: "Completa ambas fechas del período o quítalo." };
+  }
+  if (periodStart && periodEnd && periodStart > periodEnd) {
+    return { error: "El inicio del período no puede ser posterior al fin." };
+  }
 
   const channelOwned = await prisma.channel.findFirst({
     where: { id: channelId, accountId: auth.account.id },
@@ -38,8 +44,8 @@ export async function recordPayment({
         channelId,
         amount:      amount.toFixed(2),
         currency,
-        periodStart: new Date(periodStart + "T12:00:00"),
-        periodEnd:   new Date(periodEnd   + "T12:00:00"),
+        periodStart: periodStart ? new Date(periodStart + "T12:00:00") : null,
+        periodEnd:   periodEnd   ? new Date(periodEnd   + "T12:00:00") : null,
         receivedAt:  new Date(receivedAt  + "T12:00:00"),
         notes:       notes?.trim() || null,
       },

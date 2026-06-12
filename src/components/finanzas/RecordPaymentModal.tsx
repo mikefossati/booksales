@@ -26,6 +26,7 @@ export default function RecordPaymentModal({
 
   const [open, setOpen]               = useState(false);
   const [amount, setAmount]           = useState(outstandingAmount.toFixed(0));
+  const [showPeriod, setShowPeriod]   = useState(false);
   const [periodStart, setPeriodStart] = useState(firstOfMonth);
   const [periodEnd, setPeriodEnd]     = useState(today);
   const [receivedAt, setReceivedAt]   = useState(today);
@@ -50,8 +51,8 @@ export default function RecordPaymentModal({
         channelId,
         amount:      parseFloat(amount),
         currency,
-        periodStart,
-        periodEnd,
+        periodStart: showPeriod ? periodStart : undefined,
+        periodEnd:   showPeriod ? periodEnd   : undefined,
         receivedAt,
         notes: notes || undefined,
       });
@@ -105,14 +106,36 @@ export default function RecordPaymentModal({
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label>Período que cubre</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input type="date" value={periodStart} onChange={e => setPeriodStart(e.target.value)} />
-                  <Input type="date" value={periodEnd}   onChange={e => setPeriodEnd(e.target.value)} />
+              {/* Settlement window — optional, collapsed by default */}
+              {!showPeriod ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPeriod(true)}
+                  className="text-xs font-medium text-[var(--color-accent)] hover:underline"
+                >
+                  + Agregar período que cubre (opcional)
+                </button>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label>Período que cubre</Label>
+                    <button
+                      type="button"
+                      onClick={() => setShowPeriod(false)}
+                      className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input type="date" aria-label="Inicio del período" value={periodStart} onChange={e => setPeriodStart(e.target.value)} />
+                    <Input type="date" aria-label="Fin del período" value={periodEnd} onChange={e => setPeriodEnd(e.target.value)} />
+                  </div>
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    desde · hasta — la ventana de ventas que esta liquidación salda
+                  </p>
                 </div>
-                <p className="text-xs text-[var(--color-text-muted)]">desde · hasta</p>
-              </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="pay-notes">Notas <span className="text-xs font-normal text-[var(--color-text-muted)]">(opcional)</span></Label>

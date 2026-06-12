@@ -299,8 +299,8 @@ model Payment {
   channel     Channel  @relation(fields: [channelId], references: [id])
   amount      Decimal  @db.Decimal(12, 2)
   currency    String
-  periodStart DateTime
-  periodEnd   DateTime
+  periodStart DateTime? // settlement window the payment covers (optional)
+  periodEnd   DateTime?
   receivedAt  DateTime
   notes       String?
   createdAt   DateTime @default(now())
