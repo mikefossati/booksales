@@ -98,7 +98,7 @@ export function getCachedReportesData(accountId: string) {
           }),
           prisma.printRun.findMany({
             where:   { book: { accountId } },
-            select:  { id: true, bookId: true, quantity: true, totalCost: true, receivedAt: true },
+            select:  { id: true, bookId: true, quantity: true, totalCost: true, receivedAt: true, createdAt: true },
             orderBy: { receivedAt: "desc" },
           }),
           prisma.inventoryMovement.findMany({

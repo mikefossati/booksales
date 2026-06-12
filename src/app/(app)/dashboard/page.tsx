@@ -7,10 +7,10 @@ import { ChevronRight } from "lucide-react";
 import type { ChannelType, ExpenseCategory } from "@/generated/prisma/client";
 import { calcMomPercent, calcOutstanding, calcStockMatrix, saleToCLP } from "@/lib/finance";
 import { getCachedReportesData } from "@/lib/data-cache";
+import { deriveNotifications, filterDismissed, staleDismissalKeys } from "@/lib/notifications";
 import DashboardSaleButton from "@/components/dashboard/DashboardSaleButton";
 import DashboardExpenseButton from "@/components/dashboard/DashboardExpenseButton";
-
-const LOW_STOCK_THRESHOLD = 10;
+import NotificationsPanel from "@/components/dashboard/NotificationsPanel";
 
 const CATEGORY_EMOJI: Record<string, string> = {
   SHIPPING: "📦", EVENTS: "🎪", SOCIAL_ADS: "📢", DESIGN_ART: "🎨",
@@ -115,7 +115,7 @@ export default async function DashboardPage() {
   });
 
   // All other data comes from the shared cache (same dataset as reportes)
-  const { channels, allSales, allExpenses, allPayments, books, bookMovements, inventories } =
+  const { channels, allSales, allExpenses, allPayments, books, bookMovements, inventories, printRuns, allExchanges } =
     await getCachedReportesData(account.id);
 
   // ── Date boundaries ───────────────────────────────────────────────────────
@@ -217,27 +217,39 @@ export default async function DashboardPage() {
   const netMomPct   = calcMomPercent(netResult, prevNet);
   const netPositive = netResult >= 0;
 
-  // ── Alerts ────────────────────────────────────────────────────────────────
+  // ── Notifications (derived; dismissals persisted per key) ─────────────────
 
-  const alerts: { icon: string; text: string; href: string }[] = [];
+  const allNotifications = deriveNotifications({
+    now,
+    currency,
+    books,
+    printRuns,
+    channelsOutstanding: payableChannels.map(ch => ({
+      id:          ch.id,
+      name:        ch.name,
+      outstanding: calcOutstanding(salesByChannel.get(ch.id) ?? 0, paymentsByChannel.get(ch.id) ?? 0),
+    })),
+    stockByBook: printBooks.map(b => ({ bookId: b.id, stock: stockByBook.get(b.id) ?? 0 })),
+    exchanges: allExchanges.map(e => ({
+      id: e.id, recipient: e.recipient, status: e.status, deadlineAt: e.deadlineAt,
+    })),
+  });
 
-  for (const ch of payableChannels) {
-    const outstanding = calcOutstanding(salesByChannel.get(ch.id) ?? 0, paymentsByChannel.get(ch.id) ?? 0);
-    if (outstanding > 0) {
-      alerts.push({
-        icon: "💰",
-        text: `${ch.name} te debe ${formatCurrency(outstanding, currency)}`,
-        href: "/finanzas?tab=deben",
-      });
-    }
+  const dismissals    = await prisma.notificationDismissal.findMany({
+    where:  { accountId: account.id },
+    select: { key: true },
+  });
+  const dismissedKeys = dismissals.map(d => d.key);
+
+  // Lazy cleanup: drop dismissals whose notification no longer derives
+  const stale = staleDismissalKeys(allNotifications, dismissedKeys);
+  if (stale.length > 0) {
+    await prisma.notificationDismissal.deleteMany({
+      where: { accountId: account.id, key: { in: stale } },
+    });
   }
 
-  for (const book of printBooks) {
-    const stock = stockByBook.get(book.id) ?? 0;
-    if (stock > 0 && stock <= LOW_STOCK_THRESHOLD) {
-      alerts.push({ icon: "📦", text: `Stock bajo — "${book.title}" (${stock} ej.)`, href: "/libros" });
-    }
-  }
+  const notifications = filterDismissed(allNotifications, dismissedKeys);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -267,6 +279,9 @@ export default async function DashboardPage() {
         </div>
       </header>
 
+      {/* Notifications */}
+      <NotificationsPanel notifications={notifications} />
+
       {/* Two sections */}
       <div className="grid lg:grid-cols-2 gap-6">
 
@@ -288,20 +303,6 @@ export default async function DashboardPage() {
             <Stat label="Este año"  value={formatCurrency(yearlyTotal, currency)} />
             <Stat label="Unidades"  value={String(monthlyUnits)} sub="este mes" />
           </div>
-
-          {/* Alerts */}
-          {alerts.length > 0 && (
-            <div className="space-y-1.5">
-              {alerts.map((alert, i) => (
-                <a key={i} href={alert.href}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-[var(--radius-md)] bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 hover:bg-[var(--color-warning)]/15 transition-colors">
-                  <span className="text-sm shrink-0" aria-hidden="true">{alert.icon}</span>
-                  <span className="text-xs text-[var(--color-text)] flex-1 leading-snug">{alert.text}</span>
-                  <ChevronRight size={13} className="text-[var(--color-text-muted)] shrink-0" />
-                </a>
-              ))}
-            </div>
-          )}
 
           {/* Channel breakdown */}
           {breakdown.length > 0 ? (
