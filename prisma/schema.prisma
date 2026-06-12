@@ -118,6 +118,7 @@ model Account {
   channels    Channel[]
   expenses    Expense[]
   inventories Inventory[]
+  notificationDismissals NotificationDismissal[]
 }
 
 model AccountMember {
@@ -409,4 +410,18 @@ model Expense {
   notes             String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+}
+
+// Persisted dismissals for derived notifications.
+// `key` encodes the notification's identity *and* relevant state
+// (e.g. "incoming-run:{printRunId}:{date}") so a dismissed notification
+// reappears automatically when the underlying state changes.
+model NotificationDismissal {
+  id          String   @id @default(cuid())
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  key         String
+  dismissedAt DateTime @default(now())
+
+  @@unique([accountId, key])
 }
