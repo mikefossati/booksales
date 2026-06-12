@@ -744,6 +744,41 @@ describe("calcStockMatrix", () => {
     expect(m.get("personal")?.get("b1")).toBe(6);
     expect(m.get("personal")?.get("b2")).toBe(20);
   });
+
+  // ── Future-dated movements (e.g. a tirada with a scheduled delivery) ──────
+
+  it("excludes movements dated after asOf", () => {
+    const asOf = new Date("2026-06-11T12:00:00");
+    const m = calcStockMatrix([
+      { ...mv("personal", "b1", "NEW_PRINT_RUN", 100), occurredAt: new Date("2026-06-01T12:00:00") },
+      { ...mv("personal", "b1", "NEW_PRINT_RUN", 300), occurredAt: new Date("2026-07-01T12:00:00") },
+    ], asOf);
+    expect(m.get("personal")?.get("b1")).toBe(100);
+  });
+
+  it("counts movements dated exactly at asOf", () => {
+    const asOf = new Date("2026-06-11T12:00:00");
+    const m = calcStockMatrix(
+      [{ ...mv("personal", "b1", "NEW_PRINT_RUN", 50), occurredAt: asOf }],
+      asOf,
+    );
+    expect(m.get("personal")?.get("b1")).toBe(50);
+  });
+
+  it("accepts occurredAt as an ISO string", () => {
+    const asOf = new Date("2026-06-11T12:00:00");
+    const m = calcStockMatrix([
+      { ...mv("personal", "b1", "NEW_PRINT_RUN", 10), occurredAt: "2026-06-10T12:00:00" },
+      { ...mv("personal", "b1", "NEW_PRINT_RUN", 99), occurredAt: "2026-12-24T12:00:00" },
+    ], asOf);
+    expect(m.get("personal")?.get("b1")).toBe(10);
+  });
+
+  it("movements without occurredAt always count (legacy callers)", () => {
+    const asOf = new Date("2026-06-11T12:00:00");
+    const m = calcStockMatrix([mv("personal", "b1", "NEW_PRINT_RUN", 25)], asOf);
+    expect(m.get("personal")?.get("b1")).toBe(25);
+  });
 });
 
 describe("calcInventoryStock", () => {

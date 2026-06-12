@@ -145,6 +145,10 @@ export default async function BookDetailPage({
 
   const totalPrintCost = printRuns.reduce((s, r) => s + toNum(r.totalCost), 0);
   const totalPrinted   = printRuns.reduce((s, r) => s + r.quantity, 0);
+  // Tiradas with a future delivery date — registered but not yet in stock
+  const unitsInTransit = printRuns
+    .filter(r => new Date(r.receivedAt) > new Date())
+    .reduce((s, r) => s + r.quantity, 0);
   const recoveryPct    = calcRecoveryPct(totalRevenue, totalPrintCost);
   const recovered      = isFullyRecovered(totalRevenue, totalPrintCost);
 
@@ -354,6 +358,9 @@ export default async function BookDetailPage({
           <div className="flex items-center justify-between">
             <p className="text-sm text-[var(--color-text-muted)]">
               Total impreso: <strong className="text-[var(--color-text)]">{totalPrinted}</strong>
+              {unitsInTransit > 0 && (
+                <>{" · "}En camino: <strong className="text-[var(--color-warning-text)]">{unitsInTransit}</strong></>
+              )}
               {" · "}En mano: <strong className="text-[var(--color-text)]">{Math.max(0, stockInHand)}</strong>
               {" · "}En librerías: <strong className="text-[var(--color-text)]">{Math.max(0, inBookstores)}</strong>
             </p>
@@ -398,6 +405,7 @@ export default async function BookDetailPage({
 
               {printRuns.map((run, i) => {
                 const costPerUnit = toNum(run.costPerUnit);
+                const isFuture = new Date(run.receivedAt) > new Date();
                 return (
                   <Card key={run.id} className="bg-[var(--color-surface)] border-[var(--color-border)] shadow-[var(--shadow-card)]">
                     <CardContent className="px-5 py-4">
@@ -405,9 +413,14 @@ export default async function BookDetailPage({
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-[var(--color-text)]">
                             Tirada #{printRuns.length - i} — {run.quantity.toLocaleString("es-CL")} ejemplares
+                            {isFuture && (
+                              <span className="ml-2 text-[11px] font-medium px-1.5 py-0.5 rounded bg-[var(--color-secondary-light)] text-[var(--color-warning-text)] align-middle">
+                                En camino
+                              </span>
+                            )}
                           </p>
                           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                            Recibida: {formatDate(run.receivedAt)}
+                            {isFuture ? "Llega" : "Recibida"}: {formatDate(run.receivedAt)}
                             {run.supplier && <span className="ml-1.5">· {run.supplier}</span>}
                           </p>
                           {run.notes && <p className="text-xs text-[var(--color-text-muted)] mt-0.5 italic">{run.notes}</p>}

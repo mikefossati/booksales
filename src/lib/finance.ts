@@ -324,19 +324,25 @@ export type InventoryStockMovement = {
   inventoryId: string | null;
   type: string;
   quantity: number;
+  /** When present, movements dated after `asOf` don't count (e.g. a print run scheduled for the future). */
+  occurredAt?: Date | string;
 };
 
 /**
  * Stock per (inventoryId, bookId) from the movement ledger.
  * Movements without an inventory (e.g. merchandise) are ignored.
+ * Movements dated after `asOf` (default: now) are ignored when they carry a date,
+ * so a tirada with a future delivery date doesn't inflate today's stock.
  * Negative results are kept — the UI shows them as warnings.
  */
 export function calcStockMatrix(
   movements: InventoryStockMovement[],
+  asOf: Date = new Date(),
 ): Map<string, Map<string, number>> {
   const matrix = new Map<string, Map<string, number>>();
   for (const m of movements) {
     if (!m.inventoryId || !m.bookId) continue;
+    if (m.occurredAt && new Date(m.occurredAt) > asOf) continue;
     const sign = INVENTORY_SIGN[m.type] ?? 0;
     if (sign === 0) continue;
     let byBook = matrix.get(m.inventoryId);

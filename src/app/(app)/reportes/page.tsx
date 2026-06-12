@@ -132,8 +132,10 @@ export default async function ReportesPage({
 
   const cuadreRows = printBooks
     .map(book => {
+      // Future-dated tiradas don't count yet — their stock movement is also
+      // excluded by calcStockMatrix, so the cuadre stays balanced.
       const totalPrinted = printRuns
-        .filter(r => r.bookId === book.id)
+        .filter(r => r.bookId === book.id && new Date(r.receivedAt) <= now)
         .reduce((s, r) => s + r.quantity, 0);
       if (totalPrinted === 0) return null;
 

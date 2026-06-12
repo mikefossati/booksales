@@ -28,7 +28,7 @@ export default async function InventarioPage() {
     }),
     prisma.inventoryMovement.findMany({
       where:  { bookId: { not: null }, book: { accountId: account.id } },
-      select: { bookId: true, inventoryId: true, type: true, quantity: true },
+      select: { bookId: true, inventoryId: true, type: true, quantity: true, occurredAt: true },
     }),
   ]);
 
