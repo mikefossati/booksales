@@ -44,7 +44,7 @@ const SECTIONS: Section[] = [
         rows: [
           ["Resultado neto del mes", "Ingresos menos gastos del mes en curso. Verde = positivo, rojo = negativo."],
           ["Desglose por canal", "Porcentaje de ingresos que aporta cada canal en el mes actual."],
-          ["Alertas", "Aparecen cuando una librería tiene pagos pendientes o un libro tiene stock bajo (≤ 10 ej.)."],
+          ["Notificaciones", "Avisos derivados de tus datos: tiradas en camino y recién llegadas, pagos pendientes de librerías, stock bajo (≤ 10 ej.) y canjes vencidos. Podés ocultarlas con la ✕ (con opción de deshacer); reaparecen solas si algo cambia, por ejemplo si la deuda crece o la fecha de entrega se mueve."],
           ["Últimas ventas / Últimos gastos", "Los 5 registros más recientes del mes. Hacé clic en «Ver todos» para ir al listado completo."],
         ],
       },
