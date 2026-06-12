@@ -20,7 +20,6 @@ type PrintRunData = {
 
 export default function EditPrintRunModal({ run }: { run: PrintRunData }) {
   const toDateStr = (d: Date) => new Date(d).toISOString().split("T")[0];
-  const today     = new Date().toISOString().split("T")[0];
 
   const [open, setOpen]             = useState(false);
   const [quantity, setQuantity]     = useState(String(run.quantity));
@@ -132,7 +131,6 @@ export default function EditPrintRunModal({ run }: { run: PrintRunData }) {
                   <Input
                     id="edit-pr-date" type="date"
                     value={receivedAt} onChange={e => setReceivedAt(e.target.value)}
-                    max={today}
                   />
                 </div>
                 <div className="space-y-1.5">

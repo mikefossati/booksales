@@ -107,7 +107,6 @@ export default function AddPrintRunModal({ bookId }: { bookId: string }) {
                   <Input
                     id="pr-date" type="date"
                     value={receivedAt} onChange={(e) => setReceivedAt(e.target.value)}
-                    max={today}
                   />
                 </div>
                 <div className="space-y-1.5">
