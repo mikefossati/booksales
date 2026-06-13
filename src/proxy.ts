@@ -58,6 +58,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Admin routes require app_metadata.role === "admin"
+  if (pathname.startsWith("/admin")) {
+    if (!user || user.app_metadata?.role !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
 
