@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
 import AccountPlanForm from "@/components/admin/AccountPlanForm";
+import ImpersonateButton from "@/components/admin/ImpersonateButton";
 import { ChevronLeft, BookOpen, Globe, ShoppingCart, Sparkles } from "lucide-react";
 import { isProActive } from "@/lib/plan";
 
@@ -73,13 +74,16 @@ export default async function AdminAccountDetailPage({
             Cuenta creada el {account.createdAt.toLocaleDateString("es-CL")}
           </p>
         </div>
-        <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-          pro
-            ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
-            : "bg-[var(--color-secondary-light)] text-[var(--color-warning-text)]"
-        }`}>
-          {status}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+            pro
+              ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
+              : "bg-[var(--color-secondary-light)] text-[var(--color-warning-text)]"
+          }`}>
+            {status}
+          </span>
+          <ImpersonateButton accountId={id} />
+        </div>
       </div>
 
       {/* Stats */}
