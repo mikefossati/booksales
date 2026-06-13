@@ -5,6 +5,7 @@ import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { ChannelType } from "@/generated/prisma/client";
 import { getOrCreateDefaultInventory } from "@/lib/inventory";
+import { isProActive, FREE_LIMITS } from "@/lib/plan";
 
 /**
  * inventoryId semantics for create/update:
@@ -74,6 +75,15 @@ export async function createChannel({
   if ("error" in auth) return auth;
 
   if (!name.trim()) return { error: "El nombre es obligatorio." };
+
+  if (!isProActive(auth.account)) {
+    const count = await prisma.channel.count({ where: { accountId: auth.account.id } });
+    if (count >= FREE_LIMITS.CHANNELS) {
+      return {
+        error: `El plan gratuito permite ${FREE_LIMITS.CHANNELS} canales. Actualiza a Pro para agregar más.`,
+      };
+    }
+  }
 
   const inventory = await resolveInventoryId(auth.account.id, inventoryId, name, type);
   if ("error" in inventory) return inventory;

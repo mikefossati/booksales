@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
+import { hasFeature } from "@/lib/plan";
 
 export async function recordPayment({
   channelId,
@@ -23,6 +24,10 @@ export async function recordPayment({
 }): Promise<{ error?: string }> {
   const auth = await requireAccount();
   if ("error" in auth) return auth;
+
+  if (!hasFeature(auth.account, "payments")) {
+    return { error: "El registro de cobros es una función Pro. Actualiza tu plan para usarla." };
+  }
 
   if (amount <= 0) return { error: "El monto debe ser mayor a 0." };
   if (Boolean(periodStart) !== Boolean(periodEnd)) {

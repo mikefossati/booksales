@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import type { MerchandiseType } from "@/generated/prisma/client";
+import { hasFeature } from "@/lib/plan";
 import { calcCostPerUnit, resolvePricing } from "@/lib/finance";
 import { resolveSaleDate } from "@/lib/dates";
 
@@ -34,6 +35,10 @@ export async function createMerchandise({
 }): Promise<{ error?: string }> {
   const auth = await requireAccount();
   if ("error" in auth) return auth;
+
+  if (!hasFeature(auth.account, "merchandise")) {
+    return { error: "La gestión de merchandising es una función Pro. Actualiza tu plan para usarla." };
+  }
 
   if (!name.trim()) return { error: "El nombre es obligatorio." };
 

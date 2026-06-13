@@ -5,6 +5,7 @@ import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { getOrCreateDefaultInventory } from "@/lib/inventory";
 import type { ExchangeStatus } from "@/generated/prisma/client";
+import { hasFeature } from "@/lib/plan";
 
 export async function createExchange({
   bookId,
@@ -29,6 +30,10 @@ export async function createExchange({
 }): Promise<{ error?: string }> {
   const auth = await requireAccount();
   if ("error" in auth) return auth;
+
+  if (!hasFeature(auth.account, "exchanges")) {
+    return { error: "La gestión de canjes es una función Pro. Actualiza tu plan para usarla." };
+  }
 
   if (!recipient.trim()) return { error: "El destinatario es obligatorio." };
   if (quantity < 1)      return { error: "La cantidad debe ser mayor a 0." };

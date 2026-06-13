@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { updateTag } from "next/cache";
 import { requireAccount } from "@/lib/auth";
 import { BookFormat } from "@/generated/prisma/client";
+import { isProActive, FREE_LIMITS } from "@/lib/plan";
 
 export async function createBook({
   title,
@@ -19,6 +20,15 @@ export async function createBook({
 
   if (!title.trim()) return { error: "El título es obligatorio." };
   if (formats.length === 0) return { error: "Selecciona al menos un formato." };
+
+  if (!isProActive(auth.account)) {
+    const count = await prisma.book.count({ where: { accountId: auth.account.id } });
+    if (count >= FREE_LIMITS.BOOKS) {
+      return {
+        error: `El plan gratuito permite ${FREE_LIMITS.BOOKS} libro. Actualiza a Pro para agregar más.`,
+      };
+    }
+  }
 
   try {
     await prisma.book.create({
