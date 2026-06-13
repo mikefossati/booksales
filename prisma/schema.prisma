@@ -9,6 +9,11 @@ datasource db {
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
+enum Plan {
+  FREE
+  PRO
+}
+
 enum UserRole {
   OWNER
   EDITOR
@@ -107,6 +112,8 @@ model Account {
   id                    String    @id @default(cuid())
   ownerId               String
   owner                 Profile   @relation("AccountOwner", fields: [ownerId], references: [id])
+  plan                  Plan      @default(FREE)
+  planExpiresAt         DateTime?
   baseCurrency          String    @default("CLP")
   dateFormat            String    @default("DD/MM/YYYY")
   onboardingCompletedAt DateTime?
