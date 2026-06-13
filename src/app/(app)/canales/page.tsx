@@ -8,6 +8,7 @@ import EditChannelModal from "@/components/configuracion/EditChannelModal";
 import DeleteChannelButton from "@/components/configuracion/DeleteChannelButton";
 import { Globe, Store, Users } from "lucide-react";
 import type { ChannelType } from "@/generated/prisma/client";
+import { isProActive, FREE_LIMITS } from "@/lib/plan";
 
 const TYPE_META: Record<ChannelType, { label: string; icon: React.ElementType; color: string }> = {
   DIGITAL:   { label: "Digital",  icon: Globe,         color: "bg-[var(--color-secondary-light)] text-[var(--color-warning-text)]" },
@@ -35,7 +36,8 @@ export default async function CanalesPage() {
     }),
   ]);
 
-  const inventoryOptions = inventories.map(i => ({ id: i.id, name: i.name }));
+  const inventoryOptions  = inventories.map(i => ({ id: i.id, name: i.name }));
+  const channelsAtLimit   = !isProActive(account) && channels.length >= FREE_LIMITS.CHANNELS;
 
   return (
     <main className="p-5 md:p-8 max-w-4xl">
@@ -50,7 +52,7 @@ export default async function CanalesPage() {
               : `${channels.length} ${channels.length === 1 ? "canal" : "canales"}`}
           </p>
         </div>
-        <AddChannelModal accountId={account.id} inventories={inventoryOptions} />
+        <AddChannelModal accountId={account.id} inventories={inventoryOptions} atLimit={channelsAtLimit} />
       </header>
 
       {channels.length === 0 ? (
@@ -64,7 +66,7 @@ export default async function CanalesPage() {
               Amazon, librerías, ferias, Instagram — cualquier lugar donde vendas.
             </p>
           </div>
-          <AddChannelModal accountId={account.id} inventories={inventoryOptions} />
+          <AddChannelModal accountId={account.id} inventories={inventoryOptions} atLimit={channelsAtLimit} />
         </div>
       ) : (
         <div className="space-y-3">

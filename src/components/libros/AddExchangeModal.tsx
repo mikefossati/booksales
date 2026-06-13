@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import { ProLockedButton } from "@/components/ui/pro-upgrade-prompt";
 
 type BookOption = { id: string; title: string };
 type Tipo = "canje" | "regalo";
@@ -16,9 +17,11 @@ type Tipo = "canje" | "regalo";
 export default function AddExchangeModal({
   accountId,
   books,
+  isPro = true,
 }: {
   accountId: string;
   books: BookOption[];
+  isPro?: boolean;
 }) {
   const today = new Date().toISOString().split("T")[0];
 
@@ -64,6 +67,16 @@ export default function AddExchangeModal({
       if (result.error) setError(result.error);
       else { handleClose(); router.refresh(); }
     });
+  }
+
+  if (!isPro) {
+    return (
+      <ProLockedButton
+        label="Registrar salida"
+        feature="Canjes y regalos"
+        description="Registrá envíos a influencers, reseñistas y regalos estratégicos. Función exclusiva Pro."
+      />
+    );
   }
 
   return (

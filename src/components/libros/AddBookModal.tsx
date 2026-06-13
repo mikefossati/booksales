@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, X } from "lucide-react";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import { ProLockedButton } from "@/components/ui/pro-upgrade-prompt";
 
 const FORMAT_OPTIONS: { value: BookFormat; label: string }[] = [
   { value: "PRINT", label: "Impreso" },
@@ -16,7 +17,13 @@ const FORMAT_OPTIONS: { value: BookFormat; label: string }[] = [
   { value: "AUDIOBOOK", label: "Audiolibro" },
 ];
 
-export default function AddBookModal({ accountId }: { accountId: string }) {
+export default function AddBookModal({
+  accountId,
+  atLimit = false,
+}: {
+  accountId: string;
+  atLimit?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [formats, setFormats] = useState<BookFormat[]>(["PRINT"]);
@@ -53,6 +60,16 @@ export default function AddBookModal({ accountId }: { accountId: string }) {
         router.refresh();
       }
     });
+  }
+
+  if (atLimit) {
+    return (
+      <ProLockedButton
+        label="Agregar libro"
+        feature="Catálogo ilimitado"
+        description="El plan gratuito incluye 1 libro. Con Pro podés gestionar todos tus títulos sin límite."
+      />
+    );
   }
 
   return (

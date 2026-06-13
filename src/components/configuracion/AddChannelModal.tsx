@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, X, Globe, Store, Users, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import { ProLockedButton } from "@/components/ui/pro-upgrade-prompt";
 
 const CHANNEL_TYPES: {
   value: ChannelType;
@@ -49,9 +50,11 @@ const DEFAULT_INVENTORY_CHOICE: Record<ChannelType, string> = {
 export default function AddChannelModal({
   accountId,
   inventories = [],
+  atLimit = false,
 }: {
   accountId: string;
   inventories?: { id: string; name: string }[];
+  atLimit?: boolean;
 }) {
   const [open, setOpen]         = useState(false);
   const [step, setStep]         = useState<1 | 2>(1);
@@ -102,6 +105,16 @@ export default function AddChannelModal({
         router.refresh();
       }
     });
+  }
+
+  if (atLimit) {
+    return (
+      <ProLockedButton
+        label="Agregar canal"
+        feature="Canales ilimitados"
+        description="El plan gratuito incluye 3 canales. Con Pro podés agregar todos los canales que necesites."
+      />
+    );
   }
 
   return (

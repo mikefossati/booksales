@@ -18,6 +18,7 @@ import AddBatchModal from "@/components/libros/AddBatchModal";
 import { BookOpen, Handshake, ShoppingBag } from "lucide-react";
 import type { ExchangeStatus, MerchandiseType } from "@/generated/prisma/client";
 import { getExchangeStatusMeta, calcMerchStock } from "@/lib/finance";
+import { isProActive, FREE_LIMITS } from "@/lib/plan";
 
 const getStatusMeta = getExchangeStatusMeta;
 
@@ -84,6 +85,8 @@ export default async function LibrosPage({
   ]);
 
   const bookOptions = books.map(b => ({ id: b.id, title: b.title }));
+  const pro         = isProActive(account);
+  const booksAtLimit = !pro && books.length >= FREE_LIMITS.BOOKS;
 
   const nCanjes  = exchanges.filter(e => e.expectedResult !== null).length;
   const nRegalos = exchanges.filter(e => e.expectedResult === null).length;
@@ -108,9 +111,9 @@ export default async function LibrosPage({
           </h1>
           <p className="text-sm text-[var(--color-text-muted)] mt-0.5">{subtitle}</p>
         </div>
-        {tab === "libros"        && <AddBookModal accountId={account.id} />}
-        {tab === "merchandising" && <AddMerchModal accountId={account.id} books={bookOptions} />}
-        {tab === "canjes"        && <AddExchangeModal accountId={account.id} books={bookOptions} />}
+        {tab === "libros"        && <AddBookModal accountId={account.id} atLimit={booksAtLimit} />}
+        {tab === "merchandising" && <AddMerchModal accountId={account.id} books={bookOptions} isPro={pro} />}
+        {tab === "canjes"        && <AddExchangeModal accountId={account.id} books={bookOptions} isPro={pro} />}
       </header>
 
       <Suspense>

@@ -10,6 +10,7 @@ import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { MerchandiseType } from "@/generated/prisma/client";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import { ProLockedButton } from "@/components/ui/pro-upgrade-prompt";
 
 const CATEGORIES = ["Ropa", "Accesorios", "Papelería", "Coleccionables", "Set", "Otro"];
 
@@ -18,9 +19,11 @@ type BookOption = { id: string; title: string };
 export default function AddMerchModal({
   accountId,
   books,
+  isPro = true,
 }: {
   accountId: string;
   books: BookOption[];
+  isPro?: boolean;
 }) {
   const [open, setOpen]             = useState(false);
   const [name, setName]             = useState("");
@@ -63,6 +66,16 @@ export default function AddMerchModal({
       if (result.error) setError(result.error);
       else { handleClose(); router.refresh(); }
     });
+  }
+
+  if (!isPro) {
+    return (
+      <ProLockedButton
+        label="Nuevo producto"
+        feature="Gestión de merchandising"
+        description="Registrá productos, lotes de producción y vendelos junto a tus libros. Función exclusiva Pro."
+      />
+    );
   }
 
   return (
