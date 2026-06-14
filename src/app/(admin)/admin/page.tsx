@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
+import { formatDate } from "@/lib/format";
 import { Users, CreditCard, TrendingUp, CalendarDays } from "lucide-react";
 
 export default async function AdminDashboardPage() {
@@ -88,7 +89,7 @@ export default async function AdminDashboardPage() {
                     {account.plan}
                   </span>
                   <span className="text-xs text-[var(--color-text-muted)]">
-                    {account.createdAt.toLocaleDateString("es-CL")}
+                    {formatDate(account.createdAt)}
                   </span>
                 </div>
               </div>

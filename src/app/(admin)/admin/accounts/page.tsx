@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-auth";
+import { formatDate } from "@/lib/format";
 import { ChevronRight } from "lucide-react";
 
 export default async function AdminAccountsPage({
@@ -123,7 +124,7 @@ export default async function AdminAccountsPage({
               <span className="text-sm text-[var(--color-text)] text-center">{account._count.channels}</span>
 
               <span className="text-xs text-[var(--color-text-muted)]">
-                {account.createdAt.toLocaleDateString("es-CL")}
+                {formatDate(account.createdAt)}
               </span>
 
               <ChevronRight size={15} className="text-[var(--color-text-muted)] justify-self-end" />

@@ -6,6 +6,7 @@ import AccountPlanForm from "@/components/admin/AccountPlanForm";
 import ImpersonateButton from "@/components/admin/ImpersonateButton";
 import { ChevronLeft, BookOpen, Globe, ShoppingCart, Sparkles } from "lucide-react";
 import { isProActive } from "@/lib/plan";
+import { formatDate } from "@/lib/format";
 
 export default async function AdminAccountDetailPage({
   params,
@@ -39,7 +40,7 @@ export default async function AdminAccountDetailPage({
   const pro    = isProActive(account);
   const status = pro
     ? account.planExpiresAt
-      ? `Pro · vence ${account.planExpiresAt.toLocaleDateString("es-CL")}`
+      ? `Pro · vence ${formatDate(account.planExpiresAt)}`
       : "Pro · lifetime"
     : "Free";
 
@@ -71,7 +72,7 @@ export default async function AdminAccountDetailPage({
             <p className="text-sm text-[var(--color-text-muted)] mt-0.5">{account.owner.email}</p>
           )}
           <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            Cuenta creada el {account.createdAt.toLocaleDateString("es-CL")}
+            Cuenta creada el {formatDate(account.createdAt)}
           </p>
         </div>
         <div className="flex items-center gap-3">
