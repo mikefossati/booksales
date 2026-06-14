@@ -10,6 +10,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import BottomNav from "@/components/layout/BottomNav";
 import QuickSaleFab from "@/components/layout/QuickSaleFab";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
+import PageTransition from "@/components/layout/PageTransition";
 import { Toaster } from "@/components/ui/sonner";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -63,7 +64,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {impersonatedEmail && <ImpersonationBanner email={impersonatedEmail} accountId={impersonateId!} />}
       <Sidebar userEmail={user.email ?? ""} />
       <div className="md:pl-60 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0">
-        {children}
+        <PageTransition>{children}</PageTransition>
       </div>
       <BottomNav />
       <QuickSaleFab

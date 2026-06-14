@@ -257,7 +257,7 @@ export default async function DashboardPage() {
     <main className="p-5 md:p-8 max-w-5xl space-y-6">
 
       {/* Header */}
-      <header className="animate-fade-up">
+      <header>
         <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-widest mb-1 capitalize">
           {currentMonth}
         </p>
@@ -280,15 +280,12 @@ export default async function DashboardPage() {
       </header>
 
       {/* Notifications */}
-      <div className="animate-fade-up animate-delay-1">
-        <NotificationsPanel notifications={notifications} />
-      </div>
+      <NotificationsPanel notifications={notifications} />
 
       {/* Two sections */}
       <div className="grid lg:grid-cols-2 gap-6">
 
         {/* ── MIS VENTAS ────────────────────────────────────────────────────── */}
-        <div className="animate-fade-up animate-delay-2">
         <Section
           title="Mis Ventas"
           action={
@@ -364,10 +361,8 @@ export default async function DashboardPage() {
             </div>
           )}
         </Section>
-        </div>
 
         {/* ── MIS GASTOS ───────────────────────────────────────────────────── */}
-        <div className="animate-fade-up animate-delay-3">
         <Section
           title="Mis Gastos"
           action={
@@ -434,7 +429,6 @@ export default async function DashboardPage() {
             </div>
           )}
         </Section>
-        </div>
       </div>
     </main>
   );
