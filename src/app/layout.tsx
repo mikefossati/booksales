@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Cormorant_Garamond } from "next/font/google";
+import { Lora, Cormorant_Garamond } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
-const inter = Inter({
+const lora = Lora({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
@@ -24,7 +24,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Autoriapp — Gestión de ventas para autores independientes",
-  description: "Gestiona y analiza las ventas de tus libros en todos los canales. La app hecha para autores independientes.",
+  description:
+    "Gestiona y analiza las ventas de tus libros en todos los canales. La app hecha para autores independientes.",
 };
 
 export default function RootLayout({
@@ -33,7 +34,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${inter.variable} ${cormorant.variable} h-full`}>
+    <html
+      lang="es"
+      className={`${lora.variable} ${cormorant.variable} h-full`}
+    >
       <body className="min-h-full bg-[var(--color-bg)]">
         {children}
         <SpeedInsights />

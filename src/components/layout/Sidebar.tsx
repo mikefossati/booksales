@@ -42,7 +42,13 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
   const initials = userEmail ? userEmail[0].toUpperCase() : "?";
 
   return (
-    <aside className="fixed inset-y-0 left-0 w-60 bg-[var(--color-surface)] border-r border-[var(--color-border)] hidden md:flex flex-col z-30">
+    <aside
+      className="fixed inset-y-0 left-0 w-60 border-r border-[var(--color-border)] hidden md:flex flex-col z-30"
+      style={{
+        background:
+          "linear-gradient(160deg, var(--color-surface) 0%, oklch(96% 0.012 140) 100%)",
+      }}
+    >
       <div className="h-20 flex items-center px-6 border-b border-[var(--color-border)]">
         <AutoriappLogo size="lg" />
       </div>

@@ -27,9 +27,46 @@ const FEATURES = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
+    <div className="relative min-h-screen bg-[var(--color-bg)] overflow-x-hidden">
+      {/* Radial accent bloom behind hero */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 left-0 w-[700px] h-[600px]"
+        style={{
+          background:
+            "radial-gradient(ellipse at 20% 30%, oklch(44% 0.13 155 / 0.07) 0%, transparent 65%)",
+        }}
+      />
+      {/* Warm secondary bloom — right side */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-40 right-0 w-[500px] h-[500px]"
+        style={{
+          background:
+            "radial-gradient(ellipse at 80% 20%, oklch(68% 0.09 75 / 0.05) 0%, transparent 65%)",
+        }}
+      />
+      {/* Grain overlay */}
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 w-full h-full opacity-[0.03]"
+        style={{ zIndex: 1 }}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <filter id="landing-noise">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.65"
+            numOctaves="3"
+            stitchTiles="stitch"
+          />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#landing-noise)" />
+      </svg>
+
       {/* Nav */}
-      <nav className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+      <nav className="relative z-10 max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
         <AutoriappLogo size="lg" />
         <Link
           href="/login"
@@ -40,7 +77,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 pt-16 pb-24 md:pt-24 md:pb-32">
+      <section className="relative z-10 max-w-5xl mx-auto px-6 pt-16 pb-24 md:pt-24 md:pb-32">
         <div className="max-w-2xl">
           <p className="text-xs font-medium text-[var(--color-accent)] uppercase tracking-widest mb-5">
             Para autores independientes

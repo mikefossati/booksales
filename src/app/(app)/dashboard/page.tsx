@@ -31,7 +31,7 @@ function Stat({ label, value, sub, trend }: { label: string; value: string; sub?
   return (
     <div>
       <p className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-0.5">{label}</p>
-      <p className="text-xl font-semibold text-[var(--color-text)] leading-none font-heading">
+      <p className="text-3xl font-semibold text-[var(--color-text)] leading-none font-heading">
         {value}
       </p>
       {sub && <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{sub}</p>}
@@ -257,7 +257,7 @@ export default async function DashboardPage() {
     <main className="p-5 md:p-8 max-w-5xl space-y-6">
 
       {/* Header */}
-      <header>
+      <header className="animate-fade-up">
         <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-widest mb-1 capitalize">
           {currentMonth}
         </p>
@@ -280,14 +280,17 @@ export default async function DashboardPage() {
       </header>
 
       {/* Notifications */}
-      <NotificationsPanel notifications={notifications} />
+      <div className="animate-fade-up animate-delay-1">
+        <NotificationsPanel notifications={notifications} />
+      </div>
 
       {/* Two sections */}
       <div className="grid lg:grid-cols-2 gap-6">
 
         {/* ── MIS VENTAS ────────────────────────────────────────────────────── */}
+        <div className="animate-fade-up animate-delay-2">
         <Section
-          title="📚 Mis Ventas"
+          title="Mis Ventas"
           action={
             <DashboardSaleButton
               accountCurrency={currency}
@@ -361,10 +364,12 @@ export default async function DashboardPage() {
             </div>
           )}
         </Section>
+        </div>
 
         {/* ── MIS GASTOS ───────────────────────────────────────────────────── */}
+        <div className="animate-fade-up animate-delay-3">
         <Section
-          title="💸 Mis Gastos"
+          title="Mis Gastos"
           action={
             <DashboardExpenseButton
               accountId={account.id}
@@ -429,6 +434,7 @@ export default async function DashboardPage() {
             </div>
           )}
         </Section>
+        </div>
       </div>
     </main>
   );

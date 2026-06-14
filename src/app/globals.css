@@ -19,7 +19,7 @@
 
   /* Typography */
   --font-heading: "Cormorant Garamond", Georgia, serif;
-  --font-body:    "Inter", system-ui, sans-serif;
+  --font-body:    "Lora", Georgia, serif;
 
   /* Spacing scale */
   --space-1:  0.25rem;
@@ -73,6 +73,8 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -89,6 +91,27 @@ h1 { letter-spacing: -0.02em; }
 .font-heading {
   font-family: var(--font-heading);
 }
+
+/* ── Entry animations ────────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 360ms var(--ease-out) both;
+}
+
+.animate-delay-1 { animation-delay: 60ms;  }
+.animate-delay-2 { animation-delay: 120ms; }
+.animate-delay-3 { animation-delay: 180ms; }
+.animate-delay-4 { animation-delay: 240ms; }
 
 /* ── Safe areas (iOS home indicator, notches) ────────────────────────────── */
 .safe-area-inset-bottom {
