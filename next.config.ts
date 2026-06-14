@@ -4,6 +4,11 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
+    NEXT_PUBLIC_GIT_BRANCH:     process.env.VERCEL_GIT_COMMIT_REF ?? "local",
+  },
+
   async headers() {
     return [
       {

@@ -12,6 +12,7 @@ import QuickSaleFab from "@/components/layout/QuickSaleFab";
 import ImpersonationBanner from "@/components/admin/ImpersonationBanner";
 import PageTransition from "@/components/layout/PageTransition";
 import { Toaster } from "@/components/ui/sonner";
+import DevBanner from "@/components/ui/DevBanner";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -77,6 +78,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         merchLastPrices={merchLastPrices}
       />
       <Toaster position="bottom-center" />
+      <DevBanner />
     </div>
   );
 }
