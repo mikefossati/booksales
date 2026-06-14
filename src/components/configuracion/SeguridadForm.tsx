@@ -38,7 +38,7 @@ export default function SeguridadForm() {
     setLogoutLoading(true);
     const supabase = createClient();
     await supabase.auth.signOut({ scope: "global" });
-    router.push("/login");
+    router.push("/");
     router.refresh();
   }
 
