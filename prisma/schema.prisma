@@ -125,6 +125,7 @@ model Account {
   channels    Channel[]
   expenses    Expense[]
   inventories Inventory[]
+  merchandise Merchandise[]
   notificationDismissals NotificationDismissal[]
 }
 
@@ -155,7 +156,7 @@ model Book {
   coverUrl        String?
   description     String?
   seriesId        String?
-  series          Series?    @relation(fields: [seriesId], references: [id])
+  series          Series?    @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -165,6 +166,7 @@ model Book {
   inventoryMovements   InventoryMovement[]
   expenses             Expense[]
   exchanges            Exchange[]
+  merchandise          Merchandise[]
 }
 
 model Series {
@@ -271,12 +273,17 @@ model Sale {
   saleDate          DateTime   @default(now())
   origin            String?    // "manual", "csv", "manual_over_csv"
   csvImportId       String?
-  csvImport         CsvImport? @relation(fields: [csvImportId], references: [id])
+  csvImport         CsvImport? @relation(fields: [csvImportId], references: [id], onDelete: SetNull)
   notes             String?
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
   inventoryMovements InventoryMovement[]
+
+  @@index([channelId])
+  @@index([bookId])
+  @@index([merchandiseId])
+  @@index([saleDate])
 }
 
 // ─── CSV Imports ─────────────────────────────────────────────────────────────
@@ -284,7 +291,7 @@ model Sale {
 model CsvImport {
   id             String       @id @default(cuid())
   channelId      String
-  channel        Channel      @relation(fields: [channelId], references: [id])
+  channel        Channel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
   filename       String
   fileHash       String       @unique
   periodStart    DateTime
@@ -303,7 +310,7 @@ model CsvImport {
 model Payment {
   id          String   @id @default(cuid())
   channelId   String
-  channel     Channel  @relation(fields: [channelId], references: [id])
+  channel     Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
   amount      Decimal  @db.Decimal(12, 2)
   currency    String
   periodStart DateTime? // settlement window the payment covers (optional)
@@ -322,7 +329,7 @@ model InventoryMovement {
   printRunId    String?
   printRun      PrintRun?             @relation(fields: [printRunId], references: [id])
   merchandiseId String?
-  merchandise   Merchandise?          @relation(fields: [merchandiseId], references: [id])
+  merchandise   Merchandise?          @relation(fields: [merchandiseId], references: [id], onDelete: SetNull)
   type          InventoryMovementType
   quantity      Int
   inventoryId   String?
@@ -336,6 +343,10 @@ model InventoryMovement {
   notes         String?
   occurredAt    DateTime              @default(now())
   createdAt     DateTime              @default(now())
+
+  @@index([bookId])
+  @@index([inventoryId])
+  @@index([merchandiseId])
 }
 
 // ─── Exchanges (Canjes) ──────────────────────────────────────────────────────
@@ -363,12 +374,14 @@ model Exchange {
 model Merchandise {
   id             String          @id @default(cuid())
   accountId      String
+  account        Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
   name           String
   type           MerchandiseType @default(SIMPLE)
   imageUrl       String?
   suggestedPrice Decimal?        @db.Decimal(10, 2)
   category       String?
   bookId         String?
+  book           Book?           @relation(fields: [bookId], references: [id], onDelete: SetNull)
   edition        String?
   components     Json?
   sku            String?
@@ -380,6 +393,8 @@ model Merchandise {
   productionBatches  ProductionBatch[]
   inventoryMovements InventoryMovement[]
   sales              Sale[]
+
+  @@index([accountId])
 }
 
 model ProductionBatch {
@@ -417,6 +432,9 @@ model Expense {
   notes             String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+
+  @@index([accountId])
+  @@index([bookId])
 }
 
 // Persisted dismissals for derived notifications.
