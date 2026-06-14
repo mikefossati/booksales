@@ -6,12 +6,10 @@ import {
   type PlanFeature,
 } from "@/lib/plan";
 
-const FREE_ACCOUNT = { plan: "FREE" as const, planExpiresAt: null };
-const PRO_NO_EXPIRY = { plan: "PRO" as const, planExpiresAt: null };
-const future = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-const past = new Date(Date.now() - 1);
-const PRO_ACTIVE = { plan: "PRO" as const, planExpiresAt: future };
-const PRO_EXPIRED = { plan: "PRO" as const, planExpiresAt: past };
+const FREE_ACCOUNT    = { plan: "FREE" as const, planExpiresAt: null };
+const PRO_NO_EXPIRY   = { plan: "PRO"  as const, planExpiresAt: null };
+const PRO_ACTIVE      = { plan: "PRO"  as const, planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) };
+const PRO_EXPIRED     = { plan: "PRO"  as const, planExpiresAt: new Date(Date.now() - 1) };
 
 // ─── FREE_LIMITS ─────────────────────────────────────────────────────────────
 
@@ -46,10 +44,10 @@ describe("isProActive", () => {
 });
 
 // ─── hasFeature ──────────────────────────────────────────────────────────────
+// All current features require an active Pro plan.
+// unlimited_books / unlimited_channels are count limits (FREE_LIMITS), not flags.
 
 const ALL_FEATURES: PlanFeature[] = [
-  "unlimited_books",
-  "unlimited_channels",
   "payments",
   "exports",
   "merchandise",
@@ -63,14 +61,31 @@ describe("hasFeature — FREE account", () => {
   });
 });
 
-describe("hasFeature — PRO active", () => {
-  it.each(ALL_FEATURES)("%s is unlocked on active PRO", (feature) => {
+describe("hasFeature — PRO lifetime", () => {
+  it.each(ALL_FEATURES)("%s is unlocked on PRO (no expiry)", (feature) => {
     expect(hasFeature(PRO_NO_EXPIRY, feature)).toBe(true);
   });
 });
 
+describe("hasFeature — PRO with active expiry", () => {
+  it.each(ALL_FEATURES)("%s is unlocked on PRO (future expiry)", (feature) => {
+    expect(hasFeature(PRO_ACTIVE, feature)).toBe(true);
+  });
+});
+
 describe("hasFeature — PRO expired", () => {
-  it.each(ALL_FEATURES)("%s is locked when PRO is expired", (feature) => {
+  it.each(ALL_FEATURES)("%s is locked when PRO has lapsed", (feature) => {
     expect(hasFeature(PRO_EXPIRED, feature)).toBe(false);
+  });
+});
+
+// ─── Feature gate consistency ─────────────────────────────────────────────────
+// Verifies hasFeature delegates to isProActive correctly.
+
+describe("hasFeature mirrors isProActive for all Pro-only features", () => {
+  it.each(ALL_FEATURES)("%s: hasFeature === isProActive", (feature) => {
+    for (const acct of [FREE_ACCOUNT, PRO_NO_EXPIRY, PRO_ACTIVE, PRO_EXPIRED]) {
+      expect(hasFeature(acct, feature)).toBe(isProActive(acct));
+    }
   });
 });

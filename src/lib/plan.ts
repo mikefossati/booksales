@@ -2,9 +2,11 @@ import type { Plan } from "@/generated/prisma/client";
 
 export type { Plan };
 
+/**
+ * Boolean-gated features. Limits (book count, channel count) are handled
+ * separately via FREE_LIMITS — they are not feature flags.
+ */
 export type PlanFeature =
-  | "unlimited_books"
-  | "unlimited_channels"
   | "payments"
   | "exports"
   | "merchandise"
@@ -24,9 +26,19 @@ export function isProActive(account: AccountPlanFields): boolean {
   return account.planExpiresAt > new Date();
 }
 
+/** All current boolean-gated features require an active Pro plan. */
+const PRO_ONLY_FEATURES = new Set<PlanFeature>([
+  "payments",
+  "exports",
+  "merchandise",
+  "exchanges",
+  "reports_history",
+]);
+
 export function hasFeature(
   account: AccountPlanFields,
-  _feature: PlanFeature,
+  feature: PlanFeature,
 ): boolean {
+  if (!PRO_ONLY_FEATURES.has(feature)) return true;
   return isProActive(account);
 }
