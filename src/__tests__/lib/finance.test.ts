@@ -793,6 +793,38 @@ describe("calcInventoryStock", () => {
     ];
     expect(calcInventoryStock(movements, "personal", "b1")).toBe(98);
   });
+
+  it("accounts for transfers out when checking available stock (transferStock guard)", () => {
+    // Simulates what transferStock does before writing movements:
+    // source has 100, already sent 40 out → 60 available → transfer of 60 is valid
+    const movements = [
+      { inventoryId: "personal", bookId: "b1", type: "NEW_PRINT_RUN", quantity: 100 },
+      { inventoryId: "personal", bookId: "b1", type: "TRANSFER_OUT",  quantity: 40 },
+    ];
+    const available = calcInventoryStock(movements, "personal", "b1");
+    expect(available).toBe(60);
+    expect(available >= 60).toBe(true);  // transfer of 60 is allowed
+    expect(available >= 61).toBe(false); // transfer of 61 would be blocked
+  });
+
+  it("returns negative when oversold (no clamping — guard must check < quantity)", () => {
+    // Stock is 0, already transferred 5 out → -5 signals insufficient stock
+    const movements = [
+      { inventoryId: "personal", bookId: "b1", type: "TRANSFER_OUT", quantity: 5 },
+    ];
+    const available = calcInventoryStock(movements, "personal", "b1");
+    expect(available).toBe(-5);
+    expect(available >= 1).toBe(false); // any positive transfer would be blocked
+  });
+
+  it("isolates stock by inventory — does not bleed between inventories", () => {
+    const movements = [
+      { inventoryId: "personal", bookId: "b1", type: "NEW_PRINT_RUN", quantity: 100 },
+      { inventoryId: "libreria",  bookId: "b1", type: "TRANSFER_IN",   quantity: 30  },
+    ];
+    expect(calcInventoryStock(movements, "personal", "b1")).toBe(100);
+    expect(calcInventoryStock(movements, "libreria",  "b1")).toBe(30);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

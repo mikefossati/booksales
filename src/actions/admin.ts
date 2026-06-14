@@ -56,6 +56,7 @@ export async function startImpersonation(accountId: string): Promise<{ error?: s
     sameSite: "lax",
     maxAge:   60 * 60 * 8, // 8 hours
   });
+  revalidatePath("/", "layout");
   return {};
 }
 
@@ -63,4 +64,5 @@ export async function stopImpersonation(): Promise<void> {
   await requireAdmin();
   const cookieStore = await cookies();
   cookieStore.delete(IMPERSONATE_COOKIE);
+  revalidatePath("/", "layout");
 }

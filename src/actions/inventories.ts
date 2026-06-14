@@ -112,6 +112,18 @@ export async function transferStock({
   ]);
   if (!book || !from || !to) return { error: "No encontrado." };
 
+  // Validate sufficient stock in source inventory before writing any movements
+  const sourceMovements = await prisma.inventoryMovement.findMany({
+    where:  { inventoryId: fromInventoryId, bookId },
+    select: { bookId: true, inventoryId: true, type: true, quantity: true },
+  });
+  const availableStock = calcInventoryStock(sourceMovements, fromInventoryId, bookId);
+  if (availableStock < quantity) {
+    return {
+      error: `Stock insuficiente en el inventario de origen. Disponible: ${availableStock} ej.`,
+    };
+  }
+
   try {
     const transferGroupId = crypto.randomUUID();
     await prisma.$transaction(async (tx) => {
