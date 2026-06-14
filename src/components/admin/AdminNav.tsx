@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LayoutDashboard, Users, LogOut } from "lucide-react";
+import { AutoriappLogo } from "@/components/brand/Logo";
 
 const NAV = [
   { href: "/admin",          label: "Dashboard",  icon: LayoutDashboard },
@@ -10,10 +11,10 @@ export default function AdminNav() {
   return (
     <aside className="w-56 shrink-0 bg-[var(--color-text)] text-white min-h-screen flex flex-col">
       <div className="px-5 py-5 border-b border-white/10">
-        <p className="text-xs font-semibold tracking-widest uppercase text-white/40">
+        <AutoriappLogo size="md" className="text-white" />
+        <p className="text-xs font-semibold tracking-widest uppercase text-white/40 mt-2">
           Admin
         </p>
-        <p className="text-sm font-semibold text-white mt-0.5">Autoriapp</p>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">

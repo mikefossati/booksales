@@ -43,8 +43,8 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
 
   return (
     <aside className="fixed inset-y-0 left-0 w-60 bg-[var(--color-surface)] border-r border-[var(--color-border)] hidden md:flex flex-col z-30">
-      <div className="h-16 flex items-center px-6 border-b border-[var(--color-border)]">
-        <AutoriappLogo size="md" />
+      <div className="h-20 flex items-center px-6 border-b border-[var(--color-border)]">
+        <AutoriappLogo size="lg" />
       </div>
 
       <nav className="flex-1 py-4 px-3 space-y-0.5">

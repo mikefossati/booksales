@@ -407,7 +407,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
     <div className="flex flex-col min-h-screen">
       {/* Top bar */}
       <header className="flex items-center justify-between px-6 py-5">
-        <AutoriappLogo size="sm" />
+        <AutoriappLogo size="md" />
         <StepDots current={displayStep} total={totalSteps} />
       </header>
 

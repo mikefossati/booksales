@@ -30,7 +30,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[var(--color-bg)]">
       {/* Nav */}
       <nav className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
-        <AutoriappLogo size="md" />
+        <AutoriappLogo size="lg" />
         <Link
           href="/login"
           className="text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
@@ -177,7 +177,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-[var(--color-border)] px-6 py-8">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <AutoriappLogo size="sm" />
+          <AutoriappLogo size="md" />
           <p className="text-xs text-[var(--color-text-muted)]">
             Hecho con cariño para autores independientes · {new Date().getFullYear()}
           </p>

@@ -64,9 +64,9 @@ interface LogoProps {
 }
 
 const SIZE_MAP = {
-  sm: { mark: 16, text: "text-base",   gap: "gap-2"   },
-  md: { mark: 20, text: "text-lg",     gap: "gap-2.5" },
-  lg: { mark: 28, text: "text-2xl",    gap: "gap-3"   },
+  sm: { mark: 22, text: "text-xl",  gap: "gap-2.5" },
+  md: { mark: 30, text: "text-2xl", gap: "gap-3"   },
+  lg: { mark: 42, text: "text-3xl", gap: "gap-4"   },
 };
 
 /**
