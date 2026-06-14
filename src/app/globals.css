@@ -105,7 +105,10 @@ h1 { letter-spacing: -0.02em; }
 }
 
 .animate-fade-up {
-  animation: fade-up 360ms var(--ease-out) both;
+  animation-name: fade-up;
+  animation-duration: 360ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
 }
 
 .animate-delay-1 { animation-delay: 60ms;  }
