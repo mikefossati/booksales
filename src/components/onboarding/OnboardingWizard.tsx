@@ -32,7 +32,7 @@ const FORMAT_OPTIONS: { value: BookFormat; label: string; emoji: string }[] = [
 
 const CHANNEL_PRESETS: PresetChannel[] = [
   { id: "amazon",     name: "Amazon KDP",       type: "DIGITAL",   icon: Globe,  currency: "USD", hint: "Paga en USD" },
-  { id: "buscalibre", name: "Buscalibre",        type: "DIGITAL",   icon: Globe,  currency: "USD",                       hint: "Paga en USD" },
+  { id: "buscalibre", name: "Buscalibre",        type: "DIGITAL",   icon: Globe,  currency: "CLP",                       hint: "Paga en CLP" },
   { id: "librerias",  name: "Librerías",         type: "BOOKSTORE", icon: Store,  currency: "CLP", hint: "Pagan después de vender" },
   { id: "ferias",     name: "Ferias del libro",  type: "DIRECT",    icon: Users,  currency: "CLP",                       hint: "Venta directa" },
   { id: "instagram",  name: "Instagram / Redes", type: "DIRECT",    icon: Users,  currency: "CLP",                       hint: "Venta directa" },
