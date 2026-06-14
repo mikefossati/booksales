@@ -13,7 +13,7 @@ import { BookOpen, Globe, Store, Users, Check, ArrowRight, TrendingUp, Receipt }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 type PresetChannel = {
   id: string;
@@ -65,6 +65,7 @@ function StepDots({ current, total }: { current: Step; total: number }) {
 
 export default function OnboardingWizard({ accountId }: { accountId: string }) {
   const [step, setStep]             = useState<Step>(1);
+  const [artistName, setArtistName] = useState("");
   const [title, setTitle]           = useState("");
   const [formats, setFormats]       = useState<BookFormat[]>(["PRINT"]);
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
@@ -76,7 +77,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const totalSteps = formats.includes("PRINT") ? 4 : 3;
+  const totalSteps = formats.includes("PRINT") ? 5 : 4;
 
   function toggleFormat(f: BookFormat) {
     setFormats(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
@@ -87,10 +88,10 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
   }
 
   function nextStep() {
-    if (step === 2 && !formats.includes("PRINT")) {
-      setStep(4); // no print run to register — jump straight to the summary
+    if (step === 3 && !formats.includes("PRINT")) {
+      setStep(5); // no print run to register — jump straight to the summary
     } else {
-      setStep(prev => Math.min(prev + 1, 4) as Step);
+      setStep(prev => Math.min(prev + 1, 5) as Step);
     }
   }
 
@@ -119,6 +120,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
 
       const result = await completeOnboarding({
         accountId,
+        artistName: artistName.trim() || undefined,
         book: (!isSkip && title.trim()) ? { title, formats } : undefined,
         channels: channels.length ? channels : undefined,
         printRun,
@@ -137,6 +139,31 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
 
   const stepContent = {
     1: (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-semibold text-[var(--color-text)] font-heading">
+            ¿Cómo te conocen tus lectores?
+          </h2>
+          <p className="text-[var(--color-text-muted)] mt-2">
+            Tu nombre artístico aparecerá en la app. Puedes cambiarlo después desde tu perfil.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="ob-artist">Nombre artístico <span className="text-[var(--color-danger)]">*</span></Label>
+          <Input
+            id="ob-artist"
+            value={artistName}
+            onChange={e => setArtistName(e.target.value)}
+            placeholder="El nombre con que publicas"
+            className="text-base h-12"
+            autoFocus
+          />
+        </div>
+      </div>
+    ),
+
+    2: (
       <div className="space-y-6">
         <div>
           <h2 className="text-3xl font-semibold text-[var(--color-text)] font-heading">
@@ -183,7 +210,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
       </div>
     ),
 
-    2: (
+    3: (
       <div className="space-y-6">
         <div>
           <h2 className="text-3xl font-semibold text-[var(--color-text)] font-heading">
@@ -235,7 +262,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
       </div>
     ),
 
-    3: (
+    4: (
       <div className="space-y-6">
         <div>
           <h2 className="text-3xl font-semibold text-[var(--color-text)] font-heading">
@@ -297,7 +324,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
       </div>
     ),
 
-    4: (
+    5: (
       <div className="space-y-6">
         <div>
           <div className="w-14 h-14 rounded-full bg-[var(--color-accent-light)] flex items-center justify-center mb-5">
@@ -313,6 +340,15 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
 
         {/* Summary of configured items */}
         <div className="space-y-2.5">
+          {artistName && (
+            <div className="flex items-start gap-3 p-4 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)]">
+              <Users size={16} className="text-[var(--color-accent)] mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-[var(--color-text)]">{artistName}</p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Nombre artístico</p>
+              </div>
+            </div>
+          )}
           {title && (
             <div className="flex items-start gap-3 p-4 rounded-[var(--radius-md)] bg-[var(--color-surface)] border border-[var(--color-border)]">
               <BookOpen size={16} className="text-[var(--color-accent)] mt-0.5 shrink-0" />
@@ -390,17 +426,15 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
-  const isLastStep = step === 4;
-  // Without PRINT the wizard has 3 visible steps; internal step 4 (summary) displays as 3
-  const displayStep = (formats.includes("PRINT") ? step : Math.min(step, 3)) as Step;
-
-  const canAdvanceStep1 = step === 1 && title.trim().length > 0;
-  const canAdvanceStep3 = step === 3 && (hasPrint === false || (hasPrint === true && printQty));
+  const isLastStep = step === 5;
+  // Without PRINT the wizard has 4 visible steps; internal step 5 (summary) displays as 4
+  const displayStep = (formats.includes("PRINT") ? step : (step === 5 ? 4 : step)) as Step;
 
   const canAdvance =
-    step === 1 ? canAdvanceStep1 :
-    step === 2 ? true :
-    step === 3 ? !!canAdvanceStep3 :
+    step === 1 ? artistName.trim().length > 0 :
+    step === 2 ? title.trim().length > 0 :
+    step === 3 ? true :
+    step === 4 ? !!(hasPrint === false || (hasPrint === true && printQty)) :
     true;
 
   return (
@@ -439,7 +473,7 @@ export default function OnboardingWizard({ accountId }: { accountId: string }) {
 
             <Button
               onClick={isLastStep ? () => submit({ skip: false }) : nextStep}
-              disabled={isPending || (!isLastStep && step !== 2 && !canAdvance)}
+              disabled={isPending || (!isLastStep && !canAdvance)}
               className="gap-2 px-6"
             >
               {isPending

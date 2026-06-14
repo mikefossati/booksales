@@ -18,15 +18,17 @@ type PrintRunData = {
 };
 
 export async function completeOnboarding({
+  artistName,
   book,
   channels,
   printRun,
   accountId: _ignored,
 }: {
-  book?:      { title: string; formats: BookFormat[] };
-  channels?:  PresetChannel[];
-  printRun?:  PrintRunData;
-  accountId?: string; // derived from session; caller value is ignored
+  artistName?: string;
+  book?:       { title: string; formats: BookFormat[] };
+  channels?:   PresetChannel[];
+  printRun?:   PrintRunData;
+  accountId?:  string; // derived from session; caller value is ignored
 }): Promise<{ error?: string }> {
   const auth = await requireAccount();
   if ("error" in auth) return auth;
@@ -35,6 +37,12 @@ export async function completeOnboarding({
 
   try {
     await prisma.$transaction(async (tx) => {
+      if (artistName?.trim()) {
+        await tx.profile.update({
+          where: { id: auth.account.ownerId },
+          data:  { displayName: artistName.trim() },
+        });
+      }
       // Default inventory — every account sells from "Inventario personal"
       let defaultInventory = await tx.inventory.findFirst({
         where:  { accountId, isDefault: true },
